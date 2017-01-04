@@ -1,0 +1,109 @@
+---
+title: "Phylogenetic tree"
+author: "Lucas Nell"
+output: html
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code 
+within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your 
+cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, comment = '', prompt = FALSE)
+```
+
+
+# Merging two trees together
+
+<!---
+The paper by 
+[Agnarsson et al. (2011)](http://dx.doi.org/10.1371/currents.RRN1212) used only one
+mitochrondrial DNA gene and is the reason the Open Tree of Life (OTL) version doesn't 
+have a single resolved branch for *Myotis lucifugus*. A more recent paper by 
+[Shi and Rabosky (2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract) 
+uses multiple mitochondrial and nuclear genes and contains *M. lucifugus*.
+This paper will be used to complete the tree.
+-->
+
+
+I used the package `rotl` to interface with the Open Tree of Life (OTL) to import trees
+into R. [Here](https://cran.r-project.org/web/packages/rotl/vignettes/data_mashups.html)
+is a guide on using it.
+
+```{r, message = FALSE, warning = FALSE}
+library(dplyr)
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(ape)
+library(rotl)
+library(phylolm)
+# library(vegan)
+# library(lme4)
+# library(pez)
+# library(lmerTest)
+```
+
+<!---
+In `bash` (in my case, "Terminal" in macOS), you can download the tree by 
+[Shi and Rabosky (2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract)
+as such:
+
+```{bash, eval = FALSE}
+wget "http://purl.org/phylo/treebase/phylows/tree/TB2:Tr87680?format=nexus"
+mv "TB2:Tr87680?format=nexus" Shi_Rabosky_2015.nex
+```
+-->
+
+Vector of species needed:
+
+```{r}
+sp_df <- 
+'Akodon montensis
+Delomys sublineatus
+Euryoryzomys russatus
+Rattus norvegicus
+Olygoryzomys nigripes
+Sooretamys angouya
+Thaptomys nigrita
+Peromyscus leucopus
+Mus musculus
+Microtus pennsylvanicus
+Molossus rufus
+Myotis lucifugus
+Molossus molossus
+Eumops glaucinus
+Desmodus rotundus
+Carollia perspicillata
+Artibeus lituratus
+Tadarida brasiliensis
+Eptesicus fuscus
+' %>% 
+    read_csv(., col_names = 'species')
+```
+
+
+
+```{r}
+taxon_search <- tnrs_match_names(names = sp_df$species, context_name = 'Mammals')
+knitr::kable(taxon_search)
+```
+
+
+Making sure our names and IDs match up with those of the OTL.
+
+```{r}
+sp_df$ott_name <- taxon_search$unique_name
+sp_df$ott_id <- taxon_search$ott_id
+```
+
+
+
+
+```{r}
+
+```
+
+
