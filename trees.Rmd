@@ -22,7 +22,7 @@ uses multiple mitochondrial and nuclear genes and contains *M. lucifugus*.
 This paper will be used to complete the tree.
 
 
-# OTOL tree
+# Attempting OTOL tree
 
 I used the package `rotl` to interface with the Open Tree of Life (OTOL) to import trees
 into R. [Here](https://cran.r-project.org/web/packages/rotl/vignettes/data_mashups.html)
@@ -35,7 +35,7 @@ library(tidyr)
 library(ggplot2)
 library(ape)
 library(rotl)
-library(phylolm)
+# library(phylolm)
 # library(vegan)
 # library(lme4)
 # library(pez)
@@ -43,30 +43,30 @@ library(phylolm)
 ```
 
 
-Vector of species needed:
+Data frame of species needed:
 
 ```{r}
 sp_df <- 
-'species,bat
-Mus musculus,0
-Rattus norvegicus,0
-Thaptomys nigrita,0
-Akodon montensis,0
-Delomys sublineatus,0
-Olygoryzomys nigripes,0
-Sooretamys angouya,0
-Euryoryzomys russatus,0
-Peromyscus leucopus,0
-Microtus pennsylvanicus,0
-Artibeus lituratus,1
-Carollia perspicillata,1
-Desmodus rotundus,1
-Molossus rufus,1
-Molossus molossus,1
-Eumops glaucinus,1
-Tadarida brasiliensis,1
-Myotis lucifugus,1
-Eptesicus fuscus,1
+'species,type
+Mus musculus,rodent
+Rattus norvegicus,rodent
+Thaptomys nigrita,rodent
+Akodon montensis,rodent
+Delomys sublineatus,rodent
+Olygoryzomys nigripes,rodent
+Sooretamys angouya,rodent
+Euryoryzomys russatus,rodent
+Peromyscus leucopus,rodent
+Microtus pennsylvanicus,rodent
+Artibeus lituratus,bat
+Carollia perspicillata,bat
+Desmodus rotundus,bat
+Molossus rufus,bat
+Molossus molossus,bat
+Eumops glaucinus,bat
+Tadarida brasiliensis,bat
+Myotis lucifugus,bat
+Eptesicus fuscus,bat
 ' %>% 
     read_csv(.)
 ```
@@ -89,17 +89,19 @@ sp_df$ott_id <- taxon_search$ott_id
 ```
 
 
-We don't have good representation in published trees...
+We don't have good representation in published trees from this search...
 
 ```{r}
 hits <- lapply(sp_df$ott_id, studies_find_trees, property="ot:ottId", detailed = FALSE)
 sapply(hits, function(x) sum(x[["n_matched_trees"]]))
 ```
 
-So I'm creating a tree from 
-the synthesis OTOL tree using species, except replacing *M. lucifugus* with 
-*M. lucifugus lucifugus*. Using *M. lucifugus lucifugus* allows me to see where
-*M. lucifugus* will later be placed.
+So I'm creating a tree from the synthesis OTOL tree using species, except replacing 
+*M. lucifugus* with *M. lucifugus lucifugus*. Using *M. lucifugus lucifugus* allows me to
+see where *M. lucifugus* will probably be located.
+
+> This tree only serves to guide future searches, because the OTOL tree has no branch 
+> lengths, so cannot be used to generate a phylogenetic covariance matrix.
 
 ```{r}
 tr <- tol_induced_subtree(
@@ -112,10 +114,60 @@ plot(tr, no.margin = TRUE, label.offset = 0.5); nodelabels(); tiplabels()
 ```
 
 
+From more extensive searching on the OTOL database online, I found one tree that has all 
+focal rodent species
+[(Fabre et al. 2012)](http://dx.doi.org/10.1186/1471-2148-12-88)
+and another that has all bat species
+[(Shi and Rabosky 2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract).
 
 
 
-# Including *M. lucifugus* from Shi and Rabosky (2015)
+# Rodent tree
+
+Using `rotl` directly didn't work for this paper's tree, so I downloaded the Newick 
+version directly from the link on 
+[OTOL's site](https://tree.opentreeoflife.org/curator/study/view/pg_2688/?tab=metadata).
+
+```{r, engine = 'bash', eval = FALSE}
+wget "https://api.opentreeoflife.org/v3/study/pg_2688.tre"
+mv pg_2688.tre rodents.tre
+```
+
+I then opened this file in a text editor and removed all single quotes and replaced all
+spaces with underscores. This allows R to read this file appropriately. After it's read,
+I can replace underscores with spaces.
+
+```{r}
+rod_tr <- read.tree('rodents.tre')
+rod_tr$tip.label <- gsub('_', ' ', rod_tr$tip.label)
+rod_tr$node.label <- gsub('_', ' ', rod_tr$node.label)
+```
+
+
+Three species don't seem to be present in either node or tip labels.
+
+```{r}
+sp_df$species[sp_df$type == 'rodent' & 
+                  !sp_df$species %in% c(rod_tr$node.label, rod_tr$tip.label)]
+```
+
+
+Looking these up in the OTOL database, I found the following:
+- *Olygoryzomys nigripes* is spelled *Oligoryzomys nigripes*
+  [link](https://tree.opentreeoflife.org/taxonomy/browse?id=752853)
+- *Sooretamys angouya* is synonymous with *Oryzomys angouya*
+  [link](https://tree.opentreeoflife.org/taxonomy/browse?id=1039661)
+- *Euryoryzomys russatus* is synonymous with *Oryzomys russatus*
+  [link](https://tree.opentreeoflife.org/taxonomy/browse?id=739)
+
+When these are taken into account, all species are found in this tree.
+
+```{r}
+
+```
+
+
+# Bat tree
 
 You can download the tree by 
 [Shi and Rabosky (2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract)
@@ -123,29 +175,39 @@ You can download the tree by
 and adjust its tip labels to remove underscores as such:
 
 ```{r}
-shi <- get_study(study_id = 'ot_254', object_format = 'phylo')
-shi$tip.label <- gsub('_', ' ', shi$tip.label)
+bat_tr <- get_study(study_id = 'ot_254', object_format = 'phylo')
+bat_tr$tip.label <- gsub('_', ' ', bat_tr$tip.label)
+```
+
+
+If you want to make a pdf of this tree that's somewhat readable:
+```{r, eval = FALSE}
+pdf('Shi_tree.pdf', width = 6, height = 12)
+    plot(bat_tr, cex = 0.1, edge.width = 0.25, no.margin = TRUE, label.offset = 0.5)
+    nodelabels(frame = 'none', cex = 0.1, adj = c(1, 0))
+    tiplabels(frame = 'none', cex = 0.1, adj = c(0, 0.5))
+dev.off()
 ```
 
 
 ```{r}
 # Rooting tree
-# root(shi, )
+# root(bat_tr, )
 # Removing all tips except those for *Eptesicus fuscus* and *Myotis lucifugus*
-shi_filt <- drop.tip(
-    shi, 
-    tip = shi$tip.label[!shi$tip.label %in% c('Eptesicus fuscus', 'Myotis lucifugus', 
+bat_tr_filt <- drop.tip(
+    bat_tr, 
+    tip = bat_tr$tip.label[!bat_tr$tip.label %in% c('Eptesicus fuscus', 'Myotis lucifugus', 
                                               'Mus musculus')])
-# shi_filt <- root(shi_filt, 'Mus musculus')
+# bat_tr_filt <- root(bat_tr_filt, 'Mus musculus')
 
-plot(shi_filt); nodelabels(); tiplabels()
+plot(bat_tr_filt); nodelabels(); tiplabels()
 ```
 
 
 ```{r}
 is.rooted(drop.tip(
-    shi, 
-    tip = shi$tip.label[!shi$tip.label %in% c('Mus musculus', 'Eptesicus fuscus', 
+    bat_tr, 
+    tip = bat_tr$tip.label[!bat_tr$tip.label %in% c('Mus musculus', 'Eptesicus fuscus', 
                                               'Myotis lucifugus')]))
 nodelabels(); tiplabels()
 ```
@@ -156,13 +218,13 @@ nodelabels(); tiplabels()
 # Combining them
 # ?bind.tree
 
-# final_tr <- bind.tree(tr, shi_filt, where = 23)
+# final_tr <- bind.tree(tr, bat_tr_filt, where = 23)
 # plot(final_tr)
 ```
 
 
 
 Current plan:
-1. Remove bats from `shi` that are present in `tr`
+1. Remove bats from `bat_tr` that are present in `tr`
 2. Combine them
 3. Remove all species not in `sp_df$species`
