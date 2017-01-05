@@ -108,8 +108,8 @@ tr <- tol_induced_subtree(
     ott_ids = c(sp_df$ott_id[sp_df$species != 'Myotis lucifugus'],
                 tnrs_match_names(names = 'Myotis lucifugus lucifugus', 
                                  context_name = 'Mammals')$ott_id))
-
 tr$tip.label <- strip_ott_ids(tr$tip.label, remove_underscores=TRUE)
+
 plot(tr, no.margin = TRUE, label.offset = 0.5); nodelabels(); tiplabels()
 ```
 
@@ -141,8 +141,53 @@ I can replace underscores with spaces.
 rod_tr <- read.tree('rodents.tre')
 rod_tr$tip.label <- gsub('_', ' ', rod_tr$tip.label)
 rod_tr$node.label <- gsub('_', ' ', rod_tr$node.label)
+
+
+# Setting NA values to zero, then will collapse these into multichotomies
+rod_tr$edge.length[is.na(rod_tr$edge.length)] <- 0
+
+# str(rod_tr)
+# length(rod_tr$edge.length[is.na(rod_tr$edge.length)])
+# 
+# na_edges <- which(is.na(rod_tr$edge.length))
+# 
+# rod_tr$tip.label[na_edges[2]]
+# rod_tr$edge.length[na_edges[2] + c(-1,0,1)]
+# 
+# na_nodes <- c(rod_tr$edge[na_edges,], recursive = TRUE) %>% unique
+# 
+# na_tips <- sapply(na_nodes, function(x) extract.clade(rod_tr, node = x)$tip.labels)
+# 
+# rod_tr$edge[1:4,]
+# rod_tr$edge.length[1:4]
+# 
+# 1417 + 2260
+# 
+# dichotomousphylogeny <- multi2di(phylogeny, random = FALSE)
+# bin_rod <- multi2di(rod_tr, random = TRUE)
+# 
+# rod_tr %>% str
+# 
+# ran <- rtree(n = 5)
+# 
+# plot(ran)
+# ran %>% str
+
+rod_tr <- di2multi(rod_tr)
 ```
 
+
+
+
+If you want to make a pdf of this tree that's (somewhat) readable:
+```{r, eval = FALSE}
+font_size <- 0.05
+pdf('rod_tree.pdf', width = 6, height = 18)
+    plot(rod_tr, cex = font_size, edge.width = 0.25, no.margin = TRUE, label.offset = 0.5)
+    nodelabels(frame = 'none', cex = font_size, adj = c(1, 0))
+    tiplabels(frame = 'none', cex = font_size, adj = c(0, 0.5))
+dev.off()
+```
 
 Three species don't seem to be present in either node or tip labels.
 
@@ -152,7 +197,7 @@ sp_df$species[sp_df$type == 'rodent' &
 ```
 
 
-Looking these up in the OTOL database, I found the following:
+However, looking these up in the OTOL database, I found the following:
 - *Olygoryzomys nigripes* is spelled *Oligoryzomys nigripes*
   [link](https://tree.opentreeoflife.org/taxonomy/browse?id=752853)
 - *Sooretamys angouya* is synonymous with *Oryzomys angouya*
@@ -164,6 +209,16 @@ When these are taken into account, all species are found in this tree.
 
 ```{r}
 
+sp_df$species[sp_df$type == 'rodent' & sp_df$species %in% rod_tr$node.label]
+
+extract.clade(rod_tr, node = 'Mus musculus') %>% plot
+nodelabels(); tiplabels()
+
+extract.clade(rod_tr, node = 'Thaptomys nigrita') %>% plot
+nodelabels(); tiplabels()
+
+extract.clade(rod_tr, node = 'Delomys sublineatus') %>% plot
+nodelabels(); tiplabels()
 ```
 
 
@@ -180,9 +235,9 @@ bat_tr$tip.label <- gsub('_', ' ', bat_tr$tip.label)
 ```
 
 
-If you want to make a pdf of this tree that's somewhat readable:
+If you want to make a pdf of this tree that's (somewhat) readable:
 ```{r, eval = FALSE}
-pdf('Shi_tree.pdf', width = 6, height = 12)
+pdf('bat_tree.pdf', width = 6, height = 12)
     plot(bat_tr, cex = 0.1, edge.width = 0.25, no.margin = TRUE, label.offset = 0.5)
     nodelabels(frame = 'none', cex = 0.1, adj = c(1, 0))
     tiplabels(frame = 'none', cex = 0.1, adj = c(0, 0.5))
