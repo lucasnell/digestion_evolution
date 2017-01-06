@@ -26,6 +26,8 @@ source('tree_preamble.R')
 Schenk tree
 ===========
 
+The OTOL link for this paper is [here](https://tree.opentreeoflife.org/curator/study/view/pg_2859).
+
 ``` r
 schenk <- get_study(study_id = 'pg_2859', object_format = 'phylo')
 schenk$tip.label <- gsub('_', ' ', schenk$tip.label)
