@@ -1,5 +1,5 @@
 ---
-title: "Phylogenetic tree"
+title: "Rodent phylogenetic tree"
 author: "Lucas Nell"
 output:
   html_document:
@@ -22,16 +22,54 @@ uses multiple mitochondrial and nuclear genes and contains *M. lucifugus*.
 This paper will be used to complete the tree.
 
 
-# Open Tree of Life (OTOL)
+# Attempting OTOL tree
 
-I used the package `rotl` to interface with the OTOL to import trees
+I used the package `rotl` to interface with the Open Tree of Life (OTOL) to import trees
 into R. [Here](https://cran.r-project.org/web/packages/rotl/vignettes/data_mashups.html)
 is a guide on using it.
 
 ```{r, message = FALSE, warning = FALSE}
-source('tree_preamble.R')
+library(dplyr)
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(ape)
+library(rotl)
+# library(phylolm)
+# library(vegan)
+# library(lme4)
+# library(pez)
+# library(lmerTest)
 ```
 
+
+Data frame of species needed:
+
+```{r}
+sp_df <- 
+'species,type
+Mus musculus,rodent
+Rattus norvegicus,rodent
+Thaptomys nigrita,rodent
+Akodon montensis,rodent
+Delomys sublineatus,rodent
+Olygoryzomys nigripes,rodent
+Sooretamys angouya,rodent
+Euryoryzomys russatus,rodent
+Peromyscus leucopus,rodent
+Microtus pennsylvanicus,rodent
+Artibeus lituratus,bat
+Carollia perspicillata,bat
+Desmodus rotundus,bat
+Molossus rufus,bat
+Molossus molossus,bat
+Eumops glaucinus,bat
+Tadarida brasiliensis,bat
+Myotis lucifugus,bat
+Eptesicus fuscus,bat
+' %>% 
+    read_csv(.)
+```
 
 
 Searching for these species names in the OTOL database to make sure they exist there and 
