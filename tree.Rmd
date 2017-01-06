@@ -1,15 +1,13 @@
 ---
 title: "Phylogenetic tree"
 author: "Lucas Nell"
-output:
-  html_document:
-    highlight: pygments
+date: "`r format(Sys.Date())`"
+output: github_document
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = TRUE, comment = '', prompt = FALSE)
+```{r setup, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(comment = '', prompt = FALSE)
 ```
-
 
 # Background
 
