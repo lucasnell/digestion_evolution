@@ -1,11 +1,8 @@
 ---
 title: "Bat phylogenetic tree"
 author: "Lucas Nell"
-date: "Jan 2017"
-output:
-  html_document:
-    highlight: pygments
-runtime: shiny
+date: "`r format(Sys.Date())`"
+output: github_document
 ---
 
 ```{r setup, include = FALSE}

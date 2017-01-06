@@ -13,152 +13,25 @@ knitr::opts_chunk$set(echo = TRUE, eval = TRUE, comment = '', prompt = FALSE)
 
 # Background
 
-The paper by 
-[Agnarsson et al. (2011)](http://dx.doi.org/10.1371/currents.RRN1212) used only one
-mitochrondrial DNA gene and is the reason the Open Tree of Life (OTOL) version doesn't 
-have a single resolved branch for *Myotis lucifugus*. A more recent paper by 
-[Shi and Rabosky (2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract) 
-uses multiple mitochondrial and nuclear genes and contains *M. lucifugus*.
-This paper will be used to complete the tree.
 
 
-# Attempting OTOL tree
 
-I used the package `rotl` to interface with the Open Tree of Life (OTOL) to import trees
-into R. [Here](https://cran.r-project.org/web/packages/rotl/vignettes/data_mashups.html)
-is a guide on using it.
+
+
+
+
+I first need to `source` the `'tree_preamble.R'` file to load necessary R packages and 
+make the data frame of species names.
 
 ```{r, message = FALSE, warning = FALSE}
-library(dplyr)
-library(readr)
-library(tidyr)
-library(ggplot2)
-library(ape)
-library(rotl)
-# library(phylolm)
-# library(vegan)
-# library(lme4)
-# library(pez)
-# library(lmerTest)
-```
-
-
-Data frame of species needed:
-
-```{r}
-sp_df <- 
-'species,type
-Mus musculus,rodent
-Rattus norvegicus,rodent
-Thaptomys nigrita,rodent
-Akodon montensis,rodent
-Delomys sublineatus,rodent
-Olygoryzomys nigripes,rodent
-Sooretamys angouya,rodent
-Euryoryzomys russatus,rodent
-Peromyscus leucopus,rodent
-Microtus pennsylvanicus,rodent
-Artibeus lituratus,bat
-Carollia perspicillata,bat
-Desmodus rotundus,bat
-Molossus rufus,bat
-Molossus molossus,bat
-Eumops glaucinus,bat
-Tadarida brasiliensis,bat
-Myotis lucifugus,bat
-Eptesicus fuscus,bat
-' %>% 
-    read_csv(.)
-```
-
-
-Searching for these species names in the OTOL database to make sure they exist there and 
-to get their species IDs.
-
-```{r}
-taxon_search <- tnrs_match_names(names = sp_df$species, context_name = 'Mammals')
-knitr::kable(taxon_search)
-```
-
-
-Making sure our names and IDs match up with those of the OTOL.
-
-```{r}
-sp_df$ott_name <- taxon_search$unique_name
-sp_df$ott_id <- taxon_search$ott_id
-```
-
-
-We don't have good representation in published trees from this search...
-
-```{r}
-hits <- lapply(sp_df$ott_id, studies_find_trees, property="ot:ottId", detailed = FALSE)
-sapply(hits, function(x) sum(x[["n_matched_trees"]]))
-```
-
-So I'm creating a tree from the synthesis OTOL tree using species, except replacing 
-*M. lucifugus* with *M. lucifugus lucifugus*. Using *M. lucifugus lucifugus* allows me to
-see where *M. lucifugus* will probably be located.
-
-> This tree only serves to guide future searches, because the OTOL tree has no branch 
-> lengths, so cannot be used to generate a phylogenetic covariance matrix.
-
-```{r}
-tr <- tol_induced_subtree(
-    ott_ids = c(sp_df$ott_id[sp_df$species != 'Myotis lucifugus'],
-                tnrs_match_names(names = 'Myotis lucifugus lucifugus', 
-                                 context_name = 'Mammals')$ott_id))
-tr$tip.label <- strip_ott_ids(tr$tip.label, remove_underscores=TRUE)
-
-plot(tr, no.margin = TRUE, label.offset = 0.5); nodelabels(); tiplabels()
-```
-
-
-From more extensive searching on the OTOL database online, I found one tree that has all 
-focal rodent species
-[(Fabre et al. 2012)](http://dx.doi.org/10.1186/1471-2148-12-88)
-and another that has all bat species
-[(Shi and Rabosky 2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract).
-I will use these trees to fill in gaps in the overall mammal tree by 
-[Bininda-Emonds et al. (2007)](http://dx.doi.org/10.1038/nature05634).
-
-
-# Mammal tree
-
-
-```{r, eval = FALSE}
-mam_tr <- read.nexus(file = 'mammals.nex')
-mam_tr$tip.label <- gsub('_', ' ', mam_tr$tip.label)
-mam_tr$node.label <- gsub("'", '', mam_tr$node.label) %>% gsub('_', ' ', .)
-mam_tr
-```
-
-
-
-```{r, eval = FALSE}
-font_size <- 0.05
-pdf('mam_tree.pdf', width = 6, height = 120)
-    plot(mam_tr, cex = font_size, edge.width = 0.2, no.margin = TRUE, label.offset = 1)
-    nodelabels(frame = 'none', cex = font_size, adj = c(1, 0))
-    tiplabels(frame = 'none', cex = font_size, adj = c(0, 0.5))
-dev.off()
-```
-
-
-```{r}
-mam_tr$node.label[which(grepl('Chiroptera', mam_tr$node.label))]
-mam_tr$node.label[which(grepl('Rodentia', mam_tr$node.label))]
-
-extract.clade(mam_tr, node = '10 Rodentia') %>% 
-    plot(., cex = 0.1, no.margin = TRUE)
+source('tree_preamble.R')
 ```
 
 
 
 
-# Rodent tree
 
-## Schenk
+# Schenk
 
 ```{r}
 schenk <- get_study(study_id = 'pg_2859', object_format = 'phylo')
@@ -173,7 +46,7 @@ sp_df$species[sp_df$type == 'rodent' & ! sp_df$species %in% schenk$tip.label]
 
 
 
-## Fabre
+# Fabre
 
 Using `rotl` directly didn't work for this paper's tree, so I downloaded the Newick 
 version directly from the link on 
@@ -251,78 +124,5 @@ nodelabels(); tiplabels()
 
 
 
-
-
-
-
-# Bat tree
-
-You can download the tree by 
-[Shi and Rabosky (2015)](http://onlinelibrary.wiley.com/doi/10.1111/evo.12681/abstract)
-[(OTOL link)](https://tree.opentreeoflife.org/curator/study/view/ot_254)
-and adjust its tip labels to remove underscores as such:
-
-```{r}
-bat_tr <- get_study(study_id = 'ot_254', object_format = 'phylo')
-bat_tr$tip.label <- gsub('_', ' ', bat_tr$tip.label)
-# Removing outgroups
-bat_tr <- drop.tip(bat_tr, tip = c('Mus musculus', 'Sorex araneus', 'Canis lupus'))
-bat_tr
-```
-
-
-If you want to make a pdf of this tree that's (somewhat) readable:
-```{r, eval = FALSE}
-pdf('bat_tree.pdf', width = 6, height = 24)
-    plot(bat_tr, cex = 0.1, edge.width = 0.25, no.margin = TRUE, label.offset = 0.5)
-    nodelabels(frame = 'none', cex = 0.1, adj = c(1, 0))
-    tiplabels(frame = 'none', cex = 0.1, adj = c(0, 0.5))
-dev.off()
-```
-
-
-
-
-
-
-
-
-
-# Combine trees
-
-
-
-```{r}
-# Combining them
-# ?bind.tree
-
-
-
-# final_tr <- bind.tree(tr, bat_tr_filt, where = 23)
-# plot(final_tr)
-
-### examples with random trees
-set.seed(9)
-x <- rtree(4, tip.label = LETTERS[1:4])
-y <- rtree(4, tip.label = LETTERS[5:8])
-x <- makeNodeLabel(x, prefix = "x_")
-y <- makeNodeLabel(y, prefix = "y_")
-x$root.edge <- y$root.edge <- 0.2
-
-plot(y, show.node.label = TRUE, font=1, label.offset = 0.05, root.edge = TRUE); nodelabels(); tiplabels()
-title("y")
-plot(x, show.node.label = TRUE, font=1, label.offset = 0.05, root.edge = TRUE); nodelabels(); tiplabels()
-title("x")
-z <- bind.tree(x, y, position = 0.2)
-plot(z, show.node.label = TRUE, font=1, label.offset = 0.05, root.edge = TRUE); nodelabels(); tiplabels()
-title("z <- bind.tree(x, y, po=.2)")
-zz <- x + y
-plot(zz, show.node.label = TRUE, font=1, label.offset = 0.05, root.edge = TRUE); nodelabels(); tiplabels()
-title("zz <- x + y")
-x$root.edge <- y$root.edge <- NULL
-zzz <- bind.tree(x, y, where = 7)
-plot(zz, show.node.label = TRUE, font=1, label.offset = 0.05, root.edge = TRUE); nodelabels(); tiplabels()
-title("zzz <- bind.tree(x, y, where = 6)")
-```
 
 
