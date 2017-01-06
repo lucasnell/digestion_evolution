@@ -110,7 +110,11 @@ sp_df$species[sp_df$type == 'rodent' &
 
     [1] "Olygoryzomys nigripes" "Sooretamys angouya"    "Euryoryzomys russatus"
 
-However, looking these up in the OTOL database, I found the following: - *Olygoryzomys nigripes* is spelled *Oligoryzomys nigripes* ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=752853)) - *Sooretamys angouya* is synonymous with *Oryzomys angouya* ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=1039661)) - *Euryoryzomys russatus* is synonymous with *Oryzomys russatus* ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=739))
+However, looking these up in the OTOL database, I found the following:
+
+-   *Olygoryzomys nigripes* is spelled *Oligoryzomys nigripes* ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=752853))
+-   *Sooretamys angouya* is synonymous with *Oryzomys angouya* ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=1039661))
+-   *Euryoryzomys russatus* is synonymous with *Oryzomys russatus* ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=739))
 
 When these are taken into account, all species are found in this tree.
 

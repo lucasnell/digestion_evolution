@@ -119,6 +119,7 @@ sp_df$species[sp_df$type == 'rodent' &
 
 
 However, looking these up in the OTOL database, I found the following:
+
 - *Olygoryzomys nigripes* is spelled *Oligoryzomys nigripes*
   ([link](https://tree.opentreeoflife.org/taxonomy/browse?id=752853))
 - *Sooretamys angouya* is synonymous with *Oryzomys angouya*
