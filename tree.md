@@ -35,7 +35,7 @@ There could be problems with just stitching together phylogenies from different 
 
 ### Option 3
 
-We *could* create a phylogeny from sequencing data available online. I'm pretty sure all focal species have sequence data available online, so it's conceivable possible.
+We *could* create a phylogeny from sequencing data available online. I'm pretty sure all focal species have sequence data available online, so it's conceivably possible.
 
 **The problem:**
 
