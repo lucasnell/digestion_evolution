@@ -41,5 +41,3 @@ Myotis lucifugus,bat
 Eptesicus fuscus,bat
 ' %>% 
     read_csv(.)
-
-

@@ -4,6 +4,9 @@ Digestion Evolution
 The mechanistic basis of higher paracellular absorption in flying mammals
 -------
 
-Thus far, this repository only contains files related to assembling a phylogenetic
-tree containing all focal species. See `tree.md` for more details on what stage this
-process is currently in.
+Lucas Nell, Michael Bosch, Anthony Ives
+
+
+The `first_attempt` folder contains files related to LAN's first attempt at constructing
+a phylgenetic.
+It was a failure, but the code was kept in case it could be useful later.

@@ -53,7 +53,7 @@ but the rodent tree that contains all focal species has some issues (see
 ### Option 3
 
 We *could* create a phylogeny from sequencing data available online. I'm pretty sure
-all focal species have sequence data available online, so it's conceivable possible.
+all focal species have sequence data available online, so it's conceivably possible.
 
 __The problem:__
 
