@@ -87,31 +87,26 @@ plot(phy_mod2)
 
 
 
-rod_indiv <- phylopars.lm(nsa_log ~ body_mass_log, 
-                          trait_data = indiv_df[indiv_df$taxa == 'Rodent',], 
-                          tree = drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Rodent']),
-                          model = 'lambda')
-
-bat_indiv <- phylopars.lm(nsa_log ~ body_mass_log, 
-                          trait_data = indiv_df[indiv_df$taxa == 'Bat',], 
-                          tree = drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Bat']),
-                          model = 'lambda')
-
-summary(rod_indiv)
-rod_indiv$PPE$model$lambda
-summary(bat_indiv)
-bat_indiv$PPE$model$lambda
 
 
 
 
 
 
-sp_df %>% group_by(taxa) %>% 
-    summarize(nsa = mean(nsa_log), nsa_sd = sd(nsa_log) / sqrt(n()),
-              body_mass = mean(body_mass_log), body_mass_sd = sd(body_mass_log) / sqrt(n()))
 
-# Do separately for rodents and bats
+# ================================================================
+# ================================================================
+
+# Trying regression separately by taxon
+
+# ================================================================
+# ================================================================
+
+
+# ====================
+# With phylolm
+# ====================
+
 rod_mod <- phylolm(nsa_log ~ body_mass_log, 
                    data = sp_df[sp_df$taxa == 'Rodent',], 
                    phy = drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Rodent']),
@@ -124,7 +119,7 @@ summary(rod_mod)
 summary(bat_mod)
 
 
-
+# Calculating confidence intervals
 mm <- model.matrix(~ 1 + body_mass_log, data = sp_df[sp_df$taxa == 'Rodent',])
 vc <- as.matrix(vcov(rod_mod))
 ci_w <- apply(mm, 1, function(z) sqrt(t(z) %*% vc %*% z)) * 1.96
@@ -145,8 +140,65 @@ bat_ci <- data_frame(
     lo = predict(bat_mod) - ci_w,
     taxa = 'Bat')
 
-
+# Plotting model predictions with CI, plus raw data
 bind_rows(rod_ci, bat_ci) %>% 
+    ggplot(aes(body_mass_log, nsa_log, color = taxa)) +
+    theme_classic() +
+    geom_ribbon(aes(ymin = lo, ymax = hi, group = taxa), color = NA, 
+                fill = 'gray20', alpha = 0.2) +
+    geom_point(data = sp_df, shape = 1) +
+    geom_line()
+
+
+
+
+# ====================
+# With gls
+# ====================
+
+rod_gls <- gls(nsa_log ~ body_mass_log, 
+               data = sp_df[sp_df$taxa == 'Rodent',], 
+               method = 'REML', 
+               correlation = 
+                   corPagel(1, 
+                            drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Rodent']), 
+                            fixed = FALSE))
+bat_gls <- gls(nsa_log ~ body_mass_log, 
+               data = sp_df[sp_df$taxa == 'Bat',], 
+               method = 'REML', 
+               correlation = 
+                   corPagel(1, 
+                            drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Bat']), 
+                            fixed = FALSE))
+summary(rod_gls)
+summary(bat_gls)
+
+
+
+
+# Calculating confidence intervals
+mm <- model.matrix(~ 1 + body_mass_log, data = sp_df[sp_df$taxa == 'Rodent',])
+vc <- as.matrix(vcov(rod_gls))
+ci_w <- apply(mm, 1, function(z) sqrt(t(z) %*% vc %*% z)) * 1.96
+rod_ci_gls <- data_frame(
+    body_mass_log = sp_df$body_mass_log[sp_df$taxa == 'Rodent'],
+    nsa_log = predict(rod_gls), 
+    hi = predict(rod_gls) + ci_w, 
+    lo = predict(rod_gls) - ci_w, 
+    taxa = 'Rodent')
+
+mm <- model.matrix(~ 1 + body_mass_log, data = sp_df[sp_df$taxa == 'Bat',])
+vc <- as.matrix(vcov(bat_gls))
+ci_w <- apply(mm, 1, function(z) sqrt(t(z) %*% vc %*% z)) * 1.96
+bat_ci_gls <- data_frame(
+    body_mass_log = sp_df$body_mass_log[sp_df$taxa == 'Bat'],
+    nsa_log = predict(bat_gls), 
+    hi = predict(bat_gls) + ci_w, 
+    lo = predict(bat_gls) - ci_w,
+    taxa = 'Bat')
+
+# Plotting model predictions with CI, plus raw data
+bind_rows(rod_ci_gls, bat_ci_gls) %>% 
     ggplot(aes(body_mass_log, nsa_log, color = taxa)) +
     theme_classic() +
     geom_ribbon(aes(ymin = lo, ymax = hi, group = taxa), color = NA, 
@@ -159,20 +211,23 @@ bind_rows(rod_ci, bat_ci) %>%
 
 
 
+# ====================
+# With phylopars.lm
+# ====================
 
+rod_indiv <- phylopars.lm(nsa_log ~ body_mass_log, 
+                          trait_data = indiv_df[indiv_df$taxa == 'Rodent',], 
+                          tree = drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Rodent']),
+                          model = 'lambda')
 
+bat_indiv <- phylopars.lm(nsa_log ~ body_mass_log, 
+                          trait_data = indiv_df[indiv_df$taxa == 'Bat',], 
+                          tree = drop.tip(tr, tip = sp_df$species[sp_df$taxa != 'Bat']),
+                          model = 'lambda')
 
-
-
-
-
-
-
-
-
-sp_df %>% 
-    ggplot(aes(body_mass_log, nsa_log, color = taxa)) +
-    geom_point() +
-    geom_smooth(method = 'lm')
+summary(rod_indiv)
+rod_indiv$PPE$model$lambda
+summary(bat_indiv)
+bat_indiv$PPE$model$lambda
 
 
