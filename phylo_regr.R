@@ -3,13 +3,14 @@
 source('tidy_csv.R')
 
 
+library(magrittr)
 library(phylolm)
 library(ape)
 library(nlme)
-library(Rphylopars)
+# library(Rphylopars)
+# library(geiger)
 library(ggplot2)
-
-
+library(ggtree)
 
 
 
@@ -18,12 +19,29 @@ library(ggplot2)
 
 
 
-
 tr <- read.tree('tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 # plot(tr)
 tr
+
+
+#' 
+#' All measures found in `morph_df`:
+#' 
+#' - villus height
+#' - villus width
+#' - crypt width
+#' - enterocytes per surface area
+#' - sef
+#' - intestinal diameter
+#' - intestinal length
+#' - nsa
+#' - body mass
+#' - total villa surface area
+#' - enterocite width
+#' 
+#' 
 
 
 
@@ -43,6 +61,10 @@ prep_df <- function(measures, df = morph_df, tree = tr, by_sp = TRUE, trans_fun 
         filter(Reduce(`+`, lapply(.[,measures], is.na)) < length(measures)) %>% 
         # Replacing spaces in measures-column names with underscores
         rename_(.dots = setNames(as.list(sprintf('`%s`', measures)), meas_clean)) %>% 
+        # Now taking mean by sample
+        group_by(diet, taxa, species, individual) %>% 
+        summarize_all(mean, na.rm = TRUE) %>% 
+        ungroup %>% 
         # Doing the transformation now, before taking mean if aggregating by species
         mutate_(.dots = setNames(as.list(sprintf('%s(%s)', trans_fun, meas_clean)), 
                                  trans_meas))
@@ -67,27 +89,60 @@ prep_df <- function(measures, df = morph_df, tree = tr, by_sp = TRUE, trans_fun 
 }
 
 
-sp_df <- prep_df(c('nsa', 'body mass'))
-indiv_df <- prep_df(c('nsa', 'body mass'), by_sp = FALSE) %>% 
+
+
+sp_df <- prep_df(measures = c('nsa', 'sef', 'body mass'))
+indiv_df <- prep_df(c('nsa', 'sef', 'body mass'), by_sp = FALSE) %>% 
     select(species, taxa, nsa_log, body_mass_log)
 
-phy_mod <- gls(nsa_log ~ body_mass_log + taxa, data = sp_df, method = 'REML', 
-               # correlation = corBrownian(phy = tr))
-               correlation = corPagel(1, tr, fixed = FALSE))
 
-phy_mod2 <- phylolm(nsa_log ~ body_mass_log + taxa, data = sp_df, phy = tr, 
-                    model = 'lambda', boot = 100)
+# Phylogenetic tree with body mass as species name color
+gg_tr <- ggtree(tr)
+gg_tr$data$x <- gg_tr$data$x - max(gg_tr$data$x)
 
-summary(phy_mod)
-summary(phy_mod2)
+tr_p <- gg_tr %<+% {sp_df %>% select(species, everything())} +
+    theme_tree2(axis.title.x = element_text(size = 14)) +
+    geom_tiplab(aes(color = body_mass_log), size = 2, fontface = 'bold.italic') +
+    scale_x_continuous('Time (mya)', limits = c(-100, 10),
+                       breaks = seq(-100, 0, 25), labels = seq(100, 0, -25)) +
+    scale_color_gradient(low = 'yellow', high = 'black') +
+    theme(legend.position = c(0.25, 0.75), 
+          legend.background = element_rect(color = NA, fill = NA))
+tr_p
 
-plot(phy_mod)
-plot(phy_mod2)
 
 
 
 
 
+# Takes ~X minutes
+t0 <- Sys.time()
+set.seed(352)
+nsa_fits <- lapply(c('lambda', 'OUfixedRoot'), 
+                  function(m) {
+                      phylolm(nsa_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
+                              model = m, boot = 2000)})
+sef_fits <- lapply(c('lambda', 'OUfixedRoot'), 
+                   function(m) {
+                       phylolm(sef_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
+                               model = m, boot = 2000)})
+t1 <- Sys.time()
+t1 - t0
+
+
+
+summary(nsa_fits[[1]])
+
+# P-value based on bootstrap replicates for coefficient of taxaRodent != 0
+mean(nsa_fits[[1]]$bootstrap[,'taxaRodent'] < 0) * 2
+
+
+
+
+
+# ou_fit2 <- phylolm(nsa_log ~ body_mass_log * taxa, data = sp_df, phy = tr,
+#                    model = 'OUfixedRoot')
+# summary(ou_fit2)
 
 
 
