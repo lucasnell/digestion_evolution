@@ -1,7 +1,7 @@
 Regression with phylogenetic covariance
 ================
 Lucas Nell
-2017-03-15
+2017-03-16
 
 -   [Morphometric measurements](#morphometric-measurements)
 -   [Phylogenetic tree](#phylogenetic-tree)
@@ -114,7 +114,7 @@ tr
 
 #### Visualizing tree
 
-Here is the phylogenetic tree with log(NSA) as species name color and log(SEF) as the size of the species' tip size.
+Here is the phylogenetic tree with log(NSA) as tip color and log(SEF) as tip size.
 
 ![](phylo_regr_files/figure-markdown_github/phylo_plot-1.png)
 
@@ -134,12 +134,14 @@ set.seed(352)
 nsa_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                   function(m) {
                       phylolm(nsa_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
-                              model = m, boot = 2000)})
+                              model = m, boot = 2000, 
+                              upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(nsa_fits) <- c('lambda', 'ou')
 sef_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                    function(m) {
                        phylolm(sef_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
-                               model = m, boot = 2000)})
+                               model = m, boot = 2000,
+                               upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
 save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
 ```
@@ -160,7 +162,8 @@ summary(nsa_fits[['lambda']])
     ## 
     ## Call:
     ## phylolm(formula = nsa_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, boot = 2000)
+    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
+    ##         1.2, Inf), boot = 2000)
     ## 
     ##    AIC logLik 
     ## 10.826 -0.413 
@@ -176,9 +179,9 @@ summary(nsa_fits[['lambda']])
     ## 
     ## Coefficients:
     ##               Estimate   StdErr  t.value lowerbootCI upperbootCI  p.value
-    ## (Intercept)    0.46555  0.33661  1.38305    -0.15290      1.0449 0.186891
-    ## body_mass_log  0.55616  0.10451  5.32140     0.37210      0.7434 8.55e-05
-    ## taxaRodent     0.53124  0.15099  3.51833     0.26762      0.8008 0.003105
+    ## (Intercept)    0.46555  0.33661  1.38305    -0.14208      1.0466 0.186891
+    ## body_mass_log  0.55616  0.10451  5.32140     0.37210      0.7421 8.55e-05
+    ## taxaRodent     0.53124  0.15099  3.51833     0.26848      0.8001 0.003105
     ##                  
     ## (Intercept)      
     ## body_mass_log ***
@@ -189,12 +192,12 @@ summary(nsa_fits[['lambda']])
     ## Note: p-values are conditional on lambda=1e-07.
     ## 
     ## sigma2: 0.0006354724
-    ##       bootstrap mean: 0.0005542681 (on raw scale)
-    ##                       0.0005138685 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.0002412875,0.00105284)
+    ##       bootstrap mean: 0.0005418981 (on raw scale)
+    ##                       0.0005066157 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.0002412875,0.001007715)
     ## 
     ## lambda: 1e-07
-    ##       bootstrap mean: 0.01998102 (on raw scale)
+    ##       bootstrap mean: 0.003704019 (on raw scale)
     ##       bootstrap 95% CI: (1e-07,1e-07)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
@@ -208,7 +211,8 @@ summary(nsa_fits[['ou']])
     ## 
     ## Call:
     ## phylolm(formula = nsa_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, boot = 2000)
+    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
+    ##         1.2, Inf), boot = 2000)
     ## 
     ##     AIC  logLik 
     ## 10.5299 -0.2649 
@@ -219,14 +223,14 @@ summary(nsa_fits[['ou']])
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
-    ## alpha: 0.1327371
-    ## sigma2: 0.01640746 
+    ## alpha: 0.132737
+    ## sigma2: 0.01640745 
     ## 
     ## Coefficients:
     ##               Estimate   StdErr  t.value lowerbootCI upperbootCI   p.value
-    ## (Intercept)    0.40545  0.32698  1.24002    -0.17088      0.9620  0.234018
-    ## body_mass_log  0.57810  0.10074  5.73861     0.39945      0.7595 3.919e-05
-    ## taxaRodent     0.50513  0.15504  3.25813     0.22984      0.7871  0.005294
+    ## (Intercept)    0.40545  0.32698  1.24002    -0.16159      0.9678  0.234018
+    ## body_mass_log  0.57810  0.10074  5.73861     0.39858      0.7594 3.919e-05
+    ## taxaRodent     0.50513  0.15504  3.25813     0.22918      0.7919  0.005294
     ##                  
     ## (Intercept)      
     ## body_mass_log ***
@@ -234,17 +238,17 @@ summary(nsa_fits[['ou']])
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Note: p-values are conditional on alpha=0.1327371.
+    ## Note: p-values are conditional on alpha=0.132737.
     ## 
-    ## sigma2: 0.01640746
-    ##       bootstrap mean: 0.02460652 (on raw scale)
-    ##                       0.01689104 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.002771107,0.07747632)
+    ## sigma2: 0.01640745
+    ##       bootstrap mean: 2.681025 (on raw scale)
+    ##                       0.05459009 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.002771106,3.214493)
     ## 
-    ## alpha: 0.1327371
-    ##       bootstrap mean: 0.2501692 (on raw scale)
-    ##                       0.1765958 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.03313966,0.5183367)
+    ## alpha: 0.132737
+    ##       bootstrap mean: 32.22212 (on raw scale)
+    ##                       0.5711749 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.03313965,33.0764)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
@@ -259,7 +263,8 @@ summary(sef_fits[['lambda']])
     ## 
     ## Call:
     ## phylolm(formula = sef_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, boot = 2000)
+    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
+    ##         1.2, Inf), boot = 2000)
     ## 
     ##    AIC logLik 
     ##   1.06   4.47 
@@ -275,8 +280,8 @@ summary(sef_fits[['lambda']])
     ## 
     ## Coefficients:
     ##                Estimate    StdErr   t.value lowerbootCI upperbootCI
-    ## (Intercept)    2.271598  0.256632  8.851572    1.802718      2.7292
-    ## body_mass_log  0.124701  0.079682  1.564987   -0.018942      0.2684
+    ## (Intercept)    2.271598  0.256632  8.851572    1.805807      2.7292
+    ## body_mass_log  0.124701  0.079682  1.564987   -0.018942      0.2677
     ## taxaRodent    -0.507308  0.115118 -4.406861   -0.717428     -0.3054
     ##                 p.value    
     ## (Intercept)   2.425e-07 ***
@@ -288,12 +293,12 @@ summary(sef_fits[['lambda']])
     ## Note: p-values are conditional on lambda=1e-07.
     ## 
     ## sigma2: 0.000369379
-    ##       bootstrap mean: 0.0003111158 (on raw scale)
-    ##                       0.0002890881 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.0001249149,0.0005928103)
+    ##       bootstrap mean: 0.0003057477 (on raw scale)
+    ##                       0.0002854995 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.0001249149,0.0005643484)
     ## 
     ## lambda: 1e-07
-    ##       bootstrap mean: 0.01774559 (on raw scale)
+    ##       bootstrap mean: 0.002138407 (on raw scale)
     ##       bootstrap 95% CI: (1e-07,1e-07)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
@@ -307,43 +312,44 @@ summary(sef_fits[['ou']])
     ## 
     ## Call:
     ## phylolm(formula = sef_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, boot = 2000)
+    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
+    ##         1.2, Inf), boot = 2000)
     ## 
     ##    AIC logLik 
-    ##  1.070  4.465 
+    ##   1.06   4.47 
     ## 
     ## Raw residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.28821 -0.20130  0.04354  0.11975  0.32920 
+    ## -0.28887 -0.20120  0.04456  0.11970  0.32898 
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
-    ## alpha: 0.5183367
-    ## sigma2: 0.03698704 
+    ## alpha: 4.046316
+    ## sigma2: 0.28835 
     ## 
     ## Coefficients:
     ##                Estimate    StdErr   t.value lowerbootCI upperbootCI
-    ## (Intercept)    2.268762  0.256141  8.857476    1.818296      2.7390
-    ## body_mass_log  0.125695  0.079410  1.582862   -0.019674      0.2666
-    ## taxaRodent    -0.508312  0.115507 -4.400697   -0.708463     -0.3064
+    ## (Intercept)    2.271598  0.256632  8.851572    1.828177      2.7455
+    ## body_mass_log  0.124701  0.079682  1.564987   -0.018659      0.2671
+    ## taxaRodent    -0.507308  0.115118 -4.406862   -0.700808     -0.2977
     ##                 p.value    
-    ## (Intercept)   2.405e-07 ***
-    ## body_mass_log 0.1343053    
-    ## taxaRodent    0.0005162 ***
+    ## (Intercept)   2.425e-07 ***
+    ## body_mass_log 0.1384350    
+    ## taxaRodent    0.0005099 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Note: p-values are conditional on alpha=0.5183367.
+    ## Note: p-values are conditional on alpha=4.046316.
     ## 
-    ## sigma2: 0.03698704
-    ##       bootstrap mean: 0.01818782 (on raw scale)
-    ##                       0.01262905 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.00179387,0.05020319)
+    ## sigma2: 0.28835
+    ##       bootstrap mean: 7.623057 (on raw scale)
+    ##                       0.08501182 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.001761882,7.853593)
     ## 
-    ## alpha: 0.5183367
-    ##       bootstrap mean: 0.3093596 (on raw scale)
-    ##                       0.2288556 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.03864412,0.5183367)
+    ## alpha: 4.046316
+    ##       bootstrap mean: 105.3404 (on raw scale)
+    ##                       1.549017 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.0405296,126.7767)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
@@ -397,7 +403,7 @@ devtools::session_info()
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-03-15
+    ##  date     2017-03-16
 
     ## Packages ------------------------------------------------------------------
 

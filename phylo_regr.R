@@ -81,8 +81,7 @@ tr
 #' 
 #' #### Visualizing tree
 #' 
-#' Here is the phylogenetic tree with log(NSA) as species name color and 
-#' log(SEF) as the size of the species' tip size.
+#' Here is the phylogenetic tree with log(NSA) as tip color and log(SEF) as tip size.
 #' 
 
 #+ phylo_plot, fig.width=8, fig.height=6, echo = FALSE
@@ -140,14 +139,17 @@ set.seed(352)
 nsa_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                   function(m) {
                       phylolm(nsa_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
-                              model = m, boot = 2000)})
+                              model = m, boot = 2000, 
+                              upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(nsa_fits) <- c('lambda', 'ou')
 sef_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                    function(m) {
                        phylolm(sef_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
-                               model = m, boot = 2000)})
+                               model = m, boot = 2000,
+                               upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
 save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
+
 
 #+ echo = FALSE
 load('model_fits.RData')
