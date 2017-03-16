@@ -1,6 +1,4 @@
-library(readr)
-library(dplyr)
-library(tidyr)
+
 
 morph_df <- read_csv('morphometrics.csv', col_types = 'cccccddd') %>% 
     # Oligoryzomys seems to be the more standard spelling
@@ -9,10 +7,10 @@ morph_df <- read_csv('morphometrics.csv', col_types = 'cccccddd') %>%
 
 
 
-
+# Number of individuals
 N <- morph_df$individual %>% unique %>% length
 
-# Measures with no position
+# Measures with no position (i.e., NA in pos column instead of prox, med, or dist)
 no_pos <- morph_df %>% 
     filter(is.na(dist)) %>% 
     group_by(measure) %>% 
@@ -31,23 +29,56 @@ morph_df <- morph_df %>%
 rm(no_pos)
 
 
-# ============
-# Formulas from Excel sheet
-# ============
 
-# # Total enterocytes
-# { prox_enterocytes * (NSA / 3) } +{ med_enterocytes * (NSA / 3) } + { dist_enterocytes * (NSA / 3) }
-# 
-# # Intestinal length/bodymass^0,4
-# intestinal_length / body_mass^0.4
-# 
-# # Intestinal diameter/body mass^0,75
-# # This was done for proximal, medial, and distal intestinal diameters separately
-# intestinal_diameter / body_mass^0.75
-# 
-# # NSA/Body mass0,75
-# nsa / body_mass^0.75
-# 
-# # Mucosa / Body mass0,75
-# total_villa_surface_area / body_mass^0.75
+# Function to return 'wide' version of an input data frame of morphometric measurements 
+# (defaults to morph_df), given a character vector of measures
+prep_df <- function(measures, input_df = morph_df, by_sp = TRUE, 
+                    trans_fun = 'log'){
+    
+    # List of measures wrapped in ticks (``) so they'll play nice with dplyr and tidyr
+    # as column names even if they have spaces
+    meas_list <- lapply(measures, function(s) sprintf('`%s`', s))
+    # Replacing all spaces with underscores for better naming in the output data frame
+    meas_clean <- gsub(' ', '_', measures)
+    # Names of transformed columns, also with underscores rather than spaces
+    trans_meas <- paste(meas_clean, trans_fun, sep = '_')
+    
+    new_df <- input_df %>% 
+        # Changing from tall to wide format
+        spread(measure, value) %>% 
+        # Selecting measurement columns, plus the identifying columns
+        select_(.dots = append(list('diet', 'taxa', 'species', 'individual'), 
+                               meas_list)) %>% 
+        # Removing all rows with all NAs in measures columns
+        filter(Reduce(`+`, lapply(.[,measures], is.na)) < length(measures)) %>% 
+        # Replacing spaces in measures-column names with underscores
+        rename_(.dots = setNames(as.list(sprintf('`%s`', measures)), meas_clean)) %>% 
+        # Taking mean by sample
+        group_by(diet, taxa, species, individual) %>% 
+        summarize_all(mean, na.rm = TRUE) %>% 
+        ungroup %>% 
+        # Doing the transformation now, before taking mean if aggregating by species
+        mutate_(.dots = setNames(as.list(sprintf('%s(%s)', trans_fun, meas_clean)), 
+                                 trans_meas))
+    
+    if (by_sp) {
+        new_df <- new_df %>% 
+            # Grouping by, then taking mean of all measurement columns and transformed-
+            # measurement columns
+            group_by(diet, taxa, species) %>% 
+            summarize_at(.cols = c(trans_meas, meas_clean), mean) %>% 
+            ungroup %>% 
+            arrange(taxa, diet, species) %>% 
+            # To change row names, it can't be a tibble, so I'm reverting back to normal
+            # data frame
+            as.data.frame
+        # phylolm requires that the rownames match the species names
+        rownames(new_df) <- new_df$species
+    } else {
+        new_df <- new_df %>% select(species, everything()) %>% 
+            as.data.frame
+    }
+    
+    return(new_df)
+}
 
