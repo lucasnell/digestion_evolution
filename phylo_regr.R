@@ -32,7 +32,7 @@ suppressPackageStartupMessages({
 #' 
 #' # Morphometric measurements
 #' 
-#' Cleaning `./rd_files/morphometrics.csv` file for use and providing a useful 
+#' Cleaning `./data/morphometrics.csv` file for use and providing a useful 
 #' function to retrieve columns from it
 #' 
 #+ source_tidy_csv
@@ -79,7 +79,7 @@ str(sp_df)
 #' from it
 #' 
 #+ make_tr
-tr <- read.tree('tree.nwk')
+tr <- read.tree('./data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 tr
@@ -156,12 +156,12 @@ sef_fits <- lapply(c('lambda', 'OUfixedRoot'),
                                model = m, boot = 2000,
                                upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
-save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
+save(nsa_fits, sef_fits, file = './data/model_fits.RData', compress = FALSE)
 
 
 
 #+ load_fits, echo = FALSE
-load('model_fits.RData')
+load('./data/model_fits.RData')
 
 #' 
 #' # Model output
@@ -221,10 +221,11 @@ p_sef_lambda <- mean(sef_fits[['lambda']]$bootstrap[,'taxonRodent'] > 0) * 2
 p_sef_ou <- mean(sef_fits[['ou']]$bootstrap[,'taxonRodent'] > 0) * 2
 cat("P for Pagel's lambda     =", format(p_sef_lambda, nsmall = 3))
 cat("P for Ornstein-Uhlenbeck =", format(p_sef_ou, nsmall = 3))
-
-
-
-
+#' 
+#' 
+#' 
+#' 
+#' 
 #' 
 #' # Session info
 #' 

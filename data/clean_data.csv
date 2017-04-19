@@ -1,0 +1,661 @@
+diet,taxon,species,id,measure,prox,med,dist
+Omnivorous,Rodent,Akodon montensis,Ak1,crypt width,0.03862091503267974,0.03565686274509804,0.033098856209150325
+Omnivorous,Rodent,Akodon montensis,Ak2,crypt width,0.04921111111111111,0.03310270774976657,0.03828635620915033
+Omnivorous,Rodent,Akodon montensis,Ak3,crypt width,0.0372859477124183,0.03310270774976657,0.04087581699346405
+Omnivorous,Rodent,Akodon montensis,Ak4,crypt width,0.0369777183600713,0.033738198983297024,0.026779411764705885
+Herbivorous,Bat,Artibeus lituratus,Ar1,crypt width,0.023553818880579676,0.0435230962355717,0.015642986306234185
+Herbivorous,Bat,Artibeus lituratus,Ar2,crypt width,0.033055277777777774,0.033140555555555555,0.03699666666666667
+Herbivorous,Bat,Artibeus lituratus,Ar3,crypt width,0.03399361111111111,0.035756111111111114,0.03537666666666667
+Herbivorous,Bat,Carollia perspicillata,Cp1,crypt width,0.030354166666666665,0.02690588235294118,0.030936928104575163
+Herbivorous,Bat,Carollia perspicillata,Cp2,crypt width,0.02391013071895425,0.02942687908496732,0.025185049019607844
+Herbivorous,Bat,Carollia perspicillata,Cp3,crypt width,0.03408202614379085,0.033791666666666664,0.03212371615312792
+Herbivorous,Bat,Carollia perspicillata,Cp4,crypt width,0.030121323529411766,0.023159150326797384,0.03327404295051354
+Omnivorous,Rodent,Delomys sublineatus,Ds1,crypt width,0.04008333333333334,0.04449901960784313,0.04158636788048553
+Omnivorous,Rodent,Delomys sublineatus,Ds2,crypt width,0.04127369281045752,0.03717614379084967,0.0397235294117647
+Omnivorous,Rodent,Delomys sublineatus,Ds3,crypt width,0.04828104575163398,0.05178618113912232,0.043570961718020544
+Protein,Bat,Desmodus rotundus,Dr1,crypt width,0.03532679738562092,0.03972549019607844,0.0382
+Protein,Bat,Desmodus rotundus,Dr2,crypt width,0.03741031227305737,0.03262254901960785,0.034834733893557415
+Protein,Bat,Desmodus rotundus,Dr3,crypt width,0.04064444444444445,0.03814472455648926,0.04152352941176471
+NA,Bat,Eptesicus fuscus,Eptesicus1,crypt width,0.0333,0.03632,0.03688
+NA,Bat,Eptesicus fuscus,Eptesicus2,crypt width,0.03953,0.04349,0.04149
+NA,Bat,Eptesicus fuscus,Eptesicus3,crypt width,0.03675,0.03691,0.03498
+Protein,Bat,Eumops glaucinus,Eg,crypt width,0.016808823529411765,0.024799927378358746,0.03336013071895425
+Protein,Rodent,Euryoryzomys russatus,E1,crypt width,0.04181781045751634,0.04321078431372549,0.04238186274509804
+Protein,Rodent,Euryoryzomys russatus,E2,crypt width,0.03861136249371544,0.04014031862745099,0.054592903828197946
+Protein,Rodent,Euryoryzomys russatus,E3,crypt width,0.04168347338935574,0.04891633986928104,0.04751797385620915
+NA,Rodent,Microtus pennsylvanicus,Microtus1,crypt width,0.03807,0.03497,0.03332
+NA,Rodent,Microtus pennsylvanicus,Microtus2,crypt width,0.04579,0.04127,0.03718
+NA,Rodent,Microtus pennsylvanicus,Microtus3,crypt width,0.04286,0.03759,0.03576
+NA,Rodent,Microtus pennsylvanicus,Microtus4,crypt width,0.04748,0.03928,0.03515
+NA,Rodent,Microtus pennsylvanicus,Microtus5,crypt width,0.04022,0.04261,0.04506
+Protein,Bat,Molossus molossus,Mmo1,crypt width,0.032544860368389786,0.03140261437908496,0.03545686274509804
+Protein,Bat,Molossus molossus,Mmo2,crypt width,0.03150599128540305,0.03435947712418301,0.03459803921568627
+Protein,Bat,Molossus molossus,Mmo3,crypt width,0.026101307189542487,0.03101437908496732,0.027743018419489007
+Protein,Bat,Molossus rufus,Mr,crypt width,0.027936528685548287,0.03129607843137255,0.030888888888888893
+Omnivorous,Rodent,Mus musculus,Mm1,crypt width,0.03723476347383469,0.03730966834369819,0.03384044025408646
+Omnivorous,Rodent,Mus musculus,Mm2,crypt width,0.036762015711938906,0.03615563842362844,0.032343675344971665
+Omnivorous,Rodent,Mus musculus,Mm3,crypt width,0.03633771341225472,0.031073528599954704,0.03747061387729307
+Omnivorous,Rodent,Mus musculus,Mm4,crypt width,0.03165220917018349,0.034164520408959655,0.03316277484947643
+Omnivorous,Rodent,Mus musculus,Mm5,crypt width,0.035496675442052955,0.030392627152682206,0.029445799140735494
+Omnivorous,Rodent,Mus musculus,Mm6,crypt width,0.03965361018630089,0.031531999703045495,0.03258504605650131
+Protein,Bat,Myotis lucifugus,My1,crypt width,0.03172,0.03308,0.0352
+Protein,Bat,Myotis lucifugus,My2,crypt width,0.04198,0.04085,0.03958
+Protein,Bat,Myotis lucifugus,My3,crypt width,0.04064,0.04105,0.03776
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,crypt width,0.03621354952237305,0.033984909650134565,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,crypt width,0.039260037348272644,0.03491666666666667,0.045959558823529416
+Protein,Rodent,Peromyscus leucopus,P1,crypt width,0.04882,0.05755,0.05429
+Protein,Rodent,Peromyscus leucopus,P2,crypt width,0.04452,0.04677,0.04884
+Protein,Rodent,Peromyscus leucopus,P3,crypt width,0.0477,0.04822,0.04049
+Herbivorous,Rodent,Sooretamys angouya,s1,crypt width,0.044008169934640524,0.03627705156136528,0.041298474945533764
+Herbivorous,Rodent,Sooretamys angouya,s2,crypt width,0.03598774509803922,0.042708853238265,0.04023790849673203
+Protein,Bat,Tadarida brasiliensis,Tb1,crypt width,0.012542330293356788,0.021526822034785557,0.022195540733211127
+Protein,Bat,Tadarida brasiliensis,Tb2,crypt width,0.01937513919742335,0.017264573137419505,0.016764509368343505
+Protein,Bat,Tadarida brasiliensis,Tb3,crypt width,0.015455434933651606,0.01952828015753817,0.01893913003751906
+Protein,Bat,Tadarida brasiliensis,Tb4,crypt width,0.019694174932852117,0.018264129609219297,0.028082663758035382
+Protein,Bat,Tadarida brasiliensis,Tb5,crypt width,0.01788389459637982,0.015226151793243525,0.024732598180582602
+Protein,Bat,Tadarida brasiliensis,Tb6,crypt width,0.019628692657799908,0.01951609740869125,0.02015445441272488
+Protein,Bat,Tadarida brasiliensis,Tb7,crypt width,0.014592934386379687,0.018823393923473302,0.022022222095318587
+Protein,Bat,Tadarida brasiliensis,Tb8,crypt width,0.01775987802022717,0.018778565214825644,0.020435228702556284
+Omnivorous,Rodent,Thaptomys nigrita,t1,crypt width,0.03733006535947713,0.03168954248366013,0.0297140522875817
+Omnivorous,Rodent,Thaptomys nigrita,t2,crypt width,0.03225622106481482,0.03392442810457516,0.0446205519244735
+Omnivorous,Rodent,Thaptomys nigrita,t3,crypt width,NA,0.03327723311546841,0.035266013071895426
+Omnivorous,Rodent,Akodon montensis,Ak1,enterocyte density,32987651.35545681,22888295.729044493,11842951.609041601
+Omnivorous,Rodent,Akodon montensis,Ak2,enterocyte density,26616240.73424477,13246606.94275365,16166473.05068806
+Omnivorous,Rodent,Akodon montensis,Ak3,enterocyte density,27911202.58684324,21220442.449250903,11972685.291947935
+Omnivorous,Rodent,Akodon montensis,Ak4,enterocyte density,18549343.23089216,30386933.156047367,18188591.40309896
+Herbivorous,Bat,Artibeus lituratus,Ar1,enterocyte density,52206992.24395243,32590755.688941773,33129635.547500752
+Herbivorous,Bat,Artibeus lituratus,Ar2,enterocyte density,33023252.011618163,37786819.93631182,30802182.172937527
+Herbivorous,Bat,Artibeus lituratus,Ar3,enterocyte density,28110586.158569857,36169841.05909967,24313905.160773877
+Herbivorous,Bat,Carollia perspicillata,Cp1,enterocyte density,82207254.13750805,76353963.90735608,70517644.21870272
+Herbivorous,Bat,Carollia perspicillata,Cp2,enterocyte density,73087921.67093468,49210901.14424319,64030413.55826427
+Herbivorous,Bat,Carollia perspicillata,Cp3,enterocyte density,64815925.20700753,85301002.70163251,51799804.69650883
+Herbivorous,Bat,Carollia perspicillata,Cp4,enterocyte density,90866291.47119391,82832301.18105826,42578777.298416086
+Omnivorous,Rodent,Delomys sublineatus,Ds1,enterocyte density,26084948.631946575,29966646.49633915,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,enterocyte density,36461464.30887254,21665745.69804178,14272244.721801106
+Omnivorous,Rodent,Delomys sublineatus,Ds3,enterocyte density,26959395.527997352,22480357.419931322,19492492.95736354
+Protein,Bat,Desmodus rotundus,Dr1,enterocyte density,47844275.16204505,41730957.8985039,34720731.62225518
+Protein,Bat,Desmodus rotundus,Dr2,enterocyte density,37353877.370448895,42388446.070766374,34016408.64928715
+Protein,Bat,Desmodus rotundus,Dr3,enterocyte density,31062126.13281311,45063618.16152716,34387914.307476245
+NA,Bat,Eptesicus fuscus,Eptesicus1,enterocyte density,49720920.90722845,34147899.11452869,24612843.214287404
+NA,Bat,Eptesicus fuscus,Eptesicus2,enterocyte density,48152925.16396516,31163548.121159382,19082958.260560796
+NA,Bat,Eptesicus fuscus,Eptesicus3,enterocyte density,34905194.80555971,33030102.788993627,22886355.637214478
+Protein,Bat,Eumops glaucinus,Eg,enterocyte density,70331189.08225043,54809791.876699194,26926322.76328473
+Protein,Rodent,Euryoryzomys russatus,E1,enterocyte density,41092347.986341946,33288329.10874792,23990805.943993412
+Protein,Rodent,Euryoryzomys russatus,E2,enterocyte density,40949406.03278377,29305363.528928574,17879546.585493557
+Protein,Rodent,Euryoryzomys russatus,E3,enterocyte density,33316474.997141514,20656631.270098004,18018431.37324389
+NA,Rodent,Microtus pennsylvanicus,Microtus1,enterocyte density,24131519.523607947,24403144.332275223,18786690.67748046
+NA,Rodent,Microtus pennsylvanicus,Microtus2,enterocyte density,20427516.085665066,23588471.253948655,22528182.053878292
+NA,Rodent,Microtus pennsylvanicus,Microtus3,enterocyte density,24582336.542449087,22212556.9202955,19923794.463427313
+NA,Rodent,Microtus pennsylvanicus,Microtus4,enterocyte density,23685297.170795146,22414838.801026218,16005071.641462335
+NA,Rodent,Microtus pennsylvanicus,Microtus5,enterocyte density,17881224.999866452,27910229.135038868,20742940.60816476
+Protein,Bat,Molossus molossus,Mmo1,enterocyte density,34849517.305102706,62957114.40895827,25680859.589928113
+Protein,Bat,Molossus molossus,Mmo2,enterocyte density,47931083.81107145,59990906.09634645,36093447.573399715
+Protein,Bat,Molossus molossus,Mmo3,enterocyte density,70524306.92673862,34895416.36718917,70752104.47410578
+Protein,Bat,Molossus rufus,Mr,enterocyte density,65980788.31244167,67862263.28324391,48422237.861854054
+Omnivorous,Rodent,Mus musculus,Mm1,enterocyte density,68664180.5465015,36544398.44560737,44429643.397793196
+Omnivorous,Rodent,Mus musculus,Mm2,enterocyte density,73069718.68162282,58501709.91254379,38824503.68764095
+Omnivorous,Rodent,Mus musculus,Mm3,enterocyte density,55888639.31909753,37786977.83895508,25811502.427594326
+Omnivorous,Rodent,Mus musculus,Mm4,enterocyte density,85180097.87980112,44298323.18811268,58534954.096451946
+Omnivorous,Rodent,Mus musculus,Mm5,enterocyte density,51529658.335902594,52248382.67409974,44950719.58368396
+Omnivorous,Rodent,Mus musculus,Mm6,enterocyte density,108588171.39732221,57790162.113237485,41338931.06371275
+Protein,Bat,Myotis lucifugus,My1,enterocyte density,21112464.006818373,24100835.277232446,17887185.505456675
+Protein,Bat,Myotis lucifugus,My2,enterocyte density,16141050.637725499,17151427.85276446,13920324.545465808
+Protein,Bat,Myotis lucifugus,My3,enterocyte density,15953237.418911902,17156529.590832844,12829296.1323958
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,enterocyte density,11911935.315642769,19072203.97643851,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,enterocyte density,12247063.873473704,18185062.370384187,9622370.184923649
+Protein,Rodent,Peromyscus leucopus,P1,enterocyte density,11731751.849066466,10036238.865702149,6018581.331438455
+Protein,Rodent,Peromyscus leucopus,P2,enterocyte density,11300375.690548586,13149161.437949393,8722160.810767397
+Protein,Rodent,Peromyscus leucopus,P3,enterocyte density,17458694.568597738,12519654.765246756,11126489.182603681
+Herbivorous,Rodent,Sooretamys angouya,s1,enterocyte density,35062062.21664255,21642695.583970495,19712434.909439612
+Herbivorous,Rodent,Sooretamys angouya,s2,enterocyte density,45363783.98976694,23165143.86222479,16609109.64928953
+Protein,Bat,Tadarida brasiliensis,Tb1,enterocyte density,69849973.72694182,76642935.90749685,67379993.04255769
+Protein,Bat,Tadarida brasiliensis,Tb2,enterocyte density,74028551.09732486,157499059.28435504,60764470.53066139
+Protein,Bat,Tadarida brasiliensis,Tb3,enterocyte density,92088667.38740367,106541992.77547918,112469439.20998362
+Protein,Bat,Tadarida brasiliensis,Tb4,enterocyte density,96408412.3759697,183815895.1081743,64640463.39359429
+Protein,Bat,Tadarida brasiliensis,Tb5,enterocyte density,114177658.21856543,160064834.1232051,95496731.34444718
+Protein,Bat,Tadarida brasiliensis,Tb6,enterocyte density,95137731.96449211,95438483.44005713,50566505.52375537
+Protein,Bat,Tadarida brasiliensis,Tb7,enterocyte density,105230744.0615607,149806759.81338468,89558787.39168367
+Protein,Bat,Tadarida brasiliensis,Tb8,enterocyte density,124789865.04523814,182066468.58744997,96346863.31850997
+Omnivorous,Rodent,Thaptomys nigrita,t1,enterocyte density,23651945.013291594,22986732.63286025,16028444.949797027
+Omnivorous,Rodent,Thaptomys nigrita,t2,enterocyte density,32535789.699697822,24107989.29491138,12835096.13924051
+Omnivorous,Rodent,Thaptomys nigrita,t3,enterocyte density,NA,16855589.7177163,24950378.918666977
+Omnivorous,Rodent,Akodon montensis,Ak1,enterocyte width,0.006701179070112894,0.008177052896321929,0.009390600570293476
+Omnivorous,Rodent,Akodon montensis,Ak2,enterocyte width,0.007142989383245137,0.010271132859526818,0.00750615468409586
+Omnivorous,Rodent,Akodon montensis,Ak3,enterocyte width,0.007602607169041638,0.00828103670870931,0.007935130241180295
+Omnivorous,Rodent,Akodon montensis,Ak4,enterocyte width,0.00898149430712456,0.006048113402449103,0.007990064039083646
+Herbivorous,Bat,Artibeus lituratus,Ar1,enterocyte width,0.007465758547008546,0.007676414771739706,0.008107295482295484
+Herbivorous,Bat,Artibeus lituratus,Ar2,enterocyte width,0.008444473279110376,0.007706893894953412,0.0070099702125564186
+Herbivorous,Bat,Artibeus lituratus,Ar3,enterocyte width,0.009095299145299144,0.008185171245042524,0.008265336538461539
+Herbivorous,Bat,Carollia perspicillata,Cp1,enterocyte width,0.005783702104779297,0.005848535285573924,0.0052785365160556985
+Herbivorous,Bat,Carollia perspicillata,Cp2,enterocyte width,0.005787094169447111,0.006155423280423279,0.0055730947668343545
+Herbivorous,Bat,Carollia perspicillata,Cp3,enterocyte width,0.0060838689179375455,0.0048587145969498915,0.005736958363592351
+Herbivorous,Bat,Carollia perspicillata,Cp4,enterocyte width,0.00519782364709901,0.005928568643744297,0.004793881817063743
+Omnivorous,Rodent,Delomys sublineatus,Ds1,enterocyte width,0.005540263143891017,0.005910617257401381,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,enterocyte width,0.005965171037812488,0.00677566396929142,0.006777793797257466
+Omnivorous,Rodent,Delomys sublineatus,Ds3,enterocyte width,0.0069004608681079264,0.006655060110689683,0.005103948762445495
+Protein,Bat,Desmodus rotundus,Dr1,enterocyte width,0.005714902357704215,0.006155095618494311,0.006942607156460755
+Protein,Bat,Desmodus rotundus,Dr2,enterocyte width,0.006493160428422577,0.005945532393653309,0.006347108750907771
+Protein,Bat,Desmodus rotundus,Dr3,enterocyte width,0.0064872664041461985,0.005916707928962831,0.006324019956985643
+NA,Bat,Eptesicus fuscus,Eptesicus1,enterocyte width,0.006825146570022591,0.0069704869582189015,0.007030074659392883
+NA,Bat,Eptesicus fuscus,Eptesicus2,enterocyte width,0.005552902502137868,0.006030962963856439,0.006653359946773121
+NA,Bat,Eptesicus fuscus,Eptesicus3,enterocyte width,0.006811200337835536,0.006012433712918315,0.005908454407411566
+Protein,Bat,Eumops glaucinus,Eg,enterocyte width,0.006248700896480597,0.006117106976257302,0.007379883805374
+Protein,Rodent,Euryoryzomys russatus,E1,enterocyte width,0.007291286754569487,0.007052919699048359,0.006453459356452133
+Protein,Rodent,Euryoryzomys russatus,E2,enterocyte width,0.0068954974582425554,0.007037414540870739,0.007893094892277899
+Protein,Rodent,Euryoryzomys russatus,E3,enterocyte width,0.0077477951640426285,0.006622254267768431,0.006086951447245565
+NA,Rodent,Microtus pennsylvanicus,Microtus1,enterocyte width,0.008826396349635777,8.528939825932507e-4,8.682665984924543e-4
+NA,Rodent,Microtus pennsylvanicus,Microtus2,enterocyte width,0.008431705627327566,8.521933109404028e-4,7.580563923370919e-4
+NA,Rodent,Microtus pennsylvanicus,Microtus3,enterocyte width,0.007896171512990373,7.991565429222e-4,7.977180182003452e-4
+NA,Rodent,Microtus pennsylvanicus,Microtus4,enterocyte width,0.008384757829984572,8.480411538356986e-4,8.228810292447369e-4
+NA,Rodent,Microtus pennsylvanicus,Microtus5,enterocyte width,0.008237544990100836,7.635325913382653e-4,8.24478746420527e-4
+Protein,Bat,Molossus molossus,Mmo1,enterocyte width,0.007106197955686447,0.004517590215098385,0.006272026702418859
+Protein,Bat,Molossus molossus,Mmo2,enterocyte width,0.00609606934300029,0.005530008299616143,0.005956772203831027
+Protein,Bat,Molossus molossus,Mmo3,enterocyte width,0.004925155527116312,0.00623344366236523,0.004907603569311931
+Protein,Bat,Molossus rufus,Mr,enterocyte width,0.005403104805464586,0.005115232187116862,0.006592120551924474
+Omnivorous,Rodent,Mus musculus,Mm1,enterocyte width,0.004221310925418783,0.005327571706521057,0.0044811834658643164
+Omnivorous,Rodent,Mus musculus,Mm2,enterocyte width,0.004564830353278061,0.004572974154200688,0.005011610191752036
+Omnivorous,Rodent,Mus musculus,Mm3,enterocyte width,0.004724023610026092,0.0052390156370161495,0.0049193832870798645
+Omnivorous,Rodent,Mus musculus,Mm4,enterocyte width,0.004643751925210891,0.004774909377462569,0.0043536130811662735
+Omnivorous,Rodent,Mus musculus,Mm5,enterocyte width,0.005323462589420036,0.00482404593042891,0.004709390070921986
+Omnivorous,Rodent,Mus musculus,Mm6,enterocyte width,0.00434264303874902,0.004301348463356973,0.004780639542117706
+Protein,Bat,Myotis lucifugus,My1,enterocyte width,0.008352938819714118,0.007641360116115493,0.008199717074027061
+Protein,Bat,Myotis lucifugus,My2,enterocyte width,0.00796851886331306,0.008004943080978918,0.008469386864494702
+Protein,Bat,Myotis lucifugus,My3,enterocyte width,0.00870178498310456,0.007976452812310736,0.008068096497779998
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,enterocyte width,0.007271602020437804,0.007924820288430438,0.007153549382716049
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,enterocyte width,NA,NA,NA
+Protein,Rodent,Peromyscus leucopus,P1,enterocyte width,0.009989924529604876,0.009997063082938087,0.01027588809959564
+Protein,Rodent,Peromyscus leucopus,P2,enterocyte width,0.009701922979150901,0.008914423590283192,0.008349754615019394
+Protein,Rodent,Peromyscus leucopus,P3,enterocyte width,0.009490804725625572,0.010578216170240039,0.009366534150061435
+Herbivorous,Rodent,Sooretamys angouya,s1,enterocyte width,0.005895247097710782,0.005859622282824897,0.005094114302641134
+Herbivorous,Rodent,Sooretamys angouya,s2,enterocyte width,0.006844582704876822,0.007000891588519465,0.005975483451034352
+Protein,Bat,Tadarida brasiliensis,Tb1,enterocyte width,0.005965218949235941,0.0053543765149474815,0.0057700389375608405
+Protein,Bat,Tadarida brasiliensis,Tb2,enterocyte width,0.005689678948941604,0.0037909143185738937,0.005559893035693525
+Protein,Bat,Tadarida brasiliensis,Tb3,enterocyte width,0.0053941727586833965,0.004852277809724618,0.004599081782985575
+Protein,Bat,Tadarida brasiliensis,Tb4,enterocyte width,0.005279719157991417,0.0038223603474380427,0.004622373259784607
+Protein,Bat,Tadarida brasiliensis,Tb5,enterocyte width,0.004263058269198857,0.004107426251413302,0.004169773725092874
+Protein,Bat,Tadarida brasiliensis,Tb6,enterocyte width,0.004659321382471103,0.005075405559631532,0.005308899565316862
+Protein,Bat,Tadarida brasiliensis,Tb7,enterocyte width,0.005194559128846405,0.004687703703703704,0.00461233096926714
+Protein,Bat,Tadarida brasiliensis,Tb8,enterocyte width,0.004696037116125104,0.004086200607902736,0.004277056737588653
+Omnivorous,Rodent,Thaptomys nigrita,t1,enterocyte width,0.00575736460844642,0.006390428316388283,0.006190167176189472
+Omnivorous,Rodent,Thaptomys nigrita,t2,enterocyte width,0.0063225611811267126,0.006853776951393584,0.0061003813560889355
+Omnivorous,Rodent,Thaptomys nigrita,t3,enterocyte width,NA,0.00701765065000359,0.00472235037805972
+Omnivorous,Rodent,Akodon montensis,Ak1,intestinal diameter,0.66,0.535,0.6525
+Omnivorous,Rodent,Akodon montensis,Ak2,intestinal diameter,0.6124999999999999,0.75,0.7575000000000001
+Omnivorous,Rodent,Akodon montensis,Ak3,intestinal diameter,0.695,0.49749999999999994,0.5
+Omnivorous,Rodent,Akodon montensis,Ak4,intestinal diameter,0.545,0.6525,0.6225
+Herbivorous,Bat,Artibeus lituratus,Ar1,intestinal diameter,0.615,0.498,0.559
+Herbivorous,Bat,Artibeus lituratus,Ar2,intestinal diameter,0.615,0.45,0.591
+Herbivorous,Bat,Artibeus lituratus,Ar3,intestinal diameter,0.744,0.559,0.656
+Herbivorous,Bat,Carollia perspicillata,Cp1,intestinal diameter,0.7875000000000001,0.7725,0.73
+Herbivorous,Bat,Carollia perspicillata,Cp2,intestinal diameter,0.7625,0.7274999999999999,0.6525000000000001
+Herbivorous,Bat,Carollia perspicillata,Cp3,intestinal diameter,0.85,0.8175,0.7425
+Herbivorous,Bat,Carollia perspicillata,Cp4,intestinal diameter,0.8049999999999999,0.7575000000000001,0.6849999999999999
+Omnivorous,Rodent,Delomys sublineatus,Ds1,intestinal diameter,0.67,0.735,0.79
+Omnivorous,Rodent,Delomys sublineatus,Ds2,intestinal diameter,0.78,0.76,0.7525
+Omnivorous,Rodent,Delomys sublineatus,Ds3,intestinal diameter,0.9,0.9025000000000001,0.8825
+Protein,Bat,Desmodus rotundus,Dr1,intestinal diameter,0.6825,0.5599999999999999,0.5125
+Protein,Bat,Desmodus rotundus,Dr2,intestinal diameter,0.495,0.45749999999999996,0.40249999999999997
+Protein,Bat,Desmodus rotundus,Dr3,intestinal diameter,0.73,0.6375,0.595
+NA,Bat,Eptesicus fuscus,Eptesicus1,intestinal diameter,0.75,0.607,0.607
+NA,Bat,Eptesicus fuscus,Eptesicus2,intestinal diameter,0.73367,0.639,0.681
+NA,Bat,Eptesicus fuscus,Eptesicus3,intestinal diameter,0.644,0.476,0.47
+Protein,Bat,Eumops glaucinus,Eg,intestinal diameter,0.7650000000000001,0.85,0.6950000000000001
+Protein,Rodent,Euryoryzomys russatus,E1,intestinal diameter,1.3499999999999999,1.0474999999999999,1.13
+Protein,Rodent,Euryoryzomys russatus,E2,intestinal diameter,1.2825000000000002,1.185,1.1325
+Protein,Rodent,Euryoryzomys russatus,E3,intestinal diameter,1.45,1.595,1.4975
+NA,Rodent,Microtus pennsylvanicus,Microtus1,intestinal diameter,0.52433,0.590333,0.59433
+NA,Rodent,Microtus pennsylvanicus,Microtus2,intestinal diameter,0.716667,0.750667,0.6135
+NA,Rodent,Microtus pennsylvanicus,Microtus3,intestinal diameter,0.606,0.815667,0.758
+NA,Rodent,Microtus pennsylvanicus,Microtus4,intestinal diameter,0.645,0.792667,0.748
+NA,Rodent,Microtus pennsylvanicus,Microtus5,intestinal diameter,0.697,0.792667,0.8705
+Protein,Bat,Molossus molossus,Mmo1,intestinal diameter,0.5425,0.5625,0.5375
+Protein,Bat,Molossus molossus,Mmo2,intestinal diameter,0.57,0.5700000000000001,0.55
+Protein,Bat,Molossus molossus,Mmo3,intestinal diameter,0.5575,0.6375,0.5775
+Protein,Bat,Molossus rufus,Mr,intestinal diameter,0.5575,0.7625000000000001,0.6425000000000001
+Omnivorous,Rodent,Mus musculus,Mm1,intestinal diameter,0.54,0.545,0.48
+Omnivorous,Rodent,Mus musculus,Mm2,intestinal diameter,0.485,0.595,0.45999999999999996
+Omnivorous,Rodent,Mus musculus,Mm3,intestinal diameter,0.745,0.8699999999999999,0.45499999999999996
+Omnivorous,Rodent,Mus musculus,Mm4,intestinal diameter,0.655,0.67,0.45
+Omnivorous,Rodent,Mus musculus,Mm5,intestinal diameter,0.61,0.755,0.505
+Omnivorous,Rodent,Mus musculus,Mm6,intestinal diameter,0.6950000000000001,0.67,0.485
+Protein,Bat,Myotis lucifugus,My1,intestinal diameter,0.403,0.476,0.417
+Protein,Bat,Myotis lucifugus,My2,intestinal diameter,0.438,0.6,0.404
+Protein,Bat,Myotis lucifugus,My3,intestinal diameter,0.513,0.594,0.4565
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,intestinal diameter,0.535,0.55,0.5325
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,intestinal diameter,0.7525000000000001,0.6900000000000001,0.6025
+Protein,Rodent,Peromyscus leucopus,P1,intestinal diameter,0.6475,0.776,0.745667
+Protein,Rodent,Peromyscus leucopus,P2,intestinal diameter,0.662667,0.658,0.641
+Protein,Rodent,Peromyscus leucopus,P3,intestinal diameter,0.59065,0.59065,0.6066
+Herbivorous,Rodent,Sooretamys angouya,s1,intestinal diameter,1.0075,0.79,0.7325
+Herbivorous,Rodent,Sooretamys angouya,s2,intestinal diameter,0.8675,0.8625,0.7850000000000001
+Protein,Bat,Tadarida brasiliensis,Tb1,intestinal diameter,0.27999999999999997,0.375,0.365
+Protein,Bat,Tadarida brasiliensis,Tb2,intestinal diameter,0.34500000000000003,0.575,0.29500000000000004
+Protein,Bat,Tadarida brasiliensis,Tb3,intestinal diameter,0.5549999999999999,0.55,0.4
+Protein,Bat,Tadarida brasiliensis,Tb4,intestinal diameter,0.355,0.45499999999999996,0.365
+Protein,Bat,Tadarida brasiliensis,Tb5,intestinal diameter,0.465,0.6849999999999999,0.505
+Protein,Bat,Tadarida brasiliensis,Tb6,intestinal diameter,0.585,0.63,0.44000000000000006
+Protein,Bat,Tadarida brasiliensis,Tb7,intestinal diameter,0.48,0.55,0.41500000000000004
+Protein,Bat,Tadarida brasiliensis,Tb8,intestinal diameter,0.5900000000000001,0.745,0.505
+Omnivorous,Rodent,Thaptomys nigrita,t1,intestinal diameter,0.5225,0.5625,0.41
+Omnivorous,Rodent,Thaptomys nigrita,t2,intestinal diameter,0.44000000000000006,0.45499999999999996,0.4325
+Omnivorous,Rodent,Thaptomys nigrita,t3,intestinal diameter,0.5199999999999999,0.445,0.6525
+Omnivorous,Rodent,Akodon montensis,Ak1,intestinal length,39.4,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak2,intestinal length,39,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak3,intestinal length,48.8,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak4,intestinal length,48.8,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar1,intestinal length,44.7,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar2,intestinal length,48.5,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar3,intestinal length,50.4,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp1,intestinal length,7.7,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp2,intestinal length,9.2,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp3,intestinal length,9.2,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp4,intestinal length,8.1,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds1,intestinal length,37.5,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,intestinal length,36.2,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds3,intestinal length,35.8,NA,NA
+Protein,Bat,Desmodus rotundus,Dr1,intestinal length,19.2,NA,NA
+Protein,Bat,Desmodus rotundus,Dr2,intestinal length,17.6,NA,NA
+Protein,Bat,Desmodus rotundus,Dr3,intestinal length,18.5,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus1,intestinal length,7.5,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus2,intestinal length,15.25,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus3,intestinal length,13.4,NA,NA
+Protein,Bat,Eumops glaucinus,Eg,intestinal length,10.8,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E1,intestinal length,30.5,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E2,intestinal length,26.2,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E3,intestinal length,34.3,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus1,intestinal length,24.2,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus2,intestinal length,25,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus3,intestinal length,28.5,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus4,intestinal length,28.1,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus5,intestinal length,17.5,NA,NA
+Protein,Bat,Molossus molossus,Mmo1,intestinal length,9.3,NA,NA
+Protein,Bat,Molossus molossus,Mmo2,intestinal length,8.9,NA,NA
+Protein,Bat,Molossus molossus,Mmo3,intestinal length,12.3,NA,NA
+Protein,Bat,Molossus rufus,Mr,intestinal length,16.9,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm1,intestinal length,46.4,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm2,intestinal length,42.2,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm3,intestinal length,51.2,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm4,intestinal length,47.5,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm5,intestinal length,49.5,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm6,intestinal length,48.2,NA,NA
+Protein,Bat,Myotis lucifugus,My1,intestinal length,11.7,NA,NA
+Protein,Bat,Myotis lucifugus,My2,intestinal length,15.6,NA,NA
+Protein,Bat,Myotis lucifugus,My3,intestinal length,15.3,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,intestinal length,17.1,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,intestinal length,24.2,NA,NA
+Protein,Rodent,Peromyscus leucopus,P1,intestinal length,24.9,NA,NA
+Protein,Rodent,Peromyscus leucopus,P2,intestinal length,24.4,NA,NA
+Protein,Rodent,Peromyscus leucopus,P3,intestinal length,21.635,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s1,intestinal length,52.9,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s2,intestinal length,41.2,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb1,intestinal length,17.9,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb2,intestinal length,17.5,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb3,intestinal length,15.8,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb4,intestinal length,17.4,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb5,intestinal length,17.7,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb6,intestinal length,16.4,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb7,intestinal length,15.2,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb8,intestinal length,15.8,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t1,intestinal length,44.5,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t2,intestinal length,38.8,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t3,intestinal length,32.7,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak1,mass,32.5,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak2,mass,32.5,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak3,mass,31.2,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak4,mass,32.06666666666667,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar1,mass,78.54,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar2,mass,62.67,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar3,mass,67.54,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp1,mass,16.1,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp2,mass,13.7,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp3,mass,15.7,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp4,mass,26,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds1,mass,66.24,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,mass,77.4,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds3,mass,72.4,NA,NA
+Protein,Bat,Desmodus rotundus,Dr1,mass,34,NA,NA
+Protein,Bat,Desmodus rotundus,Dr2,mass,43.5,NA,NA
+Protein,Bat,Desmodus rotundus,Dr3,mass,38,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus1,mass,14.3,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus2,mass,22.2,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus3,mass,11.3,NA,NA
+Protein,Bat,Eumops glaucinus,Eg,mass,34.14,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E1,mass,153,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E2,mass,149.9,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E3,mass,168.5,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus1,mass,36.6,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus2,mass,48.8,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus3,mass,40,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus4,mass,57.7,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus5,mass,34.3,NA,NA
+Protein,Bat,Molossus molossus,Mmo1,mass,10.91,NA,NA
+Protein,Bat,Molossus molossus,Mmo2,mass,14.78,NA,NA
+Protein,Bat,Molossus molossus,Mmo3,mass,14.78,NA,NA
+Protein,Bat,Molossus rufus,Mr,mass,33.58,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm1,mass,34,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm2,mass,35,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm3,mass,43,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm4,mass,30.55,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm5,mass,41.77,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm6,mass,39.18,NA,NA
+Protein,Bat,Myotis lucifugus,My1,mass,6.3,NA,NA
+Protein,Bat,Myotis lucifugus,My2,mass,11.7,NA,NA
+Protein,Bat,Myotis lucifugus,My3,mass,9.6,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,mass,22.84,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,mass,55.17,NA,NA
+Protein,Rodent,Peromyscus leucopus,P1,mass,27.4,NA,NA
+Protein,Rodent,Peromyscus leucopus,P2,mass,24.7,NA,NA
+Protein,Rodent,Peromyscus leucopus,P3,mass,25,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s1,mass,90.85,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s2,mass,115.5,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb1,mass,16,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb2,mass,13,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb3,mass,12,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb4,mass,12,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb5,mass,14.2792,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb6,mass,14.3959,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb7,mass,14.6659,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb8,mass,15.6302,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t1,mass,23.8,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t2,mass,25.3,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t3,mass,27,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak1,nsa,24.26383333333333,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak2,nsa,27.56,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak3,nsa,27.53133333333333,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak4,nsa,29.605333333333334,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar1,nsa,24.9128,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar2,nsa,26.772000000000002,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar3,nsa,32.9112,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp1,nsa,5.877666666666667,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp2,nsa,6.570333333333332,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp3,nsa,7.390666666666666,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp4,nsa,6.06825,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds1,nsa,27.4375,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,nsa,27.66283333333333,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds3,nsa,32.041,NA,NA
+Protein,Bat,Desmodus rotundus,Dr1,nsa,11.231999999999998,NA,NA
+Protein,Bat,Desmodus rotundus,Dr2,nsa,7.9493333333333345,NA,NA
+Protein,Bat,Desmodus rotundus,Dr3,nsa,12.102083333333333,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus1,nsa,4.91,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus2,nsa,10.439489166666666,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus3,nsa,7.101999999999999,NA,NA
+Protein,Bat,Eumops glaucinus,Eg,nsa,8.316,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E1,nsa,35.86291666666666,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E2,nsa,31.439999999999998,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E3,nsa,51.93591666666666,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus1,nsa,13.785876866666666,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus2,nsa,17.340283333333335,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus3,nsa,20.7068365,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus4,nsa,20.472414233333335,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus5,nsa,13.7676408333333,NA,NA
+Protein,Bat,Molossus molossus,Mmo1,nsa,5.09175,NA,NA
+Protein,Bat,Molossus molossus,Mmo2,nsa,5.013666666666667,NA,NA
+Protein,Bat,Molossus molossus,Mmo3,nsa,7.267250000000001,NA,NA
+Protein,Bat,Molossus rufus,Mr,nsa,11.055416666666668,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm1,nsa,24.205333333333336,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm2,nsa,21.662666666666667,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm3,nsa,35.328,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm4,nsa,28.104166666666668,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm5,nsa,30.854999999999997,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm6,nsa,29.723333333333336,NA,NA
+Protein,Bat,Myotis lucifugus,My1,nsa,5.054399999999999,NA,NA
+Protein,Bat,Myotis lucifugus,My2,nsa,7.4984,NA,NA
+Protein,Bat,Myotis lucifugus,My3,nsa,7.9738500000000005,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,nsa,9.21975,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,nsa,16.496333333333336,NA,NA
+Protein,Rodent,Peromyscus leucopus,P1,nsa,18.0040861,NA,NA
+Protein,Rodent,Peromyscus leucopus,P2,nsa,15.9548916,NA,NA
+Protein,Rodent,Peromyscus leucopus,P3,nsa,12.893738833333334,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s1,nsa,44.61233333333334,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s2,nsa,34.53933333333334,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb1,nsa,6.085999999999999,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb2,nsa,7.0874999999999995,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb3,nsa,7.926333333333334,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb4,nsa,6.8149999999999995,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb5,nsa,9.764499999999998,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb6,nsa,9.047333333333333,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb7,nsa,7.3213333333333335,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb8,nsa,9.690666666666667,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t1,nsa,22.175833333333333,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t2,nsa,17.168999999999997,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t3,nsa,17.63075,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak1,sef,12.180775630559907,12.620818653630215,8.830265467983958
+Omnivorous,Rodent,Akodon montensis,Ak2,sef,11.291341865889764,11.548107511543458,7.830347522574836
+Omnivorous,Rodent,Akodon montensis,Ak3,sef,13.206073181803244,12.002286066131314,6.622486407442757
+Omnivorous,Rodent,Akodon montensis,Ak4,sef,12.259372374909205,9.300885423850708,9.744239674179902
+Herbivorous,Bat,Artibeus lituratus,Ar1,sef,23.17806447318899,18.374247600723663,12.34962186748556
+Herbivorous,Bat,Artibeus lituratus,Ar2,sef,18.894874581533028,18.02864487573859,12.314181066023023
+Herbivorous,Bat,Artibeus lituratus,Ar3,sef,18.67894765326936,19.364529397902523,13.456170050588089
+Herbivorous,Bat,Carollia perspicillata,Cp1,sef,22.07831329349399,20.96522393664462,15.960018560397597
+Herbivorous,Bat,Carollia perspicillata,Cp2,sef,19.687009633145117,15.157077742015986,16.061001838003868
+Herbivorous,Bat,Carollia perspicillata,Cp3,sef,19.42287450520747,16.351011968995163,13.897211730717236
+Herbivorous,Bat,Carollia perspicillata,Cp4,sef,19.81803076157056,23.323197532576504,8.195152971233023
+Omnivorous,Rodent,Delomys sublineatus,Ds1,sef,6.775622928779481,8.79991955539784,5.2151178205754025
+Omnivorous,Rodent,Delomys sublineatus,Ds2,sef,10.72679994539768,8.359125455775882,5.827019478157001
+Omnivorous,Rodent,Delomys sublineatus,Ds3,sef,10.64422227719045,8.39225869615852,4.6506651506106245
+Protein,Bat,Desmodus rotundus,Dr1,sef,12.84508577395673,13.081366569099812,13.783971180585441
+Protein,Bat,Desmodus rotundus,Dr2,sef,12.91133900524255,12.283731547050586,11.410830028854233
+Protein,Bat,Desmodus rotundus,Dr3,sef,10.81807138317218,12.905967812816362,11.385431160525183
+NA,Bat,Eptesicus fuscus,Eptesicus1,sef,18.776601982152492,13.610203786912297,10.155891073334754
+NA,Bat,Eptesicus fuscus,Eptesicus2,sef,12.187697970723987,9.463517947148253,7.174725985583567
+NA,Bat,Eptesicus fuscus,Eptesicus3,sef,13.289569031697994,9.948026726822377,6.831709523520441
+Protein,Bat,Eumops glaucinus,Eg,sef,22.006225222888723,16.60291245246597,12.183111899586724
+Protein,Rodent,Euryoryzomys russatus,E1,sef,17.61099387544508,13.513077301429966,8.438020363255134
+Protein,Rodent,Euryoryzomys russatus,E2,sef,15.675245651297848,11.837923741665294,9.34985405296967
+Protein,Rodent,Euryoryzomys russatus,E3,sef,16.1927728561144,7.766268178808756,5.768093007331381
+NA,Rodent,Microtus pennsylvanicus,Microtus1,sef,15.290239913369428,14.467506079497797,11.690924366186566
+NA,Rodent,Microtus pennsylvanicus,Microtus2,sef,11.895733276927928,13.973315134112385,10.701040496195073
+NA,Rodent,Microtus pennsylvanicus,Microtus3,sef,12.563530822739063,11.655532518478873,10.478815849568951
+NA,Rodent,Microtus pennsylvanicus,Microtus4,sef,13.01328151304606,13.193706049286206,9.059048274425473
+NA,Rodent,Microtus pennsylvanicus,Microtus5,sef,10.337710815186048,13.322105980562485,11.637891513875816
+Protein,Bat,Molossus molossus,Mmo1,sef,14.356528080012993,10.647636809006185,8.60058604622814
+Protein,Bat,Molossus molossus,Mmo2,sef,14.63495785886926,14.995643781031562,10.75712012985097
+Protein,Bat,Molossus molossus,Mmo3,sef,13.944510924453068,11.249566648073024,13.934847575223243
+Protein,Bat,Molossus rufus,Mr,sef,15.631519157149462,14.487171008113268,17.082618644432188
+Omnivorous,Rodent,Mus musculus,Mm1,sef,10.110921979409966,8.753268797747701,7.56334819412889
+Omnivorous,Rodent,Mus musculus,Mm2,sef,12.49945870386611,10.221408044405988,8.258364993368135
+Omnivorous,Rodent,Mus musculus,Mm3,sef,10.322724902956045,8.642397534805355,5.538490012011673
+Omnivorous,Rodent,Mus musculus,Mm4,sef,14.84464690461051,8.54864452210589,9.178735481179848
+Omnivorous,Rodent,Mus musculus,Mm5,sef,11.964278075394033,10.131042358932001,8.470291881350422
+Omnivorous,Rodent,Mus musculus,Mm6,sef,16.700114328884002,8.945002524427384,8.068450319587358
+Protein,Bat,Myotis lucifugus,My1,sef,12.149676217039705,11.643668171862586,10.060193847828206
+Protein,Bat,Myotis lucifugus,My2,sef,8.614923807357414,9.205624513710665,8.440691585267938
+Protein,Bat,Myotis lucifugus,My3,sef,10.090924590863438,9.1610158070344,7.116324277759625
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,sef,12.496186382410267,9.905991542082086,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,sef,14.344687405751328,9.471148693097373,4.471812359375659
+Protein,Rodent,Peromyscus leucopus,P1,sef,9.682247793809383,8.421093489951483,5.565184581506714
+Protein,Rodent,Peromyscus leucopus,P2,sef,8.811221997658333,8.744251762077626,5.3482713237212325
+Protein,Rodent,Peromyscus leucopus,P3,sef,12.883731416530052,11.562475262856,8.271216214209737
+Herbivorous,Rodent,Sooretamys angouya,s1,sef,10.038154378090704,6.331358068613277,4.591140541459549
+Herbivorous,Rodent,Sooretamys angouya,s2,sef,17.115493595167447,9.464089306405162,5.242502297296098
+Protein,Bat,Tadarida brasiliensis,Tb1,sef,19.93212620148396,17.796490565382967,18.1590983170994
+Protein,Bat,Tadarida brasiliensis,Tb2,sef,19.381194968650757,18.304956795335773,15.267088520836456
+Protein,Bat,Tadarida brasiliensis,Tb3,sef,21.539773859249742,20.24242057409801,19.15209479120566
+Protein,Bat,Tadarida brasiliensis,Tb4,sef,21.665121454298713,21.56114804900654,11.456508372553587
+Protein,Bat,Tadarida brasiliensis,Tb5,sef,16.81714368160226,21.669318553099583,13.708418349798537
+Protein,Bat,Tadarida brasiliensis,Tb6,sef,16.74724684425899,19.914389321698057,11.74507879478782
+Protein,Bat,Tadarida brasiliensis,Tb7,sef,22.764033615587035,26.411737787663053,15.53673026732344
+Protein,Bat,Tadarida brasiliensis,Tb8,sef,22.144594107223373,24.458711164840533,14.468105015779196
+Omnivorous,Rodent,Thaptomys nigrita,t1,sef,6.612348304383169,7.915975705940023,5.261344017074578
+Omnivorous,Rodent,Thaptomys nigrita,t2,sef,10.646285732626907,9.396431366877387,4.373931915393823
+Omnivorous,Rodent,Thaptomys nigrita,t3,sef,NA,7.022740477783264,4.992582396086071
+Omnivorous,Rodent,Akodon montensis,Ak1,villa surface area,255.5917414845818,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak2,villa surface area,262.38747582014975,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak3,villa surface area,283.89326979763064,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak4,villa surface area,289.1950186116721,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar1,villa surface area,463.7950881962634,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar2,villa surface area,425.7088713846574,NA,NA
+Herbivorous,Bat,Artibeus lituratus,Ar3,villa surface area,550.7941930369941,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp1,villa surface area,113.2396029274928,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp2,villa surface area,108.87952095402443,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp3,villa surface area,119.25419949488469,NA,NA
+Herbivorous,Bat,Carollia perspicillata,Cp4,villa surface area,109.23932307593287,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds1,villa surface area,173.0985040086932,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,villa surface area,214.3070348058916,NA,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds3,villa surface area,234.50099070096076,NA,NA
+Protein,Bat,Desmodus rotundus,Dr1,villa surface area,141.22143711496483,NA,NA
+Protein,Bat,Desmodus rotundus,Dr2,villa surface area,92.921184106596,NA,NA
+Protein,Bat,Desmodus rotundus,Dr3,villa surface area,134.55978223291072,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus1,villa surface area,68.38023303200018,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus2,villa surface area,95.37616035387562,NA,NA
+NA,Bat,Eptesicus fuscus,Eptesicus3,villa surface area,69.69622310814279,NA,NA
+Protein,Bat,Eumops glaucinus,Eg,villa surface area,137.50690634975325,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E1,villa surface area,464.1426493651302,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E2,villa surface area,375.77560610341226,NA,NA
+Protein,Rodent,Euryoryzomys russatus,E3,villa surface area,479.9223415380997,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus1,villa surface area,182.1728750936649,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus2,villa surface area,204.2666789112405,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus3,villa surface area,227.34249306437454,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus4,villa surface area,204.59401568976,NA,NA
+NA,Rodent,Microtus pennsylvanicus,Microtus5,villa surface area,212.06772922179167,NA,NA
+Protein,Bat,Molossus molossus,Mmo1,villa surface area,54.062116378234435,NA,NA
+Protein,Bat,Molossus molossus,Mmo2,villa surface area,64.43411443497087,NA,NA
+Protein,Bat,Molossus molossus,Mmo3,villa surface area,90.23408787974947,NA,NA
+Protein,Bat,Molossus rufus,Mr,villa surface area,167.23276635226244,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm1,villa surface area,200.95230998078677,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm2,villa surface area,211.56121718493083,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm3,villa surface area,283.5943027173851,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm4,villa surface area,295.8520910183353,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm5,villa surface area,299.64498930267297,NA,NA
+Omnivorous,Rodent,Mus musculus,Mm6,villa surface area,327.8120902985921,NA,NA
+Protein,Bat,Myotis lucifugus,My1,villa surface area,54.06285695306549,NA,NA
+Protein,Bat,Myotis lucifugus,My2,villa surface area,61.74051605610566,NA,NA
+Protein,Bat,Myotis lucifugus,My3,villa surface area,66.06400315656391,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,villa surface area,NA,NA,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,villa surface area,92.5376860076136,NA,NA
+Protein,Rodent,Peromyscus leucopus,P1,villa surface area,131.05052970592726,NA,NA
+Protein,Rodent,Peromyscus leucopus,P2,villa surface area,113.84590921863614,NA,NA
+Protein,Rodent,Peromyscus leucopus,P3,villa surface area,133.0167882171836,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s1,villa surface area,303.21947359954663,NA,NA
+Herbivorous,Rodent,Sooretamys angouya,s2,villa surface area,354.69527716579313,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb1,villa surface area,109.59841437939899,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb2,villa surface area,122.89282335557351,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb3,villa surface area,157.94379501822462,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb4,villa surface area,122.08733624871923,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb5,villa surface area,169.28360448562097,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb6,villa surface area,145.29929582907752,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb7,villa surface area,157.74918106971327,NA,NA
+Protein,Bat,Tadarida brasiliensis,Tb8,villa surface area,197.65909685705702,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t1,villa surface area,138.575726735525,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t2,villa surface area,131.454437712884,NA,NA
+Omnivorous,Rodent,Thaptomys nigrita,t3,villa surface area,NA,NA,NA
+Omnivorous,Rodent,Akodon montensis,Ak1,villus height,0.5108496732026143,0.46051062091503264,0.28528524743230627
+Omnivorous,Rodent,Akodon montensis,Ak2,villus height,0.5526039215686275,0.4013411220043573,0.27917755991285403
+Omnivorous,Rodent,Akodon montensis,Ak3,villus height,0.5441163398692811,0.41761568627450985,0.24411546840958603
+Omnivorous,Rodent,Akodon montensis,Ak4,villus height,0.5192768692060525,0.32589705882352943,0.2573464052287582
+Herbivorous,Bat,Artibeus lituratus,Ar1,villus height,0.92093,0.7307070000000001,0.51477125
+Herbivorous,Bat,Artibeus lituratus,Ar2,villus height,0.8756483333333334,0.7238775000000001,0.5404033333333335
+Herbivorous,Bat,Artibeus lituratus,Ar3,villus height,0.8629429166666667,0.8066633333333334,0.550185306122449
+Herbivorous,Bat,Carollia perspicillata,Cp1,villus height,0.8144667376893939,0.7165737452651514,0.5548705882352941
+Herbivorous,Bat,Carollia perspicillata,Cp2,villus height,0.5874264705882353,0.511056100217865,0.5208770424836602
+Herbivorous,Bat,Carollia perspicillata,Cp3,villus height,0.7034319196428572,0.6156879340277778,0.5140431372549019
+Herbivorous,Bat,Carollia perspicillata,Cp4,villus height,0.6679410807291666,0.682544921875,0.30446568627450976
+Omnivorous,Rodent,Delomys sublineatus,Ds1,villus height,0.3099529411764706,0.4020252100840337,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,villus height,0.4836074346405229,0.32993382352941175,0.2083860877684407
+Omnivorous,Rodent,Delomys sublineatus,Ds3,villus height,0.5437282913165266,0.4473316993464052,0.17844084967320262
+Protein,Bat,Desmodus rotundus,Dr1,villus height,0.4789039215686274,NA,0.5229880174291939
+Protein,Bat,Desmodus rotundus,Dr2,villus height,0.528663725490196,0.4537982026143791,0.38847140522875817
+Protein,Bat,Desmodus rotundus,Dr3,villus height,0.4718702614379085,0.5582475490196078,0.4896965452847805
+NA,Bat,Eptesicus fuscus,Eptesicus1,villus height,0.66023,0.51924,0.37819
+NA,Bat,Eptesicus fuscus,Eptesicus2,villus height,0.53716,0.43291,0.31531
+NA,Bat,Eptesicus fuscus,Eptesicus3,villus height,0.5169,0.38323,0.24662
+Protein,Bat,Eumops glaucinus,Eg,villus height,0.4830798366013072,0.485688888888889,0.39392745098039217
+Protein,Rodent,Euryoryzomys russatus,E1,villus height,0.93090576171875,0.6710279947916666,0.3607635524798155
+Protein,Rodent,Euryoryzomys russatus,E2,villus height,0.8759027777777777,0.6084375000000001,0.5131067538126362
+Protein,Rodent,Euryoryzomys russatus,E3,villus height,0.8073710937499999,0.35977450980392156,0.29087581699346404
+NA,Rodent,Microtus pennsylvanicus,Microtus1,villus height,0.65608,0.56868,0.41164
+NA,Rodent,Microtus pennsylvanicus,Microtus2,villus height,0.63993,0.65324,0.43655
+NA,Rodent,Microtus pennsylvanicus,Microtus3,villus height,0.60158,0.49603,0.41771
+NA,Rodent,Microtus pennsylvanicus,Microtus4,villus height,0.67831,0.57463,0.33981
+NA,Rodent,Microtus pennsylvanicus,Microtus5,villus height,0.43377,0.62173,0.55647
+Protein,Bat,Molossus molossus,Mmo1,villus height,0.518554248366013,0.3562047930283225,0.2883071895424837
+Protein,Bat,Molossus molossus,Mmo2,villus height,0.4574686274509804,0.5390114379084968,0.351402614379085
+Protein,Bat,Molossus molossus,Mmo3,villus height,0.41831985294117646,0.35506590413943356,0.4196880900508351
+Protein,Bat,Molossus rufus,Mr,villus height,0.5079636363636365,0.4992697563874034,0.5740394176136364
+Omnivorous,Rodent,Mus musculus,Mm1,villus height,0.43124856043690385,0.3249229536313158,0.2666098455646229
+Omnivorous,Rodent,Mus musculus,Mm2,villus height,0.503029697353869,0.36946041843935185,0.26646403328936125
+Omnivorous,Rodent,Mus musculus,Mm3,villus height,0.4143944888289904,0.307004033632001,0.19251417672219337
+Omnivorous,Rodent,Mus musculus,Mm4,villus height,0.6311241631498498,0.2874328283203226,0.3677721559467995
+Omnivorous,Rodent,Mus musculus,Mm5,villus height,0.49494922744240327,0.31768497315036376,0.24009770945286132
+Omnivorous,Rodent,Mus musculus,Mm6,villus height,0.6761899595113957,0.3006718595633627,0.2504871195984261
+Protein,Bat,Myotis lucifugus,My1,villus height,0.40211,0.39646,0.3531
+Protein,Bat,Myotis lucifugus,My2,villus height,0.37612,0.38899,0.33431
+Protein,Bat,Myotis lucifugus,My3,villus height,0.41344,0.38278,0.27806
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,villus height,0.5020738804636438,0.3866952069716776,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,villus height,0.6606497395833334,0.3773508986928105,0.19040242763772172
+Protein,Rodent,Peromyscus leucopus,P1,villus height,0.55245,0.51733,0.29892
+Protein,Rodent,Peromyscus leucopus,P2,villus height,0.47945,0.44107,0.2577
+Protein,Rodent,Peromyscus leucopus,P3,villus height,0.68107,0.59421,0.3325
+Herbivorous,Rodent,Sooretamys angouya,s1,villus height,0.5336834733893557,0.2573986928104575,0.1830732959850607
+Herbivorous,Rodent,Sooretamys angouya,s2,villus height,0.8207259114583334,0.4327638888888889,0.2044875816993464
+Protein,Bat,Tadarida brasiliensis,Tb1,villus height,0.34310894232800915,0.42613675516291577,0.4478682093072395
+Protein,Bat,Tadarida brasiliensis,Tb2,villus height,0.4085781780318389,0.35680492183053414,0.2927063405497085
+Protein,Bat,Tadarida brasiliensis,Tb3,villus height,0.39547487022517147,0.4403209963965713,0.44801859011331857
+Protein,Bat,Tadarida brasiliensis,Tb4,villus height,0.4663039443552947,0.48774187039458783,0.32499624047984804
+Protein,Bat,Tadarida brasiliensis,Tb5,villus height,0.342409957112917,0.41429988216997593,0.33026394686798655
+Protein,Bat,Tadarida brasiliensis,Tb6,villus height,0.371208357365709,0.40326373938054527,0.25491402596067636
+Protein,Bat,Tadarida brasiliensis,Tb7,villus height,0.41569195158118755,0.5466770600742767,0.3637893488511097
+Protein,Bat,Tadarida brasiliensis,Tb8,villus height,0.4447651299271129,0.4900706789788572,0.2978073907407302
+Omnivorous,Rodent,Thaptomys nigrita,t1,villus height,0.2974481209150327,0.26660348583877996,0.19108415032679738
+Omnivorous,Rodent,Thaptomys nigrita,t2,villus height,0.4442436079545455,0.36312254901960783,0.17664910130718953
+Omnivorous,Rodent,Thaptomys nigrita,t3,villus height,NA,0.26071132897603483,0.16262026143790848
+Omnivorous,Rodent,Akodon montensis,Ak1,villus width,0.07967075163398693,0.061142973856209155,0.05176143790849673
+Omnivorous,Rodent,Akodon montensis,Ak2,villus width,0.07761951447245566,0.06253839869281046,0.05049934640522876
+Omnivorous,Rodent,Akodon montensis,Ak3,villus width,0.07977549019607842,0.06238888888888889,0.04921764705882353
+Omnivorous,Rodent,Akodon montensis,Ak4,villus width,0.08708704693998812,0.06408333333333334,0.04240032679738562
+Herbivorous,Bat,Artibeus lituratus,Ar1,villus width,0.10898527777777778,0.08424583333333334,0.08627472222222222
+Herbivorous,Bat,Artibeus lituratus,Ar2,villus width,0.1136561111111111,0.08506999999999999,0.09314555555555556
+Herbivorous,Bat,Artibeus lituratus,Ar3,villus width,0.11055444444444444,0.08253222222222223,0.08283333333333334
+Herbivorous,Bat,Carollia perspicillata,Cp1,villus width,0.07837782883986928,0.0764545083184789,0.06784491978609625
+Herbivorous,Bat,Carollia perspicillata,Cp2,villus width,0.06570261437908496,0.06800508351488743,0.07450776143790849
+Herbivorous,Bat,Carollia perspicillata,Cp3,villus width,0.06261642156862746,0.07235026041666667,0.0756764705882353
+Herbivorous,Bat,Carollia perspicillata,Cp4,villus width,0.06419084967320261,0.06480468750000001,0.0776637254901961
+Omnivorous,Rodent,Delomys sublineatus,Ds1,villus width,0.10109967320261437,0.08260965867828614,NA
+Omnivorous,Rodent,Delomys sublineatus,Ds2,villus width,0.08791339869281045,0.07652156862745099,0.052188453159041394
+Omnivorous,Rodent,Delomys sublineatus,Ds3,villus width,0.09448412698412699,0.0978355119825708,0.06039760348583878
+Protein,Bat,Desmodus rotundus,Dr1,villus width,0.06673406862745099,0.05471677559912854,0.057283950617283946
+Protein,Bat,Desmodus rotundus,Dr2,villus width,0.07825882352941176,0.07476252723311548,0.05083300653594771
+Protein,Bat,Desmodus rotundus,Dr3,villus width,0.08253485838779956,0.08725898692810456,0.07544335511982571
+NA,Bat,Eptesicus fuscus,Eptesicus1,villus width,0.06014,0.06708,0.06299
+NA,Bat,Eptesicus fuscus,Eptesicus2,villus width,0.08729,0.08538,0.08743
+NA,Bat,Eptesicus fuscus,Eptesicus3,villus width,0.06969,0.07025,0.06969
+Protein,Bat,Eumops glaucinus,Eg,villus width,0.050362745098039216,0.06091143790849672,0.045774976657329595
+Protein,Rodent,Euryoryzomys russatus,E1,villus width,0.11864908854166666,0.10158420138888889,0.0752619825708061
+Protein,Rodent,Euryoryzomys russatus,E2,villus width,0.14134114583333332,0.11977430555555553,0.09355718954248365
+Protein,Rodent,Euryoryzomys russatus,E3,villus width,0.10581510416666666,0.07049183006535947,0.10545424836601307
+NA,Rodent,Microtus pennsylvanicus,Microtus1,villus width,0.08443,0.07742,0.06405
+NA,Rodent,Microtus pennsylvanicus,Microtus2,villus width,0.11453,0.09344,0.08013
+NA,Rodent,Microtus pennsylvanicus,Microtus3,villus width,0.0948,0.08658,0.08036
+NA,Rodent,Microtus pennsylvanicus,Microtus4,villus width,0.10003,0.08479,0.0723
+NA,Rodent,Microtus pennsylvanicus,Microtus5,villus width,0.07594,0.08898,0.08773
+Protein,Bat,Molossus molossus,Mmo1,villus width,0.06980718954248366,0.06264596949891067,0.04852124183006536
+Protein,Bat,Molossus molossus,Mmo2,villus width,0.04639477124183007,0.06181764705882352,0.042137908496732025
+Protein,Bat,Molossus molossus,Mmo3,villus width,0.061203431372549015,0.05329003267973856,0.05627083333333333
+Protein,Bat,Molossus rufus,Mr,villus width,0.06674,0.06570142602495543,0.061693214312240056
+Omnivorous,Rodent,Mus musculus,Mm1,villus width,0.08955215073106011,0.0627310677227587,0.06755905301970369
+Omnivorous,Rodent,Mus musculus,Mm2,villus width,0.07723710484587872,0.059538045392160795,0.05570343001486677
+Omnivorous,Rodent,Mus musculus,Mm3,villus width,0.0800418972347064,0.07588405830206746,0.057680176193005195
+Omnivorous,Rodent,Mus musculus,Mm4,villus width,0.10184682858301305,0.05562909621135547,0.09032232888472645
+Omnivorous,Rodent,Mus musculus,Mm5,villus width,0.08716949534866457,0.05569752899589403,0.04410764220028059
+Omnivorous,Rodent,Mus musculus,Mm6,villus width,0.06447453329602369,0.06481450813103308,0.04750881821625522
+Protein,Bat,Myotis lucifugus,My1,villus width,0.05834,0.05867,0.05763
+Protein,Bat,Myotis lucifugus,My2,villus width,0.08125,0.07684,0.06848
+Protein,Bat,Myotis lucifugus,My3,villus width,0.06914,0.0736,0.07506
+Herbivorous,Rodent,Olygoryzomys nigripes,o1,villus width,0.07876388888888888,0.08244243338360986,NA
+Herbivorous,Rodent,Olygoryzomys nigripes,o2,villus width,0.09628255208333333,0.08391363211951448,0.0778970588235294
+Protein,Rodent,Peromyscus leucopus,P1,villus width,0.12335,0.11997,0.1021
+Protein,Rodent,Peromyscus leucopus,P2,villus width,0.12462,0.09944,0.09231
+Protein,Rodent,Peromyscus leucopus,P3,villus width,0.1031,0.09514,0.0686
+Herbivorous,Rodent,Sooretamys angouya,s1,villus width,0.11872642390289449,0.0890841503267974,0.07773257080610022
+Herbivorous,Rodent,Sooretamys angouya,s2,villus width,0.11327311197916667,0.08797197712418302,0.07293246187363835
+Protein,Bat,Tadarida brasiliensis,Tb1,villus width,0.04142210750133725,0.04554197052155489,0.046750346922808966
+Protein,Bat,Tadarida brasiliensis,Tb2,villus width,0.038270963369900615,0.03788920551345528,0.03854231506492072
+Protein,Bat,Tadarida brasiliensis,Tb3,villus width,0.03796534769374854,0.041051770971935894,0.05100488642442032
+Protein,Bat,Tadarida brasiliensis,Tb4,villus width,0.03904837503069481,0.04918347029408014,0.046841907894611616
+Protein,Bat,Tadarida brasiliensis,Tb5,villus width,0.040346313671518835,0.04218809783508746,0.03366826374889832
+Protein,Bat,Tadarida brasiliensis,Tb6,villus width,0.04340075723398302,0.03294767319014797,0.04083914393346697
+Protein,Bat,Tadarida brasiliensis,Tb7,villus width,0.04005716374185517,0.037474706519483834,0.04152109233571849
+Protein,Bat,Tadarida brasiliensis,Tb8,villus width,0.038625405219165757,0.03425008518406421,0.032226797098221516
+Omnivorous,Rodent,Thaptomys nigrita,t1,villus width,0.10533725490196078,0.06606339869281046,0.08911671335200747
+Omnivorous,Rodent,Thaptomys nigrita,t2,villus width,0.09892795138888888,0.08130174291938998,0.07111220043572986
+Omnivorous,Rodent,Thaptomys nigrita,t3,villus width,NA,0.07946732026143791,0.05618191721132898

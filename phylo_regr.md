@@ -30,7 +30,7 @@ suppressPackageStartupMessages({
 Morphometric measurements
 =========================
 
-Cleaning `./rd_files/morphometrics.csv` file for use and providing a useful function to retrieve columns from it
+Cleaning `./data/morphometrics.csv` file for use and providing a useful function to retrieve columns from it
 
 ``` r
 source('tidy_csv.R')
@@ -84,7 +84,7 @@ Phylogenetic tree
 Reading phylogenetic tree, cleaning species names, and removing unnecessary species from it
 
 ``` r
-tr <- read.tree('tree.nwk')
+tr <- read.tree('./data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 tr
@@ -132,7 +132,7 @@ sef_fits <- lapply(c('lambda', 'OUfixedRoot'),
                                model = m, boot = 2000,
                                upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
-save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
+save(nsa_fits, sef_fits, file = './data/model_fits.RData', compress = FALSE)
 ```
 
 Model output

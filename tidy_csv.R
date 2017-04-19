@@ -1,9 +1,10 @@
 
 # This cleans the csv file for use and provides a useful function to retrieve columns 
 # from it
+# It is meant to be sourced from `phylo_regr.R`, which is why I am not loading packages 
+# here.
 
-
-morph_df <- read_csv('./rd_files/morphometrics.csv', col_types = 'cccccddd') %>% 
+morph_df <- read_csv('./data/clean_data.csv', col_types = 'cccccddd') %>% 
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
                             'Oligoryzomys nigripes', species))
