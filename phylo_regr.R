@@ -9,11 +9,13 @@
 #' 
 #+ setup, include = FALSE, cache = FALSE
 knitr::opts_chunk$set(echo = TRUE)
-
+#' 
+#' 
+#' 
 #' 
 #' Loading packages:
 #' 
-
+#+ load_packages
 suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
@@ -21,69 +23,72 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(phylolm)
     library(ape)
-    library(nlme)
     library(ggplot2)
     library(ggtree)
 })
-
-
 #' 
-#' ## Morphometric measurements
 #' 
-#' Cleaning `morphometrics.csv` file for use and providing a useful function to 
-#' retrieve columns from it
 #' 
+#' # Morphometric measurements
+#' 
+#' Cleaning `./bg_files/morphometrics.csv` file for use and providing a useful 
+#' function to retrieve columns from it
+#' 
+# source_tidy_csv
 source('tidy_csv.R')
-
 morph_df
-
-
+#' 
 #' 
 #' All measures found in `morph_df`:
 #' 
-#' - villus height
-#' - villus width
-#' - crypt width
-#' - enterocytes per surface area
-#' - sef
-#' - intestinal diameter
-#' - intestinal length
-#' - nsa
-#' - body mass
-#' - total villa surface area
-#' - enterocite width
+#' - `crypt width`
+#' - `enterocyte density`
+#' - `enterocyte width`
+#' - `intestinal diameter`
+#' - `intestinal length`
+#' - `mass`
+#' - `nsa`
+#' - `sef`
+#' - `villa surface area`
+#' - `villus height`
+#' - `villus width`
 #' 
 #' 
 #' 
-#' I am only analyzing three: nsa, sef, and body mass. Now I create a data frame with 
-#' just these columns and their log_transformed versions. Species names are row names
+#' I am only analyzing three: `nsa`, `sef`, and `mass`. Now I create a data frame with 
+#' just these columns and their log-transformed versions. Species names are row names
 #' because `phylolm` requires that.
 #' 
-
-
-sp_df <- prep_df(measures = c('nsa', 'sef', 'body mass'))
-head(sp_df)
-
-
-
 #' 
-#' ## Phylogenetic tree
+#' 
+#+ make_sp_df
+sp_df <- prep_df(measures = c('nsa', 'sef', 'mass'))
+head(sp_df)
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' # Phylogenetic tree
 #' 
 #' Reading phylogenetic tree, cleaning species names, and removing unnecessary species 
 #' from it
 #' 
+#+ make_tr
 tr <- read.tree('tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 tr
-
-
 #' 
-#' #### Visualizing tree
+#' 
+#' 
+#' 
+#' ## Visualizing tree
 #' 
 #' Here is the phylogenetic tree with log(NSA) as tip color and log(SEF) as tip size.
 #' 
-
+#' 
 #+ phylo_plot, fig.width=8, fig.height=6, echo = FALSE
 x_end <- 32
 gg_tr <- ggtree(tr)
@@ -110,20 +115,20 @@ gg_tr %<+% {sp_df %>% select(species, everything())} +
                          guide = guide_legend(direction = "horizontal",
                                               title.position = 'top', 
                                               title.hjust = 0.5))
-
-
-
-
 #' 
-#' ## Fitting phylogenetic linear models
+#' 
+#' 
+#' 
+#' 
+#' # Fitting phylogenetic linear models
 #' 
 #' Below fits phylogenetic linear regression models using `phylolm::phylolm`. For both
-#' nsa and sef (log-transformed), I fit models using log-transformed body mass and
-#' taxa (a factor based on whether that species is a rodent or bat) as covariates. 
-#' (I tried including the interaction between body mass and taxa, but it increased the 
+#' `nsa` and `sef` (log-transformed), I fit models using log-transformed mass and
+#' taxon (a factor based on whether that species is a rodent or bat) as covariates. 
+#' (I tried including the interaction between mass and taxon, but it increased the 
 #' AIC in all models.)
 #' 
-#' I fit two types of phylogenetic-covariance models for both nsa and sef regression 
+#' I fit two types of phylogenetic-covariance models for both `nsa` and `sef` regression 
 #' models: "the Ornstein-Uhlenbeck model with an ancestral state to be estimated at the 
 #' root (OUfixedRoot) ... [and] Pagel's lambda model." (see `phylolm` documentation)
 #' As you can see from the results below, the covariance model had little effect on our
@@ -133,25 +138,25 @@ gg_tr %<+% {sp_df %>% select(species, everything())} +
 #' 
 #' The code below takes ~10 minutes to run.
 #' 
-
-#+ eval = FALSE
+#' 
+#+ fit_mods, eval = FALSE
 set.seed(352)
 nsa_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                   function(m) {
-                      phylolm(nsa_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
+                      phylolm(nsa_log ~ mass_log + taxon, data = sp_df, phy = tr,
                               model = m, boot = 2000, 
                               upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(nsa_fits) <- c('lambda', 'ou')
 sef_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                    function(m) {
-                       phylolm(sef_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
+                       phylolm(sef_log ~ mass_log + taxon, data = sp_df, phy = tr,
                                model = m, boot = 2000,
                                upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
 save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
 
 
-#+ echo = FALSE
+#+ load_fits, echo = FALSE
 load('model_fits.RData')
 
 #' 
@@ -159,34 +164,34 @@ load('model_fits.RData')
 #' 
 #' ### Summaries
 #' 
-#' #### NSA
+#' #### `nsa`
 #' 
 #' __Pagel's lambda__
 #' 
-
+#+ lambda_nsa, echo = FALSE
 summary(nsa_fits[['lambda']])
 
 #' 
 #' __Ornstein-Uhlenbeck__
 #' 
-
+#+ ua_nsa, echo = FALSE
 summary(nsa_fits[['ou']])
 
 
 
 #' 
-#' #### SEF
+#' #### `sef`
 #' 
 #' __Pagel's lambda__
 #' 
-
+#+ lambda_sef, echo = FALSE
 summary(sef_fits[['lambda']])
 
 
 #' 
 #' __Ornstein-Uhlenbeck__
 #' 
-
+#+ ua_sef, echo = FALSE
 summary(sef_fits[['ou']])
 
 
@@ -194,20 +199,22 @@ summary(sef_fits[['ou']])
 #' ### P-values
 #' 
 #' These are p-value based on bootstrap replicates for whether the coefficient for the 
-#' taxa covariate is significantly different from zero.
+#' taxon covariate is significantly different from zero.
 #' P-values are presented for the Pagel's lambda then Ornstein-Uhlenbeck covariance
 #' models.
 #' 
-#' #### NSA
+#' #### `nsa`
 #' 
-mean(nsa_fits[['lambda']]$bootstrap[,'taxaRodent'] < 0) * 2
-mean(nsa_fits[['ou']]$bootstrap[,'taxaRodent'] < 0) * 2
+#+ nsa_ps, echo = FALSE
+mean(nsa_fits[['lambda']]$bootstrap[,'taxonRodent'] < 0) * 2
+mean(nsa_fits[['ou']]$bootstrap[,'taxonRodent'] < 0) * 2
 
 #' 
-#' #### SEF
+#' #### `sef`
 #' 
-mean(sef_fits[['lambda']]$bootstrap[,'taxaRodent'] > 0) * 2
-mean(sef_fits[['ou']]$bootstrap[,'taxaRodent'] > 0) * 2
+#+ sef_ps, echo = FALSE
+mean(sef_fits[['lambda']]$bootstrap[,'taxonRodent'] > 0) * 2
+mean(sef_fits[['ou']]$bootstrap[,'taxonRodent'] > 0) * 2
 
 
 

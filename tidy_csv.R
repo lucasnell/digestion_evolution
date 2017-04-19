@@ -1,6 +1,9 @@
 
+# This cleans the csv file for use and provides a useful function to retrieve columns 
+# from it
 
-morph_df <- read_csv('morphometrics.csv', col_types = 'cccccddd') %>% 
+
+morph_df <- read_csv('./bg_files/morphometrics.csv', col_types = 'cccccddd') %>% 
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
                             'Oligoryzomys nigripes', species))
@@ -8,7 +11,7 @@ morph_df <- read_csv('morphometrics.csv', col_types = 'cccccddd') %>%
 
 
 # Number of individuals
-N <- morph_df$individual %>% unique %>% length
+N <- morph_df$id %>% unique %>% length
 
 # Measures with no position (i.e., NA in pos column instead of prox, med, or dist)
 no_pos <- morph_df %>% 
@@ -47,14 +50,14 @@ prep_df <- function(measures, input_df = morph_df, by_sp = TRUE,
         # Changing from tall to wide format
         spread(measure, value) %>% 
         # Selecting measurement columns, plus the identifying columns
-        select_(.dots = append(list('diet', 'taxa', 'species', 'individual'), 
+        select_(.dots = append(list('diet', 'taxon', 'species', 'id'), 
                                meas_list)) %>% 
         # Removing all rows with all NAs in measures columns
         filter(Reduce(`+`, lapply(.[,measures], is.na)) < length(measures)) %>% 
         # Replacing spaces in measures-column names with underscores
         rename_(.dots = setNames(as.list(sprintf('`%s`', measures)), meas_clean)) %>% 
         # Taking mean by sample
-        group_by(diet, taxa, species, individual) %>% 
+        group_by(diet, taxon, species, id) %>% 
         summarize_all(mean, na.rm = TRUE) %>% 
         ungroup %>% 
         # Doing the transformation now, before taking mean if aggregating by species
@@ -65,10 +68,10 @@ prep_df <- function(measures, input_df = morph_df, by_sp = TRUE,
         new_df <- new_df %>% 
             # Grouping by, then taking mean of all measurement columns and transformed-
             # measurement columns
-            group_by(diet, taxa, species) %>% 
+            group_by(diet, taxon, species) %>% 
             summarize_at(.cols = c(trans_meas, meas_clean), mean) %>% 
             ungroup %>% 
-            arrange(taxa, diet, species) %>% 
+            arrange(taxon, diet, species) %>% 
             # To change row names, it can't be a tibble, so I'm reverting back to normal
             # data frame
             as.data.frame
@@ -81,4 +84,5 @@ prep_df <- function(measures, input_df = morph_df, by_sp = TRUE,
     
     return(new_df)
 }
+
 
