@@ -208,19 +208,25 @@ summary(sef_fits[['ou']])
 #' ### `nsa`
 #' 
 #+ nsa_ps, echo = FALSE
-p_nsa_lambda <- mean(nsa_fits[['lambda']]$bootstrap[,'taxonRodent'] < 0) * 2
-p_nsa_ou <- mean(nsa_fits[['ou']]$bootstrap[,'taxonRodent'] < 0) * 2
-cat("P for Pagel's lambda     =", format(p_nsa_lambda, nsmall = 3))
-cat("P for Ornstein-Uhlenbeck =", format(p_nsa_ou, nsmall = 3))
+p_nsa_df <- data_frame(
+    model = c("Pagel's lambda", "Ornstein-Uhlenbeck"),
+    taxon = sapply(nsa_fits, 
+                   function(m) mean(m$bootstrap[,'taxonRodent'] < 0) * 2),
+    mass = sapply(nsa_fits, function(m) mean(m$bootstrap[,'mass_log'] < 0) * 2)
+)
+knitr::kable(p_nsa_df)
 #' 
 #' 
 #' ### `sef`
 #' 
 #+ sef_ps, echo = FALSE
-p_sef_lambda <- mean(sef_fits[['lambda']]$bootstrap[,'taxonRodent'] > 0) * 2
-p_sef_ou <- mean(sef_fits[['ou']]$bootstrap[,'taxonRodent'] > 0) * 2
-cat("P for Pagel's lambda     =", format(p_sef_lambda, nsmall = 3))
-cat("P for Ornstein-Uhlenbeck =", format(p_sef_ou, nsmall = 3))
+p_sef_df <- data_frame(
+    model = c("Pagel's lambda", "Ornstein-Uhlenbeck"),
+    taxon = sapply(sef_fits, 
+                   function(m) mean(m$bootstrap[,'taxonRodent'] > 0) * 2),
+    mass = sapply(sef_fits, function(m) mean(m$bootstrap[,'mass_log'] < 0) * 2)
+)
+knitr::kable(p_sef_df)
 #' 
 #' 
 #' 

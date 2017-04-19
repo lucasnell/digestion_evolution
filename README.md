@@ -6,6 +6,8 @@ Phylogenetic analyses related to the mechanistic basis of higher paracellular ab
 
 Lucas Nell
 
+`figures.R ` has the code for figures related to analyses.
+
 The `phylo_regr.R` and `phylo_regr.md` files contains the analyses; the former has
 the raw R code, and the latter has a compiled description of the steps.
 
