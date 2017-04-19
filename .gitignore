@@ -3,6 +3,5 @@
 .RData
 .Ruserdata
 *.Rproj
-*.pdf
 *.docx
 bg_files

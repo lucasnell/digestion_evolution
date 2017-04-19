@@ -6,13 +6,10 @@ Phylogenetic analyses related to the mechanistic basis of higher paracellular ab
 
 Lucas Nell
 
-`figures.R ` has the code for figures related to analyses.
 
-The `phylo_regr.R` and `phylo_regr.md` files contains the analyses; the former has
-the raw R code, and the latter has a compiled description of the steps.
+## Description of contents
 
-`tidy_csv.R` and `xl_to_csv.R` contain code to prepare the initial Excel file for the 
-analyses.
+*(Alphabetical order)*
 
 The `data` folder contains the data:
 
@@ -22,3 +19,16 @@ The `data` folder contains the data:
 - `raw_data.xlsx` is the Excel file before any processing. It is not the file that should
   be used for analysis.
 - `tree.nwk` is the phylogenetic tree from [timetree.org](http://timetree.org/).
+
+`phylo_plot.R ` has the code for the figure created.
+
+`phylo_plot.pdf` is the plot output for the phylogenetic regression.
+
+The `phylo_regr.md` and `phylo_regr.R` files contains the analyses; the former has
+the raw R code, and the latter has a compiled description of the steps.
+
+`tidy_csv.R` prepared the cleaned csv file (`./data/clean_data.csv`) for analysis.
+
+`xl_to_csv.R` cleans the raw Excel file (`./data/raw_data.xlsx`) into a csv file
+(`./data/clean_data.csv`).
+
