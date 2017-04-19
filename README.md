@@ -20,9 +20,7 @@ The `data` folder contains the data:
   be used for analysis.
 - `tree.nwk` is the phylogenetic tree from [timetree.org](http://timetree.org/).
 
-`phylo_plot.R ` has the code for the figure created.
-
-`phylo_plot.pdf` is the plot output for the phylogenetic regression.
+`phylo_plot.R ` has the code for creating figure(s).
 
 The `phylo_regr.md` and `phylo_regr.R` files contains the analyses; the former has
 the raw R code, and the latter has a compiled description of the steps.
