@@ -1,12 +1,12 @@
-Regression with phylogenetic covariance
+Phylogenetic linear regression
 ================
 Lucas Nell
-2017-04-19
+19 Apr 2017
 
 -   [Morphometric measurements](#morphometric-measurements)
 -   [Phylogenetic tree](#phylogenetic-tree)
     -   [Visualizing tree](#visualizing-tree)
--   [Fitting phylogenetic linear models](#fitting-phylogenetic-linear-models)
+-   [Fitting phylogenetic linear regression models](#fitting-phylogenetic-linear-regression-models)
 -   [Model output](#model-output)
     -   [Summaries](#summaries)
     -   [P-values](#p-values)
@@ -107,8 +107,8 @@ Here is the phylogenetic tree with log(NSA) as tip color and log(SEF) as tip siz
 
 ![](phylo_regr_files/figure-markdown_github/phylo_plot-1.png)
 
-Fitting phylogenetic linear models
-==================================
+Fitting phylogenetic linear regression models
+=============================================
 
 Below fits phylogenetic linear regression models using `phylolm::phylolm`. For both `nsa` and `sef` (log-transformed), I fit models using log-transformed mass and taxon (a factor based on whether that species is a rodent or bat) as covariates. (I tried including the interaction between mass and taxon, but it increased the AIC in all models.)
 

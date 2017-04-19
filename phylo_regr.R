@@ -1,7 +1,7 @@
 #' ---
-#' title: "Regression with phylogenetic covariance"
+#' title: "Phylogenetic linear regression"
 #' author: "Lucas Nell"
-#' date: "`r format(Sys.Date())`"
+#' date: "`r format(Sys.Date(), '%d %b %Y')`"
 #' output:
 #'   github_document:
 #'     toc: true
@@ -123,7 +123,7 @@ gg_tr %<+% {sp_df %>% select(species, everything())} +
 #' 
 #' 
 #' 
-#' # Fitting phylogenetic linear models
+#' # Fitting phylogenetic linear regression models
 #' 
 #' Below fits phylogenetic linear regression models using `phylolm::phylolm`. For both
 #' `nsa` and `sef` (log-transformed), I fit models using log-transformed mass and
