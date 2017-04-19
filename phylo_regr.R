@@ -203,7 +203,7 @@ summary(sef_fits[['ou']])
 #' ## P-values
 #' 
 #' These are p-value based on bootstrap replicates for whether the coefficient for the 
-#' taxon covariate is significantly different from zero.
+#' each covariate is significantly different from zero.
 #' 
 #' ### `nsa`
 #' 

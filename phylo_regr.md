@@ -330,19 +330,21 @@ Summaries
 P-values
 --------
 
-These are p-value based on bootstrap replicates for whether the coefficient for the taxon covariate is significantly different from zero.
+These are p-value based on bootstrap replicates for whether the coefficient for the each covariate is significantly different from zero.
 
 ### `nsa`
 
-    ## P for Pagel's lambda     = 0.001
-
-    ## P for Ornstein-Uhlenbeck = 0.001
+| model              |  taxon|  mass|
+|:-------------------|------:|-----:|
+| Pagel's lambda     |  0.001|     0|
+| Ornstein-Uhlenbeck |  0.001|     0|
 
 ### `sef`
 
-    ## P for Pagel's lambda     = 0.000
-
-    ## P for Ornstein-Uhlenbeck = 0.000
+| model              |  taxon|   mass|
+|:-------------------|------:|------:|
+| Pagel's lambda     |      0|  0.124|
+| Ornstein-Uhlenbeck |      0|  0.136|
 
 Session info
 ============
@@ -379,6 +381,7 @@ devtools::session_info()
     ##  ggplot2    * 2.2.1   2016-12-30 CRAN (R 3.3.2)
     ##  ggtree     * 1.6.11  2017-03-15 Bioconductor  
     ##  gtable       0.2.0   2016-02-26 CRAN (R 3.3.0)
+    ##  highr        0.6     2016-05-09 CRAN (R 3.3.0)
     ##  hms          0.3     2016-11-22 CRAN (R 3.3.2)
     ##  htmltools    0.3.5   2016-03-21 CRAN (R 3.3.0)
     ##  jsonlite     1.4     2017-04-08 CRAN (R 3.3.2)
