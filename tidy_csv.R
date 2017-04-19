@@ -3,7 +3,7 @@
 # from it
 
 
-morph_df <- read_csv('./bg_files/morphometrics.csv', col_types = 'cccccddd') %>% 
+morph_df <- read_csv('./rd_files/morphometrics.csv', col_types = 'cccccddd') %>% 
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
                             'Oligoryzomys nigripes', species))

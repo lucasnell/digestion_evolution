@@ -5,6 +5,7 @@
 #' output:
 #'   github_document:
 #'     toc: true
+#'     toc_depth: 2
 #' ---
 #' 
 #+ setup, include = FALSE, cache = FALSE
@@ -31,12 +32,12 @@ suppressPackageStartupMessages({
 #' 
 #' # Morphometric measurements
 #' 
-#' Cleaning `./bg_files/morphometrics.csv` file for use and providing a useful 
+#' Cleaning `./rd_files/morphometrics.csv` file for use and providing a useful 
 #' function to retrieve columns from it
 #' 
-# source_tidy_csv
+#+ source_tidy_csv
 source('tidy_csv.R')
-morph_df
+str(morph_df)
 #' 
 #' 
 #' All measures found in `morph_df`:
@@ -55,7 +56,7 @@ morph_df
 #' 
 #' 
 #' 
-#' I am only analyzing three: `nsa`, `sef`, and `mass`. Now I create a data frame with 
+#' I am only using three: `nsa`, `sef`, and `mass`. Now I create a data frame with 
 #' just these columns and their log-transformed versions. Species names are row names
 #' because `phylolm` requires that.
 #' 
@@ -63,7 +64,7 @@ morph_df
 #' 
 #+ make_sp_df
 sp_df <- prep_df(measures = c('nsa', 'sef', 'mass'))
-head(sp_df)
+str(sp_df)
 #' 
 #' 
 #' 
@@ -160,19 +161,19 @@ save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
 load('model_fits.RData')
 
 #' 
-#' ## Model output
+#' # Model output
 #' 
-#' ### Summaries
+#' ## Summaries
 #' 
-#' #### `nsa`
+#' ### `nsa`
 #' 
-#' __Pagel's lambda__
+#' *Pagel's lambda*
 #' 
 #+ lambda_nsa, echo = FALSE
 summary(nsa_fits[['lambda']])
 
 #' 
-#' __Ornstein-Uhlenbeck__
+#' *Ornstein-Uhlenbeck*
 #' 
 #+ ua_nsa, echo = FALSE
 summary(nsa_fits[['ou']])
@@ -180,43 +181,43 @@ summary(nsa_fits[['ou']])
 
 
 #' 
-#' #### `sef`
+#' ### `sef`
 #' 
-#' __Pagel's lambda__
+#' *Pagel's lambda*
 #' 
 #+ lambda_sef, echo = FALSE
 summary(sef_fits[['lambda']])
 
 
 #' 
-#' __Ornstein-Uhlenbeck__
+#' *Ornstein-Uhlenbeck*
 #' 
 #+ ua_sef, echo = FALSE
 summary(sef_fits[['ou']])
 
 
 #' 
-#' ### P-values
+#' ## P-values
 #' 
 #' These are p-value based on bootstrap replicates for whether the coefficient for the 
 #' taxon covariate is significantly different from zero.
-#' P-values are presented for the Pagel's lambda then Ornstein-Uhlenbeck covariance
-#' models.
 #' 
-#' #### `nsa`
+#' ### `nsa`
 #' 
 #+ nsa_ps, echo = FALSE
-mean(nsa_fits[['lambda']]$bootstrap[,'taxonRodent'] < 0) * 2
-mean(nsa_fits[['ou']]$bootstrap[,'taxonRodent'] < 0) * 2
-
+p_nsa_lambda <- mean(nsa_fits[['lambda']]$bootstrap[,'taxonRodent'] < 0) * 2
+p_nsa_ou <- mean(nsa_fits[['ou']]$bootstrap[,'taxonRodent'] < 0) * 2
+cat("P for Pagel's lambda     =", format(p_nsa_lambda, nsmall = 3))
+cat("P for Ornstein-Uhlenbeck =", format(p_nsa_ou, nsmall = 3))
 #' 
-#' #### `sef`
+#' 
+#' ### `sef`
 #' 
 #+ sef_ps, echo = FALSE
-mean(sef_fits[['lambda']]$bootstrap[,'taxonRodent'] > 0) * 2
-mean(sef_fits[['ou']]$bootstrap[,'taxonRodent'] > 0) * 2
-
-
+p_sef_lambda <- mean(sef_fits[['lambda']]$bootstrap[,'taxonRodent'] > 0) * 2
+p_sef_ou <- mean(sef_fits[['ou']]$bootstrap[,'taxonRodent'] > 0) * 2
+cat("P for Pagel's lambda     =", format(p_sef_lambda, nsmall = 3))
+cat("P for Ornstein-Uhlenbeck =", format(p_sef_ou, nsmall = 3))
 
 
 

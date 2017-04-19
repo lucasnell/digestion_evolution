@@ -21,3 +21,7 @@ load('model_fits.RData')
 
 `tree.nwk` is the phylogenetic tree from [timetree.org](http://timetree.org/).
 
+`rd_files` is not a file in this repo, but shows up in some of the code. It is a 
+[symlink](https://kb.iu.edu/d/abbe)
+to the folder in which I stored the raw data.
+

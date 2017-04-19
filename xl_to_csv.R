@@ -8,7 +8,7 @@ library(tidyr)
 library(purrr)
 
 
-xl <- read_excel('./bg_files/Spreadsheet paper morphometrics.xlsx', col_names = FALSE,
+xl <- read_excel('./rd_files/Spreadsheet paper morphometrics.xlsx', col_names = FALSE,
            col_types = rep('text', 88))
 
 # Table of abbreviated species names
@@ -117,6 +117,6 @@ morph_df <- new_cols %>%
     arrange(measure, species, id)
 
 
-write_csv(morph_df, './bg_files/morphometrics.csv')
+write_csv(morph_df, './rd_files/morphometrics.csv')
 
 

@@ -1,7 +1,7 @@
 Regression with phylogenetic covariance
 ================
 Lucas Nell
-2017-03-16
+2017-04-19
 
 -   [Morphometric measurements](#morphometric-measurements)
 -   [Phylogenetic tree](#phylogenetic-tree)
@@ -22,76 +22,64 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(phylolm)
     library(ape)
-    library(nlme)
     library(ggplot2)
     library(ggtree)
 })
 ```
 
 Morphometric measurements
--------------------------
+=========================
 
-Cleaning `morphometrics.csv` file for use and providing a useful function to retrieve columns from it
+Cleaning `./rd_files/morphometrics.csv` file for use and providing a useful function to retrieve columns from it
 
 ``` r
 source('tidy_csv.R')
-
-morph_df
+str(morph_df)
 ```
 
-    ## # A tibble: 1,479 × 7
-    ##           diet   taxa                species individual   measure   pos
-    ##          <chr>  <chr>                  <chr>      <chr>     <chr> <chr>
-    ## 1   Omnivorous Rodent       Akodon montensis        Ak1 body mass  <NA>
-    ## 2   Omnivorous Rodent       Akodon montensis        Ak2 body mass  <NA>
-    ## 3   Omnivorous Rodent       Akodon montensis        Ak3 body mass  <NA>
-    ## 4   Omnivorous Rodent       Akodon montensis        Ak4 body mass  <NA>
-    ## 5  Herbivorous    Bat     Artibeus lituratus        Ar1 body mass  <NA>
-    ## 6  Herbivorous    Bat     Artibeus lituratus        Ar2 body mass  <NA>
-    ## 7  Herbivorous    Bat     Artibeus lituratus        Ar3 body mass  <NA>
-    ## 8  Herbivorous    Bat Carollia perspicillata        Cp1 body mass  <NA>
-    ## 9  Herbivorous    Bat Carollia perspicillata        Cp2 body mass  <NA>
-    ## 10 Herbivorous    Bat Carollia perspicillata        Cp3 body mass  <NA>
-    ## # ... with 1,469 more rows, and 1 more variables: value <dbl>
+    ## Classes 'tbl_df', 'tbl' and 'data.frame':    1479 obs. of  7 variables:
+    ##  $ diet   : chr  "Omnivorous" "Omnivorous" "Omnivorous" "Omnivorous" ...
+    ##  $ taxon  : chr  "Rodent" "Rodent" "Rodent" "Rodent" ...
+    ##  $ species: chr  "Akodon montensis" "Akodon montensis" "Akodon montensis" "Akodon montensis" ...
+    ##  $ id     : chr  "Ak1" "Ak2" "Ak3" "Ak4" ...
+    ##  $ measure: chr  "crypt width" "crypt width" "crypt width" "crypt width" ...
+    ##  $ pos    : chr  "prox" "prox" "prox" "prox" ...
+    ##  $ value  : num  0.0386 0.0492 0.0373 0.037 0.0236 ...
 
 All measures found in `morph_df`:
 
--   villus height
--   villus width
--   crypt width
--   enterocytes per surface area
--   sef
--   intestinal diameter
--   intestinal length
--   nsa
--   body mass
--   total villa surface area
--   enterocite width
+-   `crypt width`
+-   `enterocyte density`
+-   `enterocyte width`
+-   `intestinal diameter`
+-   `intestinal length`
+-   `mass`
+-   `nsa`
+-   `sef`
+-   `villa surface area`
+-   `villus height`
+-   `villus width`
 
-I am only analyzing three: nsa, sef, and body mass. Now I create a data frame with just these columns and their log\_transformed versions. Species names are row names because `phylolm` requires that.
+I am only using three: `nsa`, `sef`, and `mass`. Now I create a data frame with just these columns and their log-transformed versions. Species names are row names because `phylolm` requires that.
 
 ``` r
-sp_df <- prep_df(measures = c('nsa', 'sef', 'body mass'))
-head(sp_df)
+sp_df <- prep_df(measures = c('nsa', 'sef', 'mass'))
+str(sp_df)
 ```
 
-    ##                               diet taxa                species  nsa_log
-    ## Artibeus lituratus     Herbivorous  Bat     Artibeus lituratus 3.332184
-    ## Carollia perspicillata Herbivorous  Bat Carollia perspicillata 1.864253
-    ## Desmodus rotundus          Protein  Bat      Desmodus rotundus 2.328411
-    ## Eumops glaucinus           Protein  Bat       Eumops glaucinus 2.118181
-    ## Molossus molossus          Protein  Bat      Molossus molossus 1.741056
-    ## Molossus rufus             Protein  Bat         Molossus rufus 2.402921
-    ##                         sef_log body_mass_log       nsa      sef body_mass
-    ## Artibeus lituratus     2.843188      4.238070 28.198667 17.18214  69.58333
-    ## Carollia perspicillata 2.864234      2.851993  6.476729 17.57634  17.87500
-    ## Desmodus rotundus      2.514819      3.645569 10.427806 12.38064  38.50000
-    ## Eumops glaucinus       2.829131      3.530470  8.316000 16.93075  34.14000
-    ## Molossus molossus      2.528073      2.592077  5.790889 12.56904  13.49000
-    ## Molossus rufus         2.755809      3.513931 11.055417 15.73377  33.58000
+    ## 'data.frame':    18 obs. of  9 variables:
+    ##  $ diet    : chr  "Herbivorous" "Herbivorous" "Protein" "Protein" ...
+    ##  $ taxon   : chr  "Bat" "Bat" "Bat" "Bat" ...
+    ##  $ species : chr  "Artibeus lituratus" "Carollia perspicillata" "Desmodus rotundus" "Eumops glaucinus" ...
+    ##  $ nsa_log : num  3.33 1.86 2.33 2.12 1.74 ...
+    ##  $ sef_log : num  2.84 2.86 2.51 2.83 2.53 ...
+    ##  $ mass_log: num  4.24 2.85 3.65 3.53 2.59 ...
+    ##  $ nsa     : num  28.2 6.48 10.43 8.32 5.79 ...
+    ##  $ sef     : num  17.2 17.6 12.4 16.9 12.6 ...
+    ##  $ mass    : num  69.6 17.9 38.5 34.1 13.5 ...
 
 Phylogenetic tree
------------------
+=================
 
 Reading phylogenetic tree, cleaning species names, and removing unnecessary species from it
 
@@ -112,18 +100,19 @@ tr
     ## 
     ## Rooted; includes branch lengths.
 
-#### Visualizing tree
+Visualizing tree
+----------------
 
 Here is the phylogenetic tree with log(NSA) as tip color and log(SEF) as tip size.
 
 ![](phylo_regr_files/figure-markdown_github/phylo_plot-1.png)
 
 Fitting phylogenetic linear models
-----------------------------------
+==================================
 
-Below fits phylogenetic linear regression models using `phylolm::phylolm`. For both nsa and sef (log-transformed), I fit models using log-transformed body mass and taxa (a factor based on whether that species is a rodent or bat) as covariates. (I tried including the interaction between body mass and taxa, but it increased the AIC in all models.)
+Below fits phylogenetic linear regression models using `phylolm::phylolm`. For both `nsa` and `sef` (log-transformed), I fit models using log-transformed mass and taxon (a factor based on whether that species is a rodent or bat) as covariates. (I tried including the interaction between mass and taxon, but it increased the AIC in all models.)
 
-I fit two types of phylogenetic-covariance models for both nsa and sef regression models: "the Ornstein-Uhlenbeck model with an ancestral state to be estimated at the root (OUfixedRoot) ... \[and\] Pagel's lambda model." (see `phylolm` documentation) As you can see from the results below, the covariance model had little effect on our conclusions.
+I fit two types of phylogenetic-covariance models for both `nsa` and `sef` regression models: "the Ornstein-Uhlenbeck model with an ancestral state to be estimated at the root (OUfixedRoot) ... \[and\] Pagel's lambda model." (see `phylolm` documentation) As you can see from the results below, the covariance model had little effect on our conclusions.
 
 I also ran 2,000 parametric bootstrap replicates to estimate model parameters.
 
@@ -133,13 +122,13 @@ The code below takes ~10 minutes to run.
 set.seed(352)
 nsa_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                   function(m) {
-                      phylolm(nsa_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
+                      phylolm(nsa_log ~ mass_log + taxon, data = sp_df, phy = tr,
                               model = m, boot = 2000, 
                               upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(nsa_fits) <- c('lambda', 'ou')
 sef_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                    function(m) {
-                       phylolm(sef_log ~ body_mass_log + taxa, data = sp_df, phy = tr,
+                       phylolm(sef_log ~ mass_log + taxon, data = sp_df, phy = tr,
                                model = m, boot = 2000,
                                upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
@@ -147,23 +136,20 @@ save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
 ```
 
 Model output
-------------
+============
 
-### Summaries
+Summaries
+---------
 
-#### NSA
+### `nsa`
 
-**Pagel's lambda**
-
-``` r
-summary(nsa_fits[['lambda']])
-```
+*Pagel's lambda*
 
     ## 
     ## Call:
-    ## phylolm(formula = nsa_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
-    ##         1.2, Inf), boot = 2000)
+    ## phylolm(formula = nsa_log ~ mass_log + taxon, data = sp_df, phy = tr, 
+    ##     model = m, upper.bound = ifelse(m == "lambda", 1.2, Inf), 
+    ##     boot = 2000)
     ## 
     ##    AIC logLik 
     ## 10.826 -0.413 
@@ -178,14 +164,14 @@ summary(nsa_fits[['lambda']])
     ## sigma2: 0.0006354724 
     ## 
     ## Coefficients:
-    ##               Estimate   StdErr  t.value lowerbootCI upperbootCI  p.value
-    ## (Intercept)    0.46555  0.33661  1.38305    -0.14208      1.0466 0.186891
-    ## body_mass_log  0.55616  0.10451  5.32140     0.37210      0.7421 8.55e-05
-    ## taxaRodent     0.53124  0.15099  3.51833     0.26848      0.8001 0.003105
-    ##                  
-    ## (Intercept)      
-    ## body_mass_log ***
-    ## taxaRodent    ** 
+    ##             Estimate   StdErr  t.value lowerbootCI upperbootCI  p.value
+    ## (Intercept)  0.46555  0.33661  1.38305    -0.14208      1.0466 0.186891
+    ## mass_log     0.55616  0.10451  5.32140     0.37210      0.7421 8.55e-05
+    ## taxonRodent  0.53124  0.15099  3.51833     0.26848      0.8001 0.003105
+    ##                
+    ## (Intercept)    
+    ## mass_log    ***
+    ## taxonRodent ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
@@ -202,17 +188,13 @@ summary(nsa_fits[['lambda']])
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
-**Ornstein-Uhlenbeck**
-
-``` r
-summary(nsa_fits[['ou']])
-```
+*Ornstein-Uhlenbeck*
 
     ## 
     ## Call:
-    ## phylolm(formula = nsa_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
-    ##         1.2, Inf), boot = 2000)
+    ## phylolm(formula = nsa_log ~ mass_log + taxon, data = sp_df, phy = tr, 
+    ##     model = m, upper.bound = ifelse(m == "lambda", 1.2, Inf), 
+    ##     boot = 2000)
     ## 
     ##     AIC  logLik 
     ## 10.5299 -0.2649 
@@ -223,48 +205,44 @@ summary(nsa_fits[['ou']])
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
-    ## alpha: 0.132737
-    ## sigma2: 0.01640745 
+    ## alpha: 0.1327371
+    ## sigma2: 0.01640746 
     ## 
     ## Coefficients:
-    ##               Estimate   StdErr  t.value lowerbootCI upperbootCI   p.value
-    ## (Intercept)    0.40545  0.32698  1.24002    -0.16159      0.9678  0.234018
-    ## body_mass_log  0.57810  0.10074  5.73861     0.39858      0.7594 3.919e-05
-    ## taxaRodent     0.50513  0.15504  3.25813     0.22918      0.7919  0.005294
-    ##                  
-    ## (Intercept)      
-    ## body_mass_log ***
-    ## taxaRodent    ** 
+    ##             Estimate   StdErr  t.value lowerbootCI upperbootCI   p.value
+    ## (Intercept)  0.40545  0.32698  1.24002    -0.16159      0.9678  0.234018
+    ## mass_log     0.57810  0.10074  5.73861     0.39858      0.7580 3.919e-05
+    ## taxonRodent  0.50513  0.15504  3.25813     0.22918      0.7919  0.005294
+    ##                
+    ## (Intercept)    
+    ## mass_log    ***
+    ## taxonRodent ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Note: p-values are conditional on alpha=0.132737.
+    ## Note: p-values are conditional on alpha=0.1327371.
     ## 
-    ## sigma2: 0.01640745
-    ##       bootstrap mean: 2.681025 (on raw scale)
-    ##                       0.05459009 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.002771106,3.214493)
+    ## sigma2: 0.01640746
+    ##       bootstrap mean: 2.680095 (on raw scale)
+    ##                       0.05420355 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.002771107,3.214494)
     ## 
-    ## alpha: 0.132737
-    ##       bootstrap mean: 32.22212 (on raw scale)
-    ##                       0.5711749 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.03313965,33.0764)
+    ## alpha: 0.1327371
+    ##       bootstrap mean: 32.21303 (on raw scale)
+    ##                       0.567499 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.03313966,33.07642)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
-#### SEF
+### `sef`
 
-**Pagel's lambda**
-
-``` r
-summary(sef_fits[['lambda']])
-```
+*Pagel's lambda*
 
     ## 
     ## Call:
-    ## phylolm(formula = sef_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
-    ##         1.2, Inf), boot = 2000)
+    ## phylolm(formula = sef_log ~ mass_log + taxon, data = sp_df, phy = tr, 
+    ##     model = m, upper.bound = ifelse(m == "lambda", 1.2, Inf), 
+    ##     boot = 2000)
     ## 
     ##    AIC logLik 
     ##   1.06   4.47 
@@ -279,14 +257,14 @@ summary(sef_fits[['lambda']])
     ## sigma2: 0.000369379 
     ## 
     ## Coefficients:
-    ##                Estimate    StdErr   t.value lowerbootCI upperbootCI
-    ## (Intercept)    2.271598  0.256632  8.851572    1.805807      2.7292
-    ## body_mass_log  0.124701  0.079682  1.564987   -0.018942      0.2677
-    ## taxaRodent    -0.507308  0.115118 -4.406861   -0.717428     -0.3054
-    ##                 p.value    
-    ## (Intercept)   2.425e-07 ***
-    ## body_mass_log 0.1384350    
-    ## taxaRodent    0.0005099 ***
+    ##              Estimate    StdErr   t.value lowerbootCI upperbootCI
+    ## (Intercept)  2.271598  0.256632  8.851572    1.805807      2.7292
+    ## mass_log     0.124701  0.079682  1.564987   -0.018942      0.2677
+    ## taxonRodent -0.507308  0.115118 -4.406861   -0.717428     -0.3054
+    ##               p.value    
+    ## (Intercept) 2.425e-07 ***
+    ## mass_log    0.1384350    
+    ## taxonRodent 0.0005099 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
@@ -303,17 +281,13 @@ summary(sef_fits[['lambda']])
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
-**Ornstein-Uhlenbeck**
-
-``` r
-summary(sef_fits[['ou']])
-```
+*Ornstein-Uhlenbeck*
 
     ## 
     ## Call:
-    ## phylolm(formula = sef_log ~ body_mass_log + taxa, data = sp_df, 
-    ##     phy = tr, model = m, upper.bound = ifelse(m == "lambda", 
-    ##         1.2, Inf), boot = 2000)
+    ## phylolm(formula = sef_log ~ mass_log + taxon, data = sp_df, phy = tr, 
+    ##     model = m, upper.bound = ifelse(m == "lambda", 1.2, Inf), 
+    ##     boot = 2000)
     ## 
     ##    AIC logLik 
     ##   1.06   4.47 
@@ -324,66 +298,51 @@ summary(sef_fits[['ou']])
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
-    ## alpha: 4.046316
-    ## sigma2: 0.28835 
+    ## alpha: 4.045884
+    ## sigma2: 0.2883193 
     ## 
     ## Coefficients:
-    ##                Estimate    StdErr   t.value lowerbootCI upperbootCI
-    ## (Intercept)    2.271598  0.256632  8.851572    1.828177      2.7455
-    ## body_mass_log  0.124701  0.079682  1.564987   -0.018659      0.2671
-    ## taxaRodent    -0.507308  0.115118 -4.406862   -0.700808     -0.2977
-    ##                 p.value    
-    ## (Intercept)   2.425e-07 ***
-    ## body_mass_log 0.1384350    
-    ## taxaRodent    0.0005099 ***
+    ##              Estimate    StdErr   t.value lowerbootCI upperbootCI
+    ## (Intercept)  2.271598  0.256632  8.851572    1.828177      2.7455
+    ## mass_log     0.124701  0.079682  1.564987   -0.018659      0.2671
+    ## taxonRodent -0.507308  0.115118 -4.406862   -0.700808     -0.2977
+    ##               p.value    
+    ## (Intercept) 2.425e-07 ***
+    ## mass_log    0.1384350    
+    ## taxonRodent 0.0005099 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Note: p-values are conditional on alpha=4.046316.
+    ## Note: p-values are conditional on alpha=4.045884.
     ## 
-    ## sigma2: 0.28835
-    ##       bootstrap mean: 7.623057 (on raw scale)
-    ##                       0.08501182 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.001761882,7.853593)
+    ## sigma2: 0.2883193
+    ##       bootstrap mean: 7.622878 (on raw scale)
+    ##                       0.08479063 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.001761882,7.853592)
     ## 
-    ## alpha: 4.046316
-    ##       bootstrap mean: 105.3404 (on raw scale)
-    ##                       1.549017 (on log scale, then back transformed)
+    ## alpha: 4.045884
+    ##       bootstrap mean: 105.3373 (on raw scale)
+    ##                       1.544967 (on log scale, then back transformed)
     ##       bootstrap 95% CI: (0.0405296,126.7767)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
-### P-values
+P-values
+--------
 
-These are p-value based on bootstrap replicates for whether the coefficient for the taxa covariate is significantly different from zero. P-values are presented for the Pagel's lambda then Ornstein-Uhlenbeck covariance models.
+These are p-value based on bootstrap replicates for whether the coefficient for the taxon covariate is significantly different from zero.
 
-#### NSA
+### `nsa`
 
-``` r
-mean(nsa_fits[['lambda']]$bootstrap[,'taxaRodent'] < 0) * 2
-```
+    ## P for Pagel's lambda     = 0.001
 
-    ## [1] 0.001
+    ## P for Ornstein-Uhlenbeck = 0.001
 
-``` r
-mean(nsa_fits[['ou']]$bootstrap[,'taxaRodent'] < 0) * 2
-```
+### `sef`
 
-    ## [1] 0.001
+    ## P for Pagel's lambda     = 0.000
 
-#### SEF
-
-``` r
-mean(sef_fits[['lambda']]$bootstrap[,'taxaRodent'] > 0) * 2
-```
-
-    ## [1] 0
-
-``` r
-mean(sef_fits[['ou']]$bootstrap[,'taxaRodent'] > 0) * 2
-```
-
-    ## [1] 0
+    ## P for Ornstein-Uhlenbeck = 0.000
 
 Session info
 ============
@@ -397,50 +356,51 @@ devtools::session_info()
     ## Session info --------------------------------------------------------------
 
     ##  setting  value                       
-    ##  version  R version 3.3.2 (2016-10-31)
+    ##  version  R version 3.3.3 (2017-03-06)
     ##  system   x86_64, darwin13.4.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-03-16
+    ##  date     2017-04-19
 
     ## Packages ------------------------------------------------------------------
 
     ##  package    * version date       source        
     ##  ape        * 4.1     2017-02-14 CRAN (R 3.3.2)
-    ##  assertthat   0.1     2013-12-06 CRAN (R 3.3.0)
+    ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.3.2)
     ##  backports    1.0.5   2017-01-18 CRAN (R 3.3.2)
     ##  colorspace   1.3-2   2016-12-14 CRAN (R 3.3.2)
-    ##  DBI          0.6     2017-03-09 CRAN (R 3.3.2)
+    ##  DBI          0.6-1   2017-04-01 CRAN (R 3.3.2)
     ##  devtools     1.12.0  2016-06-24 CRAN (R 3.3.0)
     ##  digest       0.6.12  2017-01-27 CRAN (R 3.3.2)
     ##  dplyr      * 0.5.0   2016-06-24 CRAN (R 3.3.0)
     ##  evaluate     0.10    2016-10-11 CRAN (R 3.3.0)
     ##  ggplot2    * 2.2.1   2016-12-30 CRAN (R 3.3.2)
-    ##  ggtree     * 1.6.9   2017-01-21 Bioconductor  
+    ##  ggtree     * 1.6.11  2017-03-15 Bioconductor  
     ##  gtable       0.2.0   2016-02-26 CRAN (R 3.3.0)
+    ##  hms          0.3     2016-11-22 CRAN (R 3.3.2)
     ##  htmltools    0.3.5   2016-03-21 CRAN (R 3.3.0)
-    ##  jsonlite     1.3     2017-02-28 CRAN (R 3.3.2)
+    ##  jsonlite     1.4     2017-04-08 CRAN (R 3.3.2)
     ##  knitr        1.15.1  2016-11-22 CRAN (R 3.3.2)
     ##  labeling     0.3     2014-08-23 CRAN (R 3.3.0)
-    ##  lattice      0.20-34 2016-09-06 CRAN (R 3.3.2)
+    ##  lattice      0.20-35 2017-03-25 CRAN (R 3.3.2)
     ##  lazyeval     0.2.0   2016-06-12 CRAN (R 3.3.0)
     ##  magrittr   * 1.5     2014-11-22 CRAN (R 3.3.0)
     ##  memoise      1.0.0   2016-01-29 CRAN (R 3.3.0)
     ##  munsell      0.4.3   2016-02-13 CRAN (R 3.3.0)
-    ##  nlme       * 3.1-131 2017-02-06 CRAN (R 3.3.2)
+    ##  nlme         3.1-131 2017-02-06 CRAN (R 3.3.3)
     ##  phylolm    * 2.5     2016-10-17 CRAN (R 3.3.0)
     ##  plyr         1.8.4   2016-06-08 CRAN (R 3.3.0)
     ##  R6           2.2.0   2016-10-05 CRAN (R 3.3.0)
-    ##  Rcpp         0.12.9  2017-01-14 CRAN (R 3.3.2)
-    ##  readr      * 1.0.0   2016-08-03 CRAN (R 3.3.0)
-    ##  rmarkdown    1.3     2016-12-21 CRAN (R 3.3.2)
+    ##  Rcpp         0.12.10 2017-03-19 CRAN (R 3.3.2)
+    ##  readr      * 1.1.0   2017-03-22 CRAN (R 3.3.2)
+    ##  rmarkdown    1.4     2017-03-24 CRAN (R 3.3.2)
     ##  rprojroot    1.2     2017-01-16 CRAN (R 3.3.2)
     ##  scales       0.4.1   2016-11-09 CRAN (R 3.3.2)
-    ##  stringi      1.1.2   2016-10-01 CRAN (R 3.3.0)
+    ##  stringi      1.1.5   2017-04-07 CRAN (R 3.3.2)
     ##  stringr      1.2.0   2017-02-18 CRAN (R 3.3.2)
-    ##  tibble       1.2     2016-08-26 CRAN (R 3.3.0)
+    ##  tibble       1.3.0   2017-04-01 CRAN (R 3.3.2)
     ##  tidyr      * 0.6.1   2017-01-10 CRAN (R 3.3.2)
     ##  withr        1.0.2   2016-06-20 CRAN (R 3.3.0)
     ##  yaml         2.1.14  2016-11-12 CRAN (R 3.3.2)
