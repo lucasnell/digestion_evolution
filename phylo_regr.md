@@ -72,7 +72,7 @@ str(sp_df)
     ##  $ taxon   : chr  "Bat" "Bat" "Bat" "Bat" ...
     ##  $ species : chr  "Artibeus lituratus" "Carollia perspicillata" "Desmodus rotundus" "Eumops glaucinus" ...
     ##  $ nsa_log : num  3.33 1.86 2.33 2.12 1.74 ...
-    ##  $ sef_log : num  2.84 2.86 2.51 2.83 2.53 ...
+    ##  $ sef_log : num  2.82 2.83 2.51 2.8 2.52 ...
     ##  $ mass_log: num  4.24 2.85 3.65 3.53 2.59 ...
     ##  $ nsa     : num  28.2 6.48 10.43 8.32 5.79 ...
     ##  $ sef     : num  17.2 17.6 12.4 16.9 12.6 ...
@@ -245,35 +245,35 @@ Summaries
     ##     boot = 2000)
     ## 
     ##    AIC logLik 
-    ##   1.06   4.47 
+    ##  1.593  4.204 
     ## 
     ## Raw residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.28887 -0.20120  0.04456  0.11970  0.32898 
+    ## -0.28739 -0.21506  0.05644  0.10672  0.32298 
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
     ## lambda : 1e-07
-    ## sigma2: 0.000369379 
+    ## sigma2: 0.000380469 
     ## 
     ## Coefficients:
     ##              Estimate    StdErr   t.value lowerbootCI upperbootCI
-    ## (Intercept)  2.271598  0.256632  8.851572    1.805807      2.7292
-    ## mass_log     0.124701  0.079682  1.564987   -0.018942      0.2677
-    ## taxonRodent -0.507308  0.115118 -4.406861   -0.717428     -0.3054
+    ## (Intercept)  2.289672  0.260456  8.791011    1.816941      2.7541
+    ## mass_log     0.113560  0.080869  1.404242   -0.032224      0.2587
+    ## taxonRodent -0.519852  0.116833 -4.449527   -0.733102     -0.3149
     ##               p.value    
-    ## (Intercept) 2.425e-07 ***
-    ## mass_log    0.1384350    
-    ## taxonRodent 0.0005099 ***
+    ## (Intercept) 2.646e-07 ***
+    ## mass_log    0.1806133    
+    ## taxonRodent 0.0004682 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Note: p-values are conditional on lambda=1e-07.
     ## 
-    ## sigma2: 0.000369379
-    ##       bootstrap mean: 0.0003057477 (on raw scale)
-    ##                       0.0002854995 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.0001249149,0.0005643484)
+    ## sigma2: 0.000380469
+    ##       bootstrap mean: 0.0003149273 (on raw scale)
+    ##                       0.0002940711 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.0001286653,0.000581292)
     ## 
     ## lambda: 1e-07
     ##       bootstrap mean: 0.002138407 (on raw scale)
@@ -290,40 +290,40 @@ Summaries
     ##     boot = 2000)
     ## 
     ##    AIC logLik 
-    ##   1.06   4.47 
+    ##  1.593  4.204 
     ## 
     ## Raw residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.28887 -0.20120  0.04456  0.11970  0.32898 
+    ## -0.28739 -0.21506  0.05644  0.10672  0.32298 
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
-    ## alpha: 4.045884
-    ## sigma2: 0.2883193 
+    ## alpha: 4.128654
+    ## sigma2: 0.303051 
     ## 
     ## Coefficients:
     ##              Estimate    StdErr   t.value lowerbootCI upperbootCI
-    ## (Intercept)  2.271598  0.256632  8.851572    1.828177      2.7455
-    ## mass_log     0.124701  0.079682  1.564987   -0.018659      0.2671
-    ## taxonRodent -0.507308  0.115118 -4.406862   -0.700808     -0.2977
+    ## (Intercept)  2.289672  0.260456  8.791011    1.839643      2.7707
+    ## mass_log     0.113560  0.080869  1.404242   -0.031936      0.2581
+    ## taxonRodent -0.519852  0.116833 -4.449527   -0.716238     -0.3072
     ##               p.value    
-    ## (Intercept) 2.425e-07 ***
-    ## mass_log    0.1384350    
-    ## taxonRodent 0.0005099 ***
+    ## (Intercept) 2.646e-07 ***
+    ## mass_log    0.1806133    
+    ## taxonRodent 0.0004682 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Note: p-values are conditional on alpha=4.045884.
+    ## Note: p-values are conditional on alpha=4.128654.
     ## 
-    ## sigma2: 0.2883193
-    ##       bootstrap mean: 7.622878 (on raw scale)
-    ##                       0.08479063 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.001761882,7.853592)
+    ## sigma2: 0.303051
+    ##       bootstrap mean: 7.850735 (on raw scale)
+    ##                       0.08702424 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.001814778,8.089423)
     ## 
-    ## alpha: 4.045884
-    ##       bootstrap mean: 105.3373 (on raw scale)
-    ##                       1.544967 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.0405296,126.7767)
+    ## alpha: 4.128654
+    ##       bootstrap mean: 105.323 (on raw scale)
+    ##                       1.539463 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.04052872,126.7784)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 

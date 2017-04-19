@@ -56,13 +56,13 @@ prep_df <- function(measures, input_df = morph_df, by_sp = TRUE,
         filter(Reduce(`+`, lapply(.[,measures], is.na)) < length(measures)) %>% 
         # Replacing spaces in measures-column names with underscores
         rename_(.dots = setNames(as.list(sprintf('`%s`', measures)), meas_clean)) %>% 
+        # Doing the transformation now, before taking any means
+        mutate_(.dots = setNames(as.list(sprintf('%s(%s)', trans_fun, meas_clean)), 
+                                 trans_meas)) %>% 
         # Taking mean by sample
         group_by(diet, taxon, species, id) %>% 
         summarize_all(mean, na.rm = TRUE) %>% 
-        ungroup %>% 
-        # Doing the transformation now, before taking mean if aggregating by species
-        mutate_(.dots = setNames(as.list(sprintf('%s(%s)', trans_fun, meas_clean)), 
-                                 trans_meas))
+        ungroup
     
     if (by_sp) {
         new_df <- new_df %>% 

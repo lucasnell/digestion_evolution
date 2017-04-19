@@ -40,6 +40,8 @@ source('tidy_csv.R')
 str(morph_df)
 #' 
 #' 
+#' 
+#' 
 #' All measures found in `morph_df`:
 #' 
 #' - `crypt width`
@@ -155,6 +157,7 @@ sef_fits <- lapply(c('lambda', 'OUfixedRoot'),
                                upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
 save(nsa_fits, sef_fits, file = 'model_fits.RData', compress = FALSE)
+
 
 
 #+ load_fits, echo = FALSE
