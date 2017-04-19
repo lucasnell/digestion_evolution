@@ -1,12 +1,23 @@
 Digestion Evolution
 ========
 
-The mechanistic basis of higher paracellular absorption in flying mammals
+Phylogenetic analyses related to the mechanistic basis of higher paracellular absorption in flying mammals
 -------
 
-Lucas Nell, Michael Bosch, Anthony Ives
+Lucas Nell
 
+The `phylo_regr.R` and `phylo_regr.md` files contains the analyses; the former has
+the raw R code, and the latter has a compiled description of the steps.
 
-The `first_attempt` folder contains files related to LAN's first attempt at constructing
-a phylogenetic tree.
-It was a failure, but the code was kept in case it could be useful later.
+`tidy_csv.R` and `xl_to_csv.R` contain code to prepare the initial Excel file for the 
+analyses.
+
+`model_fits.RData` contains the phylogenetic regression model fits.
+You can load this file yourself by using the following:
+```{r}
+library(phylolm)
+load('model_fits.RData')
+```
+
+`tree.nwk` is the phylogenetic tree from [timetree.org](http://timetree.org/).
+
