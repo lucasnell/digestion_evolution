@@ -98,7 +98,7 @@ sef_plot <- ci_df %>%
     guides(color = guide_legend(override.aes = list(shape = c(1, 2))))
 
 
-pdf('phylo_plot.pdf', 4, 6, title = 'Phylogenetic Regression')
+pdf('phylo_plot.pdf', 4, 6, title = 'Phylogenetic Regression', useDingbats = FALSE)
 grid.newpage()
 grid.draw(rbind(ggplotGrob(nsa_plot), 
                 ggplotGrob(sef_plot), 

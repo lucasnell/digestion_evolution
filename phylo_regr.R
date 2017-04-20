@@ -178,7 +178,8 @@ load('./data/model_fits.RData')
 #' 
 #+ lambda_nsa, echo = FALSE
 summary(nsa_fits[['lambda']])
-
+#' 
+#' 
 #' 
 #' *Ornstein-Uhlenbeck*
 #' 
@@ -194,8 +195,9 @@ summary(nsa_fits[['ou']])
 #' 
 #+ lambda_sef, echo = FALSE
 summary(sef_fits[['lambda']])
-
-
+#' 
+#' 
+#' 
 #' 
 #' *Ornstein-Uhlenbeck*
 #' 
