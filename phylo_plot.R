@@ -8,7 +8,8 @@ suppressPackageStartupMessages({
 # Set the default ggplot theme
 theme_set(theme_classic() %+replace% 
               theme(strip.background = element_blank(),
-                    strip.text = element_text(size = 12)))
+                    strip.text = element_text(size = 12),
+                    legend.background = element_blank()))
 
 # Load model fits
 load('./data/model_fits.RData')
@@ -47,16 +48,13 @@ mod_ci <- function(.model, mod_name, y_measure){
     return(out_df)
 }
 
-# Apply above function to all model fits, change the model column so it shows up
-# more nicely in plots, and add column of observed data
-ci_df <- mapply(mod_ci, append(nsa_fits, sef_fits), 
-       rep(c('lambda', 'ou'), 2),
-       rep(c('nsa', 'sef'), each = 2),
+# Apply above function to both Pagel's lambda model fits and add column of observed data
+ci_df <- mapply(mod_ci, list(nsa_fits[['lambda']], sef_fits[['lambda']]),
+       rep('lambda', 2), c('nsa', 'sef'),
        SIMPLIFY = FALSE, USE.NAMES = FALSE) %>% 
     bind_rows %>% 
-    mutate(model = recode_factor(model, lambda = "\"Pagel's\" ~ lambda", 
-                                 ou = "Ornstein-Uhlenbeck")) %>% 
-    group_by(model, measure, mass_log) %>% 
+    select(-model) %>% 
+    group_by(measure, mass_log) %>% 
     mutate(observed = sp_df$value[sp_df$measure == measure & 
                                       sp_df$mass_log == mass_log]) %>% 
     ungroup
@@ -73,12 +71,11 @@ nsa_plot <- ci_df %>%
     geom_line(aes(color = taxon), size = 0.75) +
     scale_color_brewer(NULL, palette = 'Dark2') +
     scale_shape_manual(values = c(1, 2), guide = FALSE) +
-    theme(legend.position = c(0.1, 0.8),
+    theme(legend.position = c(0.15, 0.8),
           axis.title.x = element_blank()) +
     scale_y_continuous(expression('NSA (' * cm^2 * ')'), trans = 'log',
                        breaks = c(5, 10, 20, 40)) +
     scale_x_continuous(trans = 'log', breaks = c(15, 30, 60, 120)) +
-    facet_wrap(~ model, labeller = label_parsed) +
     guides(color = guide_legend(override.aes = list(shape = c(1, 2))))
 
 
@@ -98,11 +95,10 @@ sef_plot <- ci_df %>%
     scale_y_continuous('SEF', trans = 'log',
                        breaks = c(8, 12, 18)) +
     scale_x_continuous('Mass (g)', trans = 'log', breaks = c(15, 30, 60, 120)) +
-    facet_wrap(~ model) +
     guides(color = guide_legend(override.aes = list(shape = c(1, 2))))
 
 
-pdf('2model_plot.pdf', 6, 6, title = 'Phylogenetic Regression')
+pdf('phylo_plot.pdf', 4, 6, title = 'Phylogenetic Regression')
 grid.newpage()
 grid.draw(rbind(ggplotGrob(nsa_plot), 
                 ggplotGrob(sef_plot), 
