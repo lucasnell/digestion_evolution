@@ -136,8 +136,12 @@ gg_tr %<+% {sp_df %>% select(species, everything())} +
 #' root (OUfixedRoot) ... [and] Pagel's lambda model." (see `phylolm` documentation)
 #' As you can see from the results below, the covariance model had little effect on our
 #' conclusions.
+#' The Ornstein-Uhlenbeck model gave much less precise estimates of the 
+#' phylogenetic signal (see the bootstrapped confidence intervals of the alpha 
+#' parameter below).
+#' This is why I only mentioned Pagel's lambda in the manuscript.
 #' 
-#' I also ran 2,000 parametric bootstrap replicates to estimate model parameters.
+#' I ran 2,000 parametric bootstrap replicates to estimate model parameters.
 #' 
 #' The code below takes ~10 minutes to run.
 #' 
