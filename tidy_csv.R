@@ -77,7 +77,7 @@ prep_df <- function(measures, input_df = morph_df, by_sp = TRUE,
             # Grouping by, then taking mean of all measurement columns and transformed-
             # measurement columns
             group_by(diet, taxon, species) %>% 
-            summarize_at(.cols = c(trans_meas, meas_clean), mean) %>% 
+            summarize_at(.vars = c(trans_meas, meas_clean), mean) %>% 
             ungroup %>% 
             arrange(taxon, diet, species) %>% 
             # To change row names, it can't be a tibble, so I'm reverting back to normal
