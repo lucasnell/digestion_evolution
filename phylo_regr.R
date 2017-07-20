@@ -82,6 +82,65 @@ tr <- read.tree('./data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 tr
+
+all_df <- prep_df(measures = c('nsa', 'sef', 'mass'), by_sp = FALSE) %>% 
+    as_data_frame
+
+library(Rphylopars)
+
+library(phytools)
+
+
+# set.seed(9)
+# test <- all_df %>% 
+#     select(species, taxon) %>% 
+#     mutate(mass_log = log(rlnorm(nrow(test), mean(all_df$mass_log), sd(all_df$mass_log)))) %>% 
+#     mutate(nsa_log = ifelse(taxon == 'Rodent', 1, 0) * 0.5 + mass_log * 0.6,
+#            taxon = factor(taxon)) %>% 
+#     select(species, nsa_log, mass_log, taxon)
+
+# z <- phylopars.lm(nsa_log ~ mass_log + taxon, 
+#                   trait_data = as.data.frame(test), 
+#                   tree = tr, model = 'BM')
+# 
+# z <- phylopars.lm(nsa_log ~ mass_log + taxon, 
+#                   trait_data = as.data.frame(
+#                       all_df[,c('species', 'nsa_log', 'mass_log', 'taxon')]
+#                   ), 
+#                   tree = tr, model = 'BM')
+# summary(z)
+
+# data file: row for each species
+# me file: se for each cell in data file
+# file: physigv2.m file
+# run it, and dialogs will show up
+# taxon me = 0
+# vcov txt file for phylo file
+# use likelihoods for p-values: run it with and with, 2*logLik is chi-square
+# run it with ml, not reml
+
+
+
+X <- all_df$mass_log
+names(X) <- all_df$species
+y <- all_df$nsa_log
+names(y) <- all_df$species
+pgls.Ives(tr, X, y)
+
+sp_se
+
+pgls.SEy(nsa_log ~ mass_log + taxon, data = sp_df, 
+         corClass=corBrownian, tree=tr,
+         se=NULL, method="ML", interval=c(0,1000))
+
+m <- phylolm(nsa_log ~ mass_log + taxon, data = sp_df, phy = tr,
+             model = 'lambda', upper.bound = 1.2)
+summary(m)
+
+
+
+
+
 #' 
 #' 
 #' 
