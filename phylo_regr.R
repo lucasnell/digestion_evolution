@@ -26,17 +26,21 @@ suppressPackageStartupMessages({
     library(ape)
     library(ggplot2)
 })
+# Set the default ggplot theme
+theme_set(theme_classic() %+replace% 
+              theme(strip.background = element_blank(),
+                    strip.text = element_text(size = 12),
+                    legend.background = element_blank()))
 #' 
 #' 
 #' 
-#' # Morphometric measurements
+#' # Reading csv of morphometric measurements
 #' 
-#' Cleaning `./data/morphometrics.csv` file for use and providing a useful 
-#' function to retrieve columns from it
+#' Reading and cleaning `./data/morphometrics.csv` file for use.
 #' 
 #+ source_tidy_csv
 source('tidy_csv.R')
-str(morph_df)
+morph_df
 #' 
 #' 
 #' 
@@ -57,15 +61,7 @@ str(morph_df)
 #' 
 #' 
 #' 
-#' I am only using three: `nsa`, `sef`, and `mass`. Now I create a data frame with 
-#' just these columns and their log-transformed versions. Species names are row names
-#' because `phylolm` requires that.
 #' 
-#' 
-#' 
-#+ make_sp_df
-sp_df <- prep_df(measures = c('nsa', 'sef', 'mass'))
-str(sp_df)
 #' 
 #' 
 #' 
@@ -82,65 +78,389 @@ tr <- read.tree('./data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 tr
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' # Creating data frames of measurements
+#' 
+#' 
+#' Now I create two data frames with the different measurements as columns, plus separate
+#' columns for their log-transformed versions.
+#' 
+#' The first one summarizes by species only (and takes mean over positions), 
+#' while the second one keeps the positions (distal, medial, proximal) separate.
+#' Each data frame only needs certain measurements, so only those are included.
+#' 
+#' ## Species data frame
+#' 
+#+ make_spp_df
+spp_measures <- c('mass',
+                  'intestinal_length',
+                  'nsa',
+                  'villa_surface_area',
+                  'enterocyte_density',
+                  'sef')
 
-all_df <- prep_df(measures = c('nsa', 'sef', 'mass'), by_sp = FALSE) %>% 
-    as_data_frame
+spp_df <- morph_df %>%
+    # Changing from tall to wide format
+    spread(measure, value) %>% 
+    # Selecting measurement columns, plus the identifying columns
+    select_(.dots = append(list('diet', 'taxon', 'species', 'id', 'pos'), 
+                           spp_measures)) %>% 
+    # Removing all rows with all NAs in measures columns
+    filter(Reduce(`+`, lapply(.[,spp_measures], is.na)) < length(spp_measures)) %>% 
+    # Add nsa to all positions' estimates (for total_enterocytes and total_surface below)
+    group_by(taxon, diet, species, id) %>% 
+    mutate(nsa = ifelse(is.na(nsa), nsa[!is.na(nsa)], nsa)) %>% 
+    ungroup %>% 
+    # Doing the calculations now, before taking any means
+    mutate(int_length_mass = intestinal_length / mass^0.4,
+           nsa_mass = nsa / mass^0.75,
+           vill_area_mass = villa_surface_area / mass^0.75,
+           total_enterocytes = enterocyte_density * nsa,
+           log_total_enterocytes = log(enterocyte_density * nsa),
+           total_surface = nsa * sef,
+           log_mass = log(mass)) %>% 
+    select(taxon, diet, species, id,
+           int_length_mass, nsa_mass, vill_area_mass, 
+           total_enterocytes, log_total_enterocytes, total_surface, sef, 
+           mass, log_mass) %>% 
+    # Taking mean by sample
+    group_by(taxon, diet, species, id) %>% 
+    summarize_all(mean, na.rm = TRUE) %>% 
+    ungroup %>%
+    # Now taking mean by species
+    group_by(taxon, diet, species) %>% 
+    summarize_at(.vars = vars(int_length_mass, nsa_mass, vill_area_mass, 
+                              total_enterocytes, log_total_enterocytes, total_surface, 
+                              sef, mass, log_mass), 
+                 mean, na.rm = TRUE) %>% 
+    ungroup %>% 
+    # Converting taxon and diet to factors
+    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
+           diet = factor(diet, levels = c("Herbivorous", "Omnivorous", "Protein"))) %>% 
+    arrange(taxon, diet, species) %>% 
+    # To change row names, it can't be a tibble, so I'm reverting back to normal
+    # data frame
+    as.data.frame
 
-library(Rphylopars)
+# phylolm requires that the rownames match the species names
+rownames(spp_df) <- spp_df$species
+#' 
+#' 
+#' ### Analyses for this data frame
+#' 
+#' `Model: Y ~ Taxon`
+#' 
+#' List of `Y`s:
+#' 
+#' - Intestinal length / body mass^0.4
+#' - NSA / body mass^0.75
+#' - Villus surface area / body mass^0.75
+#' - Total number of enterocytes (body mass as covariate)
+#'   * Calculated as such: `NSA * mean(enterocyte_density_for_all_positions)`
+#' - Fractional absorption / total intestinal surface (the latter is `NSA * SEF`)
+#' 
+#' 
+#' `Model: Y ~ Diet`
+#' 
+#' List of `Y`s:
+#' 
+#' - SEF
+#' 
+#+ sp_analyses
 
-library(phytools)
+# (Since I don't yet have fractional absorption data, I'm skipping that for now)
+spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
 
-
-# set.seed(9)
-# test <- all_df %>% 
-#     select(species, taxon) %>% 
-#     mutate(mass_log = log(rlnorm(nrow(test), mean(all_df$mass_log), sd(all_df$mass_log)))) %>% 
-#     mutate(nsa_log = ifelse(taxon == 'Rodent', 1, 0) * 0.5 + mass_log * 0.6,
-#            taxon = factor(taxon)) %>% 
-#     select(species, nsa_log, mass_log, taxon)
-
-# z <- phylopars.lm(nsa_log ~ mass_log + taxon, 
-#                   trait_data = as.data.frame(test), 
-#                   tree = tr, model = 'BM')
-# 
-# z <- phylopars.lm(nsa_log ~ mass_log + taxon, 
-#                   trait_data = as.data.frame(
-#                       all_df[,c('species', 'nsa_log', 'mass_log', 'taxon')]
-#                   ), 
-#                   tree = tr, model = 'BM')
-# summary(z)
-
-# data file: row for each species
-# me file: se for each cell in data file
-# file: physigv2.m file
-# run it, and dialogs will show up
-# taxon me = 0
-# vcov txt file for phylo file
-# use likelihoods for p-values: run it with and with, 2*logLik is chi-square
-# run it with ml, not reml
-
-
-
-X <- all_df$mass_log
-names(X) <- all_df$species
-y <- all_df$nsa_log
-names(y) <- all_df$species
-pgls.Ives(tr, X, y)
-
-sp_se
-
-pgls.SEy(nsa_log ~ mass_log + taxon, data = sp_df, 
-         corClass=corBrownian, tree=tr,
-         se=NULL, method="ML", interval=c(0,1000))
-
-m <- phylolm(nsa_log ~ mass_log + taxon, data = sp_df, phy = tr,
-             model = 'lambda', upper.bound = 1.2)
-summary(m)
+# Takes ~6.5 min
+# model_fits <- lapply(
+#     spp_ys,
+#     function(x){
+#         f <- paste(x, ' ~ taxon',
+#                    ifelse(grepl('total_enterocytes', x), '+ log_mass', ''))
+#         suppressWarnings(
+#             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
+#                                     phy = as.name("tr"), model = 'lambda',
+#                                     boot = 2000, upper.bound = 1.2))
+#         )
+#     })
+# save(model_fits, file = './data/spp_models.rda')
+load('./data/spp_models.rda')
+lapply(model_fits, summary)
 
 
 
 
+# Creates data frame containing 95% CI based on bootstrapping for one model
+mod_ci <- function(.model, y_measure, mod_name = NULL){
+    ci_matrix <- .model$bootstrap %>% 
+        apply(1, 
+              function(x) {
+                  matrix(head(x, -2) %*% t(.model$X))
+              }) %>% 
+        apply(1,
+              function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
+        t
+    
+    out_df <- cbind(as.numeric(.model$fitted.values), ci_matrix) %>% 
+        as_data_frame %>% 
+        rename_(.dots = setNames(colnames(.), c('predicted', 'low', 'high'))) %>% 
+        mutate(measure = y_measure,
+               log_mass = tryCatch(.model$X[,'log_mass'], 
+                                   error = function(e) rep(NA, nrow(.model$X))),
+               taxon = factor(.model$X[,'taxonBat'], levels = c(0,1), 
+                              labels = c('Rodent', 'Bat'))) %>% 
+        select(taxon, log_mass, measure, everything())
+    if (!is.null(mod_name)) {
+        out_df <- out_df %>% 
+            mutate(model = mod_name) %>% 
+            select(model, taxon, log_mass, measure, everything())
+    }
+    # Check if there is no need for log_mass or many of the rows
+    if (ncol(.model$bootstrap) == 4) {
+        out_df <- out_df %>% 
+            select(-log_mass) %>% 
+            distinct(taxon, measure, predicted, low, high)
+    }
+    return(out_df)
+}
 
+
+
+
+
+# Figure 1A
+# fig1a <- 
+mod_ci(model_fits[[1]], 'int_length_mass') %>% 
+    ggplot(aes(taxon, predicted)) +
+    geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, size = 0.5) +
+    geom_segment(aes(yend = predicted, 
+                     x = as.numeric(taxon) - 0.05, 
+                     xend = as.numeric(taxon) + 0.05)) +
+    geom_point(data = spp_df, 
+               aes(y = int_length_mass, shape = taxon),
+               position = position_jitter(width = 0.2, height = 0),
+               color = 'black', size = 2) +
+    geom_text(label = 'A', x = 0.5, y = 11.7, size = 6, vjust = 1, hjust = 0) +
+    # geom_text(data = NULL, inherit.aes = FALSE,
+    #           label = paste("italic(P) ==", 
+    #                         sprintf("%.3f", mean(
+    #                             model_fits[[1]]$bootstrap[,'taxonBat'] > 0) * 2)),
+    #           x = 1.5, y = 11.7, parse = TRUE, size = 4, vjust = 1, hjust = 0.5) +
+    scale_shape_manual(values = c(19, 1)) +
+    theme(legend.position = 'none', axis.title.x = element_blank(),
+          axis.title.y = element_text(margin = margin(t = 0, r = -10, b = 0, l = 0))) +
+    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
+    scale_y_continuous(expression(atop("Intestinal length / body" ~ mass^{0.4},
+                                       "(" * cm / g^{0.4} * ")")),
+                       limits = c(2.2, 11.7), expand = c(0, 0))
+
+# Figure 1B
+# fig1b <- 
+mod_ci(model_fits[[2]], 'nsa_mass') %>% 
+    ggplot(aes(taxon, predicted)) +
+    geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, size = 0.5) +
+    geom_segment(aes(yend = predicted, 
+                     x = as.numeric(taxon) - 0.05, 
+                     xend = as.numeric(taxon) + 0.05)) +
+    geom_point(data = spp_df, 
+               aes(y = nsa_mass, shape = taxon),
+               position = position_jitter(width = 0.2, height = 0),
+               color = 'black', size = 2) +
+    geom_text(label = 'B', x = 0.5, y = 2.2, size = 6, vjust = 1, hjust = 0) +
+    # geom_text(data = NULL, inherit.aes = FALSE,
+    #           label = paste("italic(P) ==", 
+    #                         sprintf("%.3f", mean(
+    #                             model_fits[[2]]$bootstrap[,'taxonBat'] > 0) * 2)),
+    #           x = 1.5, y = 2.2, parse = TRUE, size = 4, vjust = 1, hjust = 0.5) +
+    scale_shape_manual(values = c(19, 1)) +
+    theme(legend.position = 'none', axis.title.x = element_blank(),
+          axis.title.y = element_text(margin = margin(t = 0, r = -8, b = 0, l = 0))) +
+    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
+    scale_y_continuous(expression(atop("NSA / body" ~ mass^{0.75},
+                                       "(" * cm^2 / g^{0.75} * ")")),
+                       limits = c(0.5, 2.2), expand = c(0, 0))
+#
+
+# Figure 4
+# fig4 <- 
+mod_ci(model_fits[[3]], 'vill_area_mass') %>% 
+    ggplot(aes(taxon, predicted)) +
+    geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, size = 0.5) +
+    geom_segment(aes(yend = predicted, 
+                     x = as.numeric(taxon) - 0.05, 
+                     xend = as.numeric(taxon) + 0.05)) +
+    geom_point(data = spp_df, 
+               aes(y = vill_area_mass, shape = taxon),
+               position = position_jitter(width = 0.2, height = 0),
+               color = 'black', size = 2) +
+    # geom_text(data = NULL, inherit.aes = FALSE,
+    #           label = paste("italic(P) ==", 
+    #                         sprintf("%.3f", mean(
+    #                             model_fits[[3]]$bootstrap[,'taxonBat'] < 0) * 2)),
+    #           x = 1.5, y = 21.75, parse = TRUE, size = 4, vjust = 1, hjust = 0.5) +
+    scale_shape_manual(values = c(19, 1)) +
+    theme(legend.position = 'none', axis.title.x = element_blank(),
+          axis.title.y = element_text(margin = margin(t = 0, r = -8, b = 0, l = 0))) +
+    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
+    scale_y_continuous(expression(atop("Villous surface area / body" ~ mass^{0.75},
+                                       "(" * cm^2 / g^{0.75} * ")")),
+                       limits = c(3.7, 21.75), expand = c(0, 0))
+
+
+
+
+
+
+# Left off --> Decided to remove p-values from here and all above figures
+
+# Figure 6
+# fig6 <- 
+mod_ci(model_fits[[4]], 'log_total_enterocytes') %>% 
+    ggplot(aes(log_mass, predicted)) + 
+    geom_ribbon(aes(group = taxon, ymin = low, ymax = high), 
+                fill = 'gray70', alpha = 0.5) +
+    geom_point(data = spp_df, aes(y = log_total_enterocytes, shape = taxon),
+               color = 'black', size = 2) +
+    geom_line(aes(linetype = taxon)) +
+    # geom_text(inherit.aes = FALSE, 
+    #           data = data_frame(
+    #               label = paste0(c("Taxon ~", "log(Body ~ mass) ~ "), "italic(P) == \"", 
+    #                             c(
+    #                                 sprintf("%.3f", mean(
+    #                                     model_fits[[4]]$bootstrap[,'taxonBat'] < 0) * 2),
+    #                                 sprintf("%.3f", mean(
+    #                                     model_fits[[4]]$bootstrap[,'log_mass'] < 0) * 2)),
+    #                             "\""),
+    #               x = rep(log(70),2), y = c(log(2189340173), log(2189340173 - 1.5e8))), 
+    #           aes(x, y, label = label),
+    #           parse = TRUE, size = 3, vjust = 1, hjust = 0) +
+    theme(legend.position = c(0.15, 0.9), legend.title = element_blank(),
+          legend.key.width = unit(0.05, "npc")) +
+    scale_linetype_manual(values = c(1, 2)) +
+    scale_shape_manual(values = c(19, 1)) +
+    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
+    scale_y_continuous(expression("Total enterocytes (" %*% 10^9 * ")"), 
+                       breaks = log(seq(0, 2e9, 5e8)), labels = seq(0, 2, 0.5),
+                       limits = c(log(15763933), log(2189340173)), expand = c(0, 0)) +
+    scale_x_continuous("Body mass (g)", breaks = log(seq(0, 150, 50)), 
+                       labels = seq(0, 150, 50)) +
+    coord_trans(x = 'exp', y = 'exp')
+
+
+
+
+
+
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' ## Positions data frame
+#' 
+#+ make_pos_df
+pos_measures <- c('mass',
+                  'intestinal_diameter',
+                  'villus_height', 
+                  'villus_width',
+                  'crypt_width',
+                  'sef',
+                  'enterocyte_diameter',
+                  'enterocyte_density')
+
+pos_df <- morph_df %>%
+    # Changing from tall to wide format
+    spread(measure, value) %>% 
+    select_(.dots = append(list('taxon', 'diet', 'species', 'pos', 'id'), 
+                           as.list(pos_measures))) %>% 
+    # Add mass to all positions' estimates
+    group_by(taxon, diet, species, id) %>% 
+    mutate(mass = ifelse(is.na(mass), mass[!is.na(mass)], mass)) %>% 
+    ungroup %>% 
+    # Now removing rows with pos == NA bc they don't have the other measurements
+    filter(!is.na(pos)) %>% 
+    # Doing the transformation now, before taking any means
+    mutate_(.dots = setNames(as.list(sprintf('%s(%s)', 'log', pos_measures)), 
+                             paste0('log_', pos_measures))) %>% 
+    # Grouping by, then taking mean of all measurement columns and transformed-
+    # measurement columns
+    group_by(taxon, diet, species, pos) %>% 
+    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), mean) %>% 
+    ungroup %>% 
+    # Converting taxon and diet to factors
+    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
+           diet = factor(diet, levels = c("Herbivorous", "Omnivorous", "Protein"))) %>% 
+    arrange(taxon, diet, species, pos)
+#' 
+#' 
+#' 
+#' ### Analyses for this data frame
+#' 
+#' `Model: Y ~ Taxon * Segment`
+#' 
+#' (Segment = proximal, medial, or distal)
+#' 
+#' List of `Y`s:
+#' 
+#' - Intestinal diameter (body mass as covariate)
+#' - Villus height
+#' - Villus width
+#' - Crypt width
+#' - Surface enlargement factor (SEF)
+#' - Enterocyte diameter
+#' - Enterocytes per cm^2 NSA
+#' 
+#' 
+#' ### Model: log(Y) ~ log(SEF)
+#' 
+#' - paracellular probe L-arabinose clearance
+#'   ("we used reduced major axis regression (model II regression)... because both 
+#'   variables [X and Y] were subject to error")
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#+ make_sp_df
+sp_df <- prep_df(measures = unique(morph_df$measure))
+str(sp_df)
+
+
+
+
+to_exam <- c('crypt_width', 'enterocyte_density', 'enterocyte_width', 
+             'intestinal_diameter', 'intestinal_length', 'nsa', 'sef',
+             'villa_surface_area', 'villus_height', 'villus_width')
+plot.new()
+par(mfrow = c(1, 2), mar=c(5.1, 4.1, 1, 1))
+for (p in to_exam) {
+    plot(sp_df[['log_mass']], sp_df[[paste0(p)]], 
+         ylab = paste0(p), xlab = 'log(mass)', main = NULL)
+    plot(sp_df[['log_mass']], sp_df[[paste0(p, '_log')]], 
+         ylab = paste0(p, '_log'), xlab = 'log(mass)', main = NULL)
+}; rm(p)
+
+
+# Keep logged: villa_surface_area, nsa, intestinal_length, intestinal_diameter
+
+#' 
+#' 
 #' 
 #' 
 #' 
@@ -173,13 +493,13 @@ summary(m)
 set.seed(352)
 nsa_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                   function(m) {
-                      phylolm(nsa_log ~ mass_log + taxon, data = sp_df, phy = tr,
+                      phylolm(nsa_log ~ log_mass + taxon, data = sp_df, phy = tr,
                               model = m, boot = 2000, 
                               upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(nsa_fits) <- c('lambda', 'ou')
 sef_fits <- lapply(c('lambda', 'OUfixedRoot'), 
                    function(m) {
-                       phylolm(sef_log ~ mass_log + taxon, data = sp_df, phy = tr,
+                       phylolm(sef_log ~ log_mass + taxon, data = sp_df, phy = tr,
                                model = m, boot = 2000,
                                upper.bound = ifelse(m == 'lambda', 1.2, Inf))})
 names(sef_fits) <- c('lambda', 'ou')
@@ -241,7 +561,7 @@ p_nsa_df <- data_frame(
     model = c("Pagel's lambda", "Ornstein-Uhlenbeck"),
     taxon = sapply(nsa_fits, 
                    function(m) mean(m$bootstrap[,'taxonRodent'] < 0) * 2),
-    mass = sapply(nsa_fits, function(m) mean(m$bootstrap[,'mass_log'] < 0) * 2)
+    mass = sapply(nsa_fits, function(m) mean(m$bootstrap[,'log_mass'] < 0) * 2)
 )
 knitr::kable(p_nsa_df)
 #' 
@@ -253,7 +573,7 @@ p_sef_df <- data_frame(
     model = c("Pagel's lambda", "Ornstein-Uhlenbeck"),
     taxon = sapply(sef_fits, 
                    function(m) mean(m$bootstrap[,'taxonRodent'] > 0) * 2),
-    mass = sapply(sef_fits, function(m) mean(m$bootstrap[,'mass_log'] < 0) * 2)
+    mass = sapply(sef_fits, function(m) mean(m$bootstrap[,'log_mass'] < 0) * 2)
 )
 knitr::kable(p_sef_df)
 #' 
