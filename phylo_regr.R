@@ -248,12 +248,8 @@ mod_ci(model_fits[[1]], 'int_length_mass') %>%
                aes(y = int_length_mass, shape = taxon),
                position = position_jitter(width = 0.2, height = 0),
                color = 'black', size = 2) +
-    geom_text(label = 'A', x = 0.5, y = 11.7, size = 6, vjust = 1, hjust = 0) +
-    # geom_text(data = NULL, inherit.aes = FALSE,
-    #           label = paste("italic(P) ==", 
-    #                         sprintf("%.3f", mean(
-    #                             model_fits[[1]]$bootstrap[,'taxonBat'] > 0) * 2)),
-    #           x = 1.5, y = 11.7, parse = TRUE, size = 4, vjust = 1, hjust = 0.5) +
+    geom_text(data = NULL, label = 'A', x = 0.5, y = 11.7, size = 6, 
+              vjust = 1, hjust = 0) +
     scale_shape_manual(values = c(19, 1)) +
     theme(legend.position = 'none', axis.title.x = element_blank(),
           axis.title.y = element_text(margin = margin(t = 0, r = -10, b = 0, l = 0))) +
@@ -274,12 +270,8 @@ mod_ci(model_fits[[2]], 'nsa_mass') %>%
                aes(y = nsa_mass, shape = taxon),
                position = position_jitter(width = 0.2, height = 0),
                color = 'black', size = 2) +
-    geom_text(label = 'B', x = 0.5, y = 2.2, size = 6, vjust = 1, hjust = 0) +
-    # geom_text(data = NULL, inherit.aes = FALSE,
-    #           label = paste("italic(P) ==", 
-    #                         sprintf("%.3f", mean(
-    #                             model_fits[[2]]$bootstrap[,'taxonBat'] > 0) * 2)),
-    #           x = 1.5, y = 2.2, parse = TRUE, size = 4, vjust = 1, hjust = 0.5) +
+    geom_text(data = NULL, label = 'B', x = 0.5, y = 2.2, size = 6, 
+              vjust = 1, hjust = 0) +
     scale_shape_manual(values = c(19, 1)) +
     theme(legend.position = 'none', axis.title.x = element_blank(),
           axis.title.y = element_text(margin = margin(t = 0, r = -8, b = 0, l = 0))) +
@@ -301,18 +293,11 @@ mod_ci(model_fits[[3]], 'vill_area_mass') %>%
                aes(y = vill_area_mass, shape = taxon),
                position = position_jitter(width = 0.2, height = 0),
                color = 'black', size = 2) +
-    # geom_text(data = NULL, inherit.aes = FALSE,
-    #           label = paste("italic(P) ==", 
-    #                         sprintf("%.3f", mean(
-    #                             model_fits[[3]]$bootstrap[,'taxonBat'] < 0) * 2)),
-    #           x = 1.5, y = 21.75, parse = TRUE, size = 4, vjust = 1, hjust = 0.5) +
     scale_shape_manual(values = c(19, 1)) +
     theme(legend.position = 'none', axis.title.x = element_blank(),
           axis.title.y = element_text(margin = margin(t = 0, r = -8, b = 0, l = 0))) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
     scale_y_continuous(expression(atop("Villous surface area / body" ~ mass^{0.75},
-                                       "(" * cm^2 / g^{0.75} * ")")),
-                       limits = c(3.7, 21.75), expand = c(0, 0))
+                                       "(" * cm^2 / g^{0.75} * ")")))
 
 
 
@@ -328,28 +313,12 @@ mod_ci(model_fits[[4]], 'log_total_enterocytes') %>%
     geom_point(data = spp_df, aes(y = log_total_enterocytes, shape = taxon),
                color = 'black', size = 2) +
     geom_line(aes(linetype = taxon)) +
-    # geom_text(inherit.aes = FALSE,
-    #           data = data_frame(
-    #               label = paste0(c(
-    #                   "Taxon ~", "log(Body ~ mass) ~ "), "italic(P) == \"",
-    #                   c(
-    #                       sprintf("%.3f", mean(
-    #                           model_fits[[4]]$bootstrap[,'taxonBat'] < 0) * 2),
-    #                       sprintf("%.3f", mean(
-    #                           model_fits[[4]]$bootstrap[,'log_mass'] < 0) * 2)),
-    #                   "\""),
-    #               x = rep(log(70),2), 
-    #               y = c(log(2189340173), log(2189340173 - 1.5e8))),
-    #           aes(x, y, label = label),
-    #           parse = TRUE, size = 3, vjust = 1, hjust = 0) +
     theme(legend.position = c(0.15, 0.9), legend.title = element_blank(),
           legend.key.width = unit(0.05, "npc")) +
     scale_linetype_manual(values = c(1, 2)) +
     scale_shape_manual(values = c(19, 1)) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
     scale_y_continuous(expression("Total enterocytes (" %*% 10^9 * ")"), 
-                       breaks = log(seq(0, 2e9, 5e8)), labels = seq(0, 2, 0.5),
-                       limits = c(log(15763933), log(2189340173)), expand = c(0, 0)) +
+                       breaks = log(seq(0, 2e9, 5e8)), labels = seq(0, 2, 0.5)) +
     scale_x_continuous("Body mass (g)", breaks = log(seq(0, 150, 50)), 
                        labels = seq(0, 150, 50)) +
     coord_trans(x = 'exp', y = 'exp')
