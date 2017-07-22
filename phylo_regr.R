@@ -164,7 +164,8 @@ rownames(spp_df) <- spp_df$species
 #' - Villus surface area / body mass^0.75
 #' - Total number of enterocytes (body mass as covariate)
 #'   * Calculated as such: `NSA * mean(enterocyte_density_for_all_positions)`
-#' - Fractional absorption / total intestinal surface (the latter is `NSA * SEF`)
+#' - Fractional absorption / (total intestinal surface / mass^0.75)
+#'   * total intestinal surface = `NSA * SEF`
 #' 
 #' 
 #' `Model: Y ~ Diet`
@@ -318,8 +319,6 @@ mod_ci(model_fits[[3]], 'vill_area_mass') %>%
 
 
 
-# Left off --> Decided to remove p-values from here and all above figures
-
 # Figure 6
 # fig6 <- 
 mod_ci(model_fits[[4]], 'log_total_enterocytes') %>% 
@@ -329,16 +328,18 @@ mod_ci(model_fits[[4]], 'log_total_enterocytes') %>%
     geom_point(data = spp_df, aes(y = log_total_enterocytes, shape = taxon),
                color = 'black', size = 2) +
     geom_line(aes(linetype = taxon)) +
-    # geom_text(inherit.aes = FALSE, 
+    # geom_text(inherit.aes = FALSE,
     #           data = data_frame(
-    #               label = paste0(c("Taxon ~", "log(Body ~ mass) ~ "), "italic(P) == \"", 
-    #                             c(
-    #                                 sprintf("%.3f", mean(
-    #                                     model_fits[[4]]$bootstrap[,'taxonBat'] < 0) * 2),
-    #                                 sprintf("%.3f", mean(
-    #                                     model_fits[[4]]$bootstrap[,'log_mass'] < 0) * 2)),
-    #                             "\""),
-    #               x = rep(log(70),2), y = c(log(2189340173), log(2189340173 - 1.5e8))), 
+    #               label = paste0(c(
+    #                   "Taxon ~", "log(Body ~ mass) ~ "), "italic(P) == \"",
+    #                   c(
+    #                       sprintf("%.3f", mean(
+    #                           model_fits[[4]]$bootstrap[,'taxonBat'] < 0) * 2),
+    #                       sprintf("%.3f", mean(
+    #                           model_fits[[4]]$bootstrap[,'log_mass'] < 0) * 2)),
+    #                   "\""),
+    #               x = rep(log(70),2), 
+    #               y = c(log(2189340173), log(2189340173 - 1.5e8))),
     #           aes(x, y, label = label),
     #           parse = TRUE, size = 3, vjust = 1, hjust = 0) +
     theme(legend.position = c(0.15, 0.9), legend.title = element_blank(),
