@@ -19,52 +19,13 @@ theme_set(theme_classic() %+replace%
 
 load('./data/spp_models.rda')
 
-load('./data/pos_models.rda')
-
 
 
 
 
 
 # Creates data frame containing 95% CI based on bootstrapping for one species model
-spp_mod_ci <- function(.model, y_measure, mod_name = NULL){
-    ci_matrix <- .model$bootstrap %>% 
-        apply(1, 
-              function(x) {
-                  matrix(head(x, -2) %*% t(.model$X))
-              }) %>% 
-        apply(1,
-              function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
-        t
-    
-    out_df <- cbind(as.numeric(.model$fitted.values), ci_matrix) %>% 
-        as_data_frame %>% 
-        rename_(.dots = setNames(colnames(.), c('predicted', 'low', 'high'))) %>% 
-        mutate(measure = y_measure,
-               log_mass = tryCatch(.model$X[,'log_mass'], 
-                                   error = function(e) rep(NA, nrow(.model$X))),
-               taxon = factor(.model$X[,'taxonBat'], levels = c(0,1), 
-                              labels = c('Rodent', 'Bat'))) %>% 
-        select(taxon, log_mass, measure, everything())
-    if (!is.null(mod_name)) {
-        out_df <- out_df %>% 
-            mutate(model = mod_name) %>% 
-            select(model, taxon, log_mass, measure, everything())
-    }
-    # Check if there is no need for log_mass or many of the rows
-    if (ncol(.model$bootstrap) == 4) {
-        out_df <- out_df %>% 
-            select(-log_mass) %>% 
-            distinct(taxon, measure, predicted, low, high)
-    }
-    return(out_df)
-}
-
-
-
-
-# Same for species by position models
-pos_mod_ci <- function(.model, y_measure, pos_name = NULL){
+spp_mod_ci <- function(.model, y_measure){
     
     if ('log_mass' %in% colnames(.model$X)) {
         new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0), 
@@ -75,10 +36,55 @@ pos_mod_ci <- function(.model, y_measure, pos_name = NULL){
         new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0))
         new_data_df <- data.frame(taxon = c(1.0, 0.0))
     }
+    
+    # Column names coinciding with phylogenetic parameters from models lambda, BM, and
+    # OUfixed
+    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2', 'alpha'))
     ci_matrix <- .model$bootstrap %>% 
         apply(1, 
               function(x) {
-                  matrix(head(x, -2) %*% new_data)
+                  matrix(x[-phylo_cols] %*% new_data)
+              }) %>% 
+        apply(1,
+              function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
+        t
+    
+    out_df <- cbind(predict(.model, new_data_df), ci_matrix) %>% 
+        as_data_frame %>% 
+        rename_(.dots = setNames(colnames(.), c('predicted', 'low', 'high'))) %>% 
+        mutate(measure = y_measure,
+               taxon = factor(c(1.0, 0.0), levels = c(0,1), 
+                              labels = c('Rodent', 'Bat'))) %>% 
+        select(taxon, measure, everything())
+    return(out_df)
+}
+
+
+
+
+
+# Same for species by position models
+pos_mod_ci <- function(.model, y_measure, pos_name = NULL){
+    
+    
+    if ('log_mass' %in% colnames(.model$X)) {
+        new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0), 
+                          rep(mean(.model$X[,'log_mass']), 2))
+        new_data_df <- data.frame(taxon = c(1.0, 0.0), 
+                                  log_mass = rep(mean(.model$X[,'log_mass']), 2))
+    } else {
+        new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0))
+        new_data_df <- data.frame(taxon = c(1.0, 0.0))
+    }
+    
+    # Column names coinciding with phylogenetic parameters from models lambda, BM, and
+    # OUfixed:
+    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2', 'alpha'))
+    
+    ci_matrix <- .model$bootstrap %>% 
+        apply(1, 
+              function(x) {
+                  matrix(x[-phylo_cols] %*% new_data)
               }) %>% 
         apply(1,
               function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
@@ -115,88 +121,56 @@ pos_mod_ci <- function(.model, y_measure, pos_name = NULL){
 # =======================================================================================
 
 
+taxon_only_no_mass <- function(.model, y_name, y_axis_title, title = NULL) {
+    .p <- spp_mod_ci(.model, y_name) %>%
+        ggplot(aes(taxon, predicted)) +
+        geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
+        geom_segment(aes(yend = predicted, 
+                         x = as.numeric(taxon) - 0.1, 
+                         xend = as.numeric(taxon) + 0.1)) +
+        geom_point(data = spp_df, 
+                   aes_string(y = y_name, shape = 'taxon'),
+                   position = position_jitter(width = 0.2, height = 0),
+                   color = 'black', size = 2, fill = 'gray60') +
+        scale_shape_manual(values = c(21, 1)) +
+        theme(legend.position = 'none', axis.title.x = element_blank(),
+              axis.ticks.x = element_blank(),
+              axis.text.x = element_text(color = 'black', size = 10),
+              axis.title.y = element_text(margin = margin(t = 0, r = -8, 
+                                                          b = 0, l = 0))) +
+        ylab(y_axis_title)
+    if (!is.null(title)) .p <- .p + ggtitle(title)
+    return(.p)
+}
+
+
 
 # Figure 1A
-fig1a <- spp_mod_ci(spp_fits[[1]], 'int_length_mass') %>%
-    ggplot(aes(taxon, predicted)) +
-    geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, size = 0.5) +
-    geom_segment(aes(yend = predicted, 
-                     x = as.numeric(taxon) - 0.05, 
-                     xend = as.numeric(taxon) + 0.05)) +
-    geom_point(data = spp_df, 
-               aes(y = int_length_mass, shape = taxon),
-               position = position_jitter(width = 0.2, height = 0),
-               color = 'black', size = 2, fill = 'gray60') +
-    # geom_text(data = NULL, label = 'A', x = 0.5, y = 11.7, size = 6, 
-    #           vjust = 1, hjust = 0) +
-    scale_shape_manual(values = c(21, 1)) +
-    ggtitle('(a)') +
-    theme(legend.position = 'none', axis.title.x = element_blank(),
-          axis.title.y = element_text(margin = margin(t = 0, r = -10, b = 0, l = 0))) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(expression(atop("Intestinal length / body" ~ mass^{0.4},
-                                       "(" * cm / g^{0.4} * ")")))
+fig1a <- taxon_only_no_mass(spp_fits$int_length_mass, 'int_length_mass', 
+                            expression(atop("Intestinal length / body" ~ mass^{0.4},
+                                            "(" * cm / g^{0.4} * ")")),
+                            '(a)')
 
 # Figure 1B
-fig1b <- spp_mod_ci(spp_fits[[2]], 'nsa_mass') %>%
-    ggplot(aes(taxon, predicted)) +
-    geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, size = 0.5) +
-    geom_segment(aes(yend = predicted, 
-                     x = as.numeric(taxon) - 0.05, 
-                     xend = as.numeric(taxon) + 0.05)) +
-    geom_point(data = spp_df, 
-               aes(y = nsa_mass, shape = taxon),
-               position = position_jitter(width = 0.2, height = 0),
-               color = 'black', size = 2, fill = 'gray60') +
-    # geom_text(data = NULL, label = 'B', x = 0.5, y = 2.2, size = 6, 
-    #           vjust = 1, hjust = 0) +
-    ggtitle('(b)') +
-    scale_shape_manual(values = c(21, 1)) +
-    theme(legend.position = 'none', axis.title.x = element_blank(),
-          axis.title.y = element_text(margin = margin(t = 0, r = -8, b = 0, l = 0))) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(expression(atop("NSA / body" ~ mass^{0.75},
-                                       "(" * cm^2 / g^{0.75} * ")")))
-
+fig1b <- taxon_only_no_mass(spp_fits$nsa_mass, 'nsa_mass', 
+                            expression(atop("NSA / body" ~ mass^{0.75},
+                                            "(" * cm^2 / g^{0.75} * ")")),
+                            '(b)')
 
 # Figure 4
-fig4 <- spp_mod_ci(spp_fits[[3]], 'vill_area_mass') %>%
-    ggplot(aes(taxon, predicted)) +
-    geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, size = 0.5) +
-    geom_segment(aes(yend = predicted, 
-                     x = as.numeric(taxon) - 0.05, 
-                     xend = as.numeric(taxon) + 0.05)) +
-    geom_point(data = spp_df, 
-               aes(y = vill_area_mass, shape = taxon),
-               position = position_jitter(width = 0.2, height = 0),
-               color = 'black', size = 2, fill = 'gray60') +
-    scale_shape_manual(values = c(21, 1)) +
-    theme(legend.position = 'none', axis.title.x = element_blank(),
-          axis.title.y = element_text(margin = margin(t = 0, r = -8, b = 0, l = 0))) +
-    scale_y_continuous(expression(atop("Villous surface area / body" ~ mass^{0.75},
-                                       "(" * cm^2 / g^{0.75} * ")")))
-
+fig4 <- taxon_only_no_mass(spp_fits$vill_area_mass, 'vill_area_mass', 
+                           expression(atop("Villous surface area / body" ~ mass^{0.75},
+                                           "(" * cm^2 / g^{0.75} * ")")))
 
 
 # Figure 6
-fig6 <- spp_mod_ci(spp_fits[[4]], 'log_total_enterocytes') %>%
-    ggplot(aes(log_mass, predicted)) + 
-    geom_ribbon(aes(group = taxon, ymin = low, ymax = high), 
-                fill = 'gray70', alpha = 0.5) +
-    geom_point(data = spp_df, aes(y = log_total_enterocytes, shape = taxon),
-               color = 'black', size = 2, fill = 'gray60') +
-    geom_line(aes(linetype = taxon)) +
-    theme(legend.position = c(0.15, 0.9), legend.title = element_blank(),
-          legend.key.width = unit(0.05, "npc")) +
-    scale_linetype_manual(values = c(1, 2)) +
-    scale_shape_manual(values = c(21, 1)) +
-    scale_y_continuous(expression("Total enterocytes (" %*% 10^9 * ")"), 
-                       breaks = log(seq(0, 2e9, 5e8)), labels = seq(0, 2, 0.5)) +
-    scale_x_continuous("Body mass (g)", breaks = log(seq(0, 150, 50)), 
-                       labels = seq(0, 150, 50)) +
-    coord_trans(x = 'exp', y = 'exp')
-
-
+fig6 <- taxon_only_no_mass(spp_fits$log_total_enterocytes, 'log_total_enterocytes',
+                   expression("Total enterocytes (" %*% 10^9 * ")")) +
+    theme(axis.title.y = element_text(margin = margin(0, 5.5, 0, 0))) +
+    scale_y_continuous(breaks = log(c(5e8, 1e9, 1.5e9)), labels = seq(0.5, 1.5, 0.5),
+                       limits = log(c(1, 1.55e9))) +
+    coord_trans(y = 'exp')
+# Mention that bars represent model predictions for mean body mass among all species
 
 
 
@@ -216,6 +190,9 @@ fig6 <- spp_mod_ci(spp_fits[[4]], 'log_total_enterocytes') %>%
 # =======================================================================================
 
 
+load('./data/pos_models.rda')
+
+# Nest pos_fits by parameter, not position, bc the former is how they'll be plotted
 pos_fits <- lapply(names(pos_fits$dist), 
                    function(n) {
                        list(prox = pos_fits$prox[[n]], 
@@ -230,6 +207,7 @@ names(pos_fits) <- c('log_intestinal_diameter',
                      'enterocyte_diameter',
                      'log_enterocyte_density')
 
+# Making data frame of confidence intervals
 pos_ci <- lapply(names(pos_fits), 
                  function(n) {
                      bind_rows(list(pos_mod_ci(pos_fits[[n]]$prox, n, 'prox'),
@@ -240,6 +218,7 @@ pos_ci <- lapply(names(pos_fits),
     mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
                         labels = c('Proximal', 'Medial', 'Distal')))
 
+# Combining the three data frame separated by position into one
 pos_df <- lapply(c('prox','med', 'dist'),
                  function(p) {
                      df <- eval(parse(text = paste0(p, '_df')))
@@ -251,6 +230,7 @@ pos_df <- lapply(c('prox','med', 'dist'),
     mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
                         labels = c('Proximal', 'Medial', 'Distal')))
 
+# Table of y-axis names for each parameter
 plot_names <- read_csv('og,new
 log_intestinal_diameter,"Intestinal ~ diameter ~ \'(cm)\'"
 villus_height,"Villus ~ height ~ \'(mm)\'"
@@ -262,153 +242,200 @@ log_enterocyte_density,"Enterocyte ~ density ~ \'(\' %*% 10^6 * \')\'"
 ')
 
 
+# Plots for each parameter. I'm avoiding facets bc they make `ggplotGrob`s 
+# annoying to combine
 pos_plots <- lapply(names(pos_fits), 
        function(n) {
-           plot_n <- pos_ci %>% 
+           plot_n <- pos_ci %>%
                filter(measure == n) %>% 
-               ggplot(aes(taxon)) + 
-               geom_point(data = pos_df, aes_string(y = n, shape = 'taxon'),
+               mutate(pos = as.numeric(pos)) %>% 
+               group_by(taxon) %>% 
+               mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
+               ungroup %>% 
+               ggplot(aes(pos, group = taxon)) + 
+               geom_point(data = pos_df %>% 
+                              mutate(pos = as.numeric(pos)) %>% 
+                              group_by(taxon) %>% 
+                              mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
+                              ungroup, 
+                          aes_string(y = n, shape = 'taxon'),
                           color = 'black', size = 2, fill = 'gray60',
-                          position = position_jitter(width = 0.2, height = 0)) +
-               geom_errorbar(aes(ymin = low, ymax = high), width = 0.3) +
-               geom_segment(aes(y = predicted, yend = predicted, 
-                                x = as.numeric(taxon) - 0.2, 
-                                xend = as.numeric(taxon) + 0.2)) +
-               theme(legend.position = 'none', axis.title.x = element_blank()) +
+                          position = position_jitter(0.075, 0)) +
+               geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
+               geom_segment(aes(y = predicted, yend = predicted,
+                                x = pos - 0.1, xend = pos + 0.1), 
+                            size = 0.5) +
+               theme(legend.position = 'none', legend.margin = margin(0,0,0,0),
+                     axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
+                     axis.text.x = element_blank(), legend.title = element_blank()) +
                scale_shape_manual(values = c(21, 1)) +
-               facet_wrap(~ pos, nrow = 1) +
-               ylab(eval(parse(text = plot_names[plot_names$og == n,]$new)))
+               ylab(eval(parse(text = plot_names[plot_names$og == n,]$new))) +
+               scale_x_continuous(breaks = 1:3, 
+                                  labels = c('Proximal', 'Medial', 'Distal'))
            return(plot_n)
        })
 names(pos_plots) <- names(pos_fits)
 
 
-
-n = names(pos_fits)[1]
-fig1c <- pos_ci %>%
-    filter(measure == n) %>% 
-    mutate(pos = as.numeric(pos)) %>% 
-    group_by(taxon) %>% 
-    mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
-    ungroup %>% 
-    ggplot(aes(pos, group = taxon)) + 
-    geom_point(data = pos_df %>% 
-                   mutate(pos = as.numeric(pos)) %>% 
-                   group_by(taxon) %>% 
-                   mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
-                   ungroup, 
-               aes_string(y = n, shape = 'taxon'),
-               color = 'black', size = 2, fill = 'gray60',
-               position = position_jitter(0.075, 0)) +
-    geom_errorbar(aes(ymin = low, ymax = high), width = 0.3) +
-    geom_segment(aes(y = predicted, yend = predicted,
-                     x = pos - 0.2,
-                     xend = pos + 0.2)) +
-    theme(legend.position = 'bottom', legend.margin = margin(0,0,0,0),
-          axis.title.x = element_blank(),
-          axis.ticks.x = element_blank(), 
+# Figure 1c
+fig1c <- pos_plots$log_intestinal_diameter +
+    theme(legend.position = 'bottom', 
           axis.text.x = element_text(color = 'black', size = 10)) +
-    scale_shape_manual(values = c(21, 1)) +
-    ylab(eval(parse(text = plot_names[plot_names$og == n,]$new))) +
     ggtitle("(c)") +
-    # geom_text(data = data_frame(pos = 1:3, taxon = 0.5, y = 0.37 + 0.05), aes(y=y),
-    #           label = c('Proximal', 'Medial', 'Distal'), 
-    #           size = 4, vjust = 1, hjust = 0.5) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(limits = c(-0.96, 0.37 + 0.1), expand = c(0, 0),
-                       breaks = log(seq(0.6, 1.2, 0.2)), labels = seq(0.6, 1.2, 0.2)) +
-    scale_x_continuous(# breaks = c(1 + c(-0.2, 0.2), 2 + c(-0.2, 0.2), 
-                       #            3 + c(-0.2, 0.2)), 
-                       # labels = rep(c('Rodent', 'Bat'), 3)
-        breaks = 1:3, labels = c('Proximal', 'Medial', 'Distal')) + 
-    guides(shape = guide_legend(title = NULL))
+    scale_y_continuous(breaks = log(seq(0.6, 1.2, 0.2)), labels = seq(0.6, 1.2, 0.2)) +
+    coord_trans(y = 'exp')
+
+
+# Figure 2a
+fig2a <- pos_plots$villus_height +
+    ggtitle('(a)')
+
+
+# Figure 2b
+fig2b <- pos_plots$villus_width +
+    ggtitle('(b)')
+
+# Figure 2c
+fig2c <- pos_plots$crypt_width +
+    theme(legend.position = 'bottom', 
+          axis.text.x = element_text(color = 'black', size = 10)) +
+    ggtitle("(c)")
+
+
+
+fig12 <- function(fig_num) {
+    grid.newpage()
+    grid.draw(rbind(ggplotGrob(eval(parse(text = paste0('fig', fig_num, 'a')))),
+                    ggplotGrob(eval(parse(text = paste0('fig', fig_num, 'b')))),
+                    ggplotGrob(eval(parse(text = paste0('fig', fig_num, 'c')))),
+                    size = "first"))
+}
+
+fig12(1)
+# 3.875" wide, 9.4375 " tall
+fig12(2)
+
+crypt_test <- read_csv('enterocyte_diameter,species
+8.19,"Akodon montensis"
+6.45,"Delomys sublineatus"
+6.90,"Euryoryzomys russatus"
+7.92,"Olygoryzomys nigripes"
+6.43,"Sooretamys angouya"
+6.75,"Thaptomys nigrita"
+8.70,"Peromyscus leucopus"
+4.84,"Mus musculus"
+8.23,"Microtus pennsylvanicus"
+5.12,"Molossus rufus"
+7.00,"Myotis lucifugus"
+5.43,"Molossus molossus"
+6.12,"Eumops glaucinus"
+6.01,"Desmodus rotundus"
+5.70,"Carollia perspicillata"
+7.86,"Artibeus lituratus"
+5.02,"Tadarida brasiliensis"
+6.34,"Eptesicus fuscus"') %>% 
+    mutate(pos = 'med', 
+           species = gsub('Olygoryzomys nigripes', 'Oligoryzomys nigripes', species),
+           taxon = sapply(species, 
+                          function(s) paste(spp_df$taxon[spp_df$species == s])))
+
+theirs <- crypt_test$enterocyte_diameter
+my <- round(pos_df$enterocyte_diameter[pos_df$pos == 'Medial'] * 1e3, 2)
+
+
+
+desc_spp <- pos_df$species[pos_df$pos == 'Medial'][!my %in% theirs]
+desc_spp
+theirs[crypt_test$species %in% desc_spp]
+my[pos_df$species[pos_df$pos == 'Medial'] %in% desc_spp]
+
+source('tidy_csv.R')
+unique(morph_df$id[morph_df$species %in% pos_df$species[pos_df$pos == 'Medial'][!my %in% theirs]])
+
+
+# figure 3
+fig3 <- pos_plots$sef +
+    theme(legend.position = 'top', 
+          axis.text.x = element_text(color = 'black', size = 10))
+
+# Figure 5
+# fig5 <- 
+pos_plots$enterocyte_diameter +
+    scale_y_continuous(breaks = seq(2e-3, 10e-3, 2e-3), labels = seq(2, 10, 2))
+
+'log_enterocyte_density'
+
+
+
+
+
+
+
+
+mass_len <- read_csv('mass,length,species
+32,44,"Akodon montensis"
+72,36.5,"Delomys sublineatus"
+157.1,30.3,"Euryoryzomys russatus"
+39,20.7,"Oligoryzomys nigripes"
+103.2,47,"Sooretamys angouya"
+25.4,38.6,"Thaptomys nigrita"
+25.7,23.6,"Peromyscus leucopus"
+37,47.5,"Mus musculus"
+43.5,24.6,"Microtus pennsylvanicus"
+33.6,16.9,"Molossus rufus"
+9.2,14.2,"Myotis lucifugus"
+13.5,10.2,"Molossus molossus"
+34.1,10.8,"Eumops glaucinus"
+38.5,18.4,"Desmodus rotundus"
+17.9,8.5,"Carollia perspicillata"
+69.6,47.8,"Artibeus lituratus"
+14,16.7,"Tadarida brasiliensis"
+15.9,12.4,"Eptesicus fuscus"')
+
+get_len <- function(.s) {
+    mean({spread(morph_df, measure, value) %>% 
+            filter(`species` == .s)}$intestinal_length, na.rm = TRUE)
+}
+
+mass_len %>% 
+    group_by(species) %>% 
+    summarize(len = median(length), 
+              len2 = get_len(species))
+
+
+
+
+
+
+spp_df %>% filter(taxon == 'Bat') %>% select(species, int_length_mass)
 
 #
 
 
 
 
-# Figure 1c
-fig1c <- pos_plots$log_intestinal_diameter +
-    geom_text(data = data_frame(pos = 'Distal', taxon = 0.5, y = 0.37), aes(y=y),
-              label = 'C', size = 6, vjust = 1, hjust = 0) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(limits = c(-0.96, 0.37), expand = c(0, 0),
-                       breaks = log(seq(0.6, 1.2, 0.2)), labels = seq(0.6, 1.2, 0.2)) +
-    coord_trans(y = 'exp') +
-    coord_cartesian(xlim = c(0.4, 2.6), expand = FALSE)
 
 
-# Figure 2a
-fig2a <- pos_plots$villus_height +
-    theme(axis.text.x = element_blank()) +
-    geom_text(data = data_frame(pos = 'Distal', taxon = 0.5, y = 0.922), aes(y=y),
-              label = 'A', size = 6, vjust = 1, hjust = 0) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(limits = c(0.14, 0.922), expand = c(0, 0)) +
-    coord_cartesian(xlim = c(0.4, 2.6), expand = FALSE)
 
 
-# Figure 2b
-fig2b <- pos_plots$villus_width +
-    theme(axis.text.x = element_blank(), strip.text = element_blank()) +
-    geom_text(data = data_frame(pos = 'Distal', taxon = 0.5, y = 0.13), aes(y=y),
-              label = 'B', size = 6, vjust = 1, hjust = 0) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(limits = c(0.036, 0.13), expand = c(0, 0)) +
-    coord_cartesian(xlim = c(0.4, 2.6), expand = FALSE)
 
 
-# Figure 2c
-fig2c <- pos_plots$crypt_width +
-    theme(strip.text = element_blank()) +
-    geom_text(data = data_frame(pos = 'Distal', taxon = 0.5, y = 0.059), aes(y=y),
-              label = 'C', size = 6, vjust = 1, hjust = 0) +
-    # Used ggplot_build(<obj>)$layout$panel_ranges[[1]]$y.range to get y range
-    scale_y_continuous(limits = c(0.014, 0.059), expand = c(0, 0)) +
-    coord_cartesian(xlim = c(0.4, 2.6), expand = FALSE)
 
 
-# fig1 <- function() {
-    g1 <- ggplotGrob(fig1a)
-    g2 <- ggplotGrob(fig1b)
-    g3 <- ggplotGrob(fig1c)
-    # colnames(g1) <- paste0(seq_len(ncol(g1)))
-    # colnames(g2) <- paste0(seq_len(ncol(g2)))
-    # colnames(g3) <- paste0(seq_len(ncol(g3)))
-    # grid.draw(combine(g1, g2, g3, along=2))
-    # 
-    # newWidth = unit.pmax(g1$widths[2:3], g2$widths[2:3], g3$widths[2:3])
-    # 
-    # g1$widths[2:3] = as.list(newWidth)
-    # g2$widths[2:3] = as.list(newWidth)
-    # g3$widths[2:3] = as.list(newWidth)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
-    grid.arrange(g1, g2, g3, ncol=1)
-    
-    grid.newpage()
-    grid.draw(rbind(ggplotGrob(fig1a),
-                          ggplotGrob(fig1b),
-                    ggplotGrob(fig1c),
-                    size = "first"))
-    
-    
-    
-# }
-
-fig1()
-
-
-fig2 <- function() {
-    g1 <- ggplotGrob(fig2a)
-    g2 <- ggplotGrob(fig2b)
-    g3 <- ggplotGrob(fig2c)
-    colnames(g1) <- paste0(seq_len(ncol(g1)))
-    colnames(g2) <- paste0(seq_len(ncol(g2)))
-    colnames(g3) <- paste0(seq_len(ncol(g3)))
-    grid.draw(combine(g1, g2, g3, along=2))
-}
-
-fig2()
-# 3.875" wide, 9.4375 " tall
-
