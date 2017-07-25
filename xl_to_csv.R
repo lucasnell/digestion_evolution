@@ -117,3 +117,20 @@ morph_df <- new_cols %>%
 
 
 write_csv(morph_df, './data/clean_data.csv')
+
+
+
+
+
+
+# ================================================
+
+# Clearance data
+
+# ================================================
+
+clear_df <- read_excel('./data/raw_clearance_data.xlsx', range = "B5:C13", 
+                       col_names = c('sef', 'clearance'))
+
+write_csv(clear_df, './data/clean_clearance_data.csv')
+
