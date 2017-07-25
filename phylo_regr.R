@@ -168,6 +168,18 @@ rownames(spp_df) <- spp_df$species
 #' 
 #' - SEF
 #' 
+
+diet_df <- spp_df %>% filter(!is.na(diet))
+rownames(diet_df) <- diet_df$species
+diet_tr <- tr
+diet_tr <- drop.tip(diet_tr, 
+                    tip = diet_tr$tip.label[!diet_tr$tip.label %in% diet_df$species])
+set.seed(581120)
+diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
+                    model = 'lambda', boot = 2000)
+
+
+#' 
 #+ sp_analyses
 
 # (Since I don't yet have fractional absorption data, I'm skipping that for now)
@@ -187,9 +199,10 @@ spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocy
 #         )
 #     })
 # names(spp_fits) <- spp_ys
-# save(spp_fits, spp_df, file = './data/spp_models.rda')
+# save(spp_fits, spp_df, diet_mod, file = './data/spp_models.rda')
 load('./data/spp_models.rda')
 lapply(spp_fits, summary)
+summary(diet_mod)
 #' 
 #' 
 #' 
@@ -306,8 +319,8 @@ pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
 #                 f <- paste(y, ' ~ taxon',
 #                            ifelse(grepl('intestinal_diameter|villus_height', y),
 #                                   '+ log_mass', ''))
-#                 # This model doesn't find the peak likelihood unless specifying a starting
-#                 # value of 0.1.
+#                 # This model doesn't find the peak likelihood unless specifying a 
+#                 # starting value of 0.1.
 #                 if (y == "log_enterocyte_density" & pos == "prox") {
 #                     suppressWarnings(
 #                         do.call("phylolm",
@@ -348,7 +361,14 @@ lapply(pos_fits$prox, summary)
 #'   ("we used reduced major axis regression (model II regression)... because both 
 #'   variables [X and Y] were subject to error")
 #' 
-#' 
+#+ clear_sef
+
+# set.seed()
+# read_csv('./data/clean_clearance_data.csv')
+
+
+
+
 #' 
 #' 
 #' 
