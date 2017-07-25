@@ -330,17 +330,13 @@ pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
 #     })
 # names(pos_fits) <- unique(pos_df$pos)
 # for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys
-# save(pos_fits, dist_df, med_df, prox_df, file = './data/pos_models.rda')
+# # (Saving the tree too in case you want to re-fit any models in other files)
+# save(pos_fits, dist_df, med_df, prox_df, tr, file = './data/pos_models.rda')
 
 load('./data/pos_models.rda')
 lapply(pos_fits$dist, summary)
 lapply(pos_fits$med, summary)
 lapply(pos_fits$prox, summary)
-
-
-
-
-
 
 #' 
 #' 
