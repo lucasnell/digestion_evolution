@@ -177,7 +177,7 @@ diet_tr <- drop.tip(diet_tr,
 set.seed(581120)
 diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
                     model = 'lambda', boot = 2000)
-
+summary(diet_mod)
 
 #' 
 #+ sp_analyses
@@ -364,8 +364,14 @@ lapply(pos_fits$prox, summary)
 #+ clear_sef
 
 # set.seed()
-# read_csv('./data/clean_clearance_data.csv')
+clear_df <- read_csv('./data/clean_clearance_data.csv', col_types = 'dd')
 
+
+summary(lm(log(clearance) ~ log(sef), data = clear_df))
+
+library(lmodel2)
+lmodel2(log(clearance) ~ log(sef), data = clear_df, nperm = 2000, 
+        range.y = 'interval', range.x = 'interval')
 
 
 
