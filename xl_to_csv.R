@@ -8,7 +8,7 @@ library(tidyr)
 library(purrr)
 
 
-xl <- read_excel('./data/raw_data.xlsx', col_names = FALSE, col_types = rep('text', 88))
+xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, col_types = rep('text', 88))
 
 # Table of abbreviated species names
 spp_df <- xl[69:86,2:3] %>% 

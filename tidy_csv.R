@@ -10,11 +10,10 @@ suppressPackageStartupMessages({
 })
 
 
-morph_df <- read_csv('./data/clean_data.csv', col_types = 'cccccddd') %>% 
+morph_df <- read_csv('./data/clean_data.csv', col_types = 'cccccddd') %>%
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
                             'Oligoryzomys nigripes', species))
-
 
 
 # Number of individuals
@@ -41,3 +40,8 @@ morph_df <- morph_df %>%
 # This object is no longer necessary
 rm(no_pos)
 
+# These values were input with an extra zero to the Excel file
+morph_df <- morph_df %>% 
+    mutate(value = ifelse(species == 'Microtus pennsylvanicus' &
+                          measure == 'enterocyte_diameter' &
+                          pos %in% c('dist', 'med'), value * 10, value))
