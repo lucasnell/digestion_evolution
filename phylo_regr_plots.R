@@ -17,7 +17,7 @@ theme_set(theme_classic() %+replace%
                     plot.title = element_text(size = 14, hjust = 0)))
 
 
-load('./data/spp_models.rda')
+load('data/spp_models.rda')
 
 
 
@@ -315,42 +315,6 @@ fig12(1)
 # 3.875" wide, 9.4375 " tall
 fig12(2)
 
-crypt_test <- read_csv('enterocyte_diameter,species
-8.19,"Akodon montensis"
-6.45,"Delomys sublineatus"
-6.90,"Euryoryzomys russatus"
-7.92,"Olygoryzomys nigripes"
-6.43,"Sooretamys angouya"
-6.75,"Thaptomys nigrita"
-8.70,"Peromyscus leucopus"
-4.84,"Mus musculus"
-8.23,"Microtus pennsylvanicus"
-5.12,"Molossus rufus"
-7.00,"Myotis lucifugus"
-5.43,"Molossus molossus"
-6.12,"Eumops glaucinus"
-6.01,"Desmodus rotundus"
-5.70,"Carollia perspicillata"
-7.86,"Artibeus lituratus"
-5.02,"Tadarida brasiliensis"
-6.34,"Eptesicus fuscus"') %>% 
-    mutate(pos = 'med', 
-           species = gsub('Olygoryzomys nigripes', 'Oligoryzomys nigripes', species),
-           taxon = sapply(species, 
-                          function(s) paste(spp_df$taxon[spp_df$species == s])))
-
-theirs <- crypt_test$enterocyte_diameter
-my <- round(pos_df$enterocyte_diameter[pos_df$pos == 'Medial'] * 1e3, 2)
-
-
-
-desc_spp <- pos_df$species[pos_df$pos == 'Medial'][!my %in% theirs]
-desc_spp
-theirs[crypt_test$species %in% desc_spp]
-my[pos_df$species[pos_df$pos == 'Medial'] %in% desc_spp]
-
-source('tidy_csv.R')
-unique(morph_df$id[morph_df$species %in% pos_df$species[pos_df$pos == 'Medial'][!my %in% theirs]])
 
 
 # figure 3
