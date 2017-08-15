@@ -303,17 +303,19 @@ fig2c <- pos_plots$crypt_width +
 
 
 
-fig12 <- function(fig_num) {
+combine_fig <- function(fig_num) {
+    grob_list <- c(lapply(ls(envir = .GlobalEnv)[grepl(paste0('^fig', fig_num), 
+                                                       ls(envir = .GlobalEnv))], 
+                        function(n) ggplotGrob(eval(parse(text = n)))),
+                   size = "first")
     grid.newpage()
-    grid.draw(rbind(ggplotGrob(eval(parse(text = paste0('fig', fig_num, 'a')))),
-                    ggplotGrob(eval(parse(text = paste0('fig', fig_num, 'b')))),
-                    ggplotGrob(eval(parse(text = paste0('fig', fig_num, 'c')))),
-                    size = "first"))
+    grid.draw(do.call(rbind, grob_list))
 }
 
-fig12(1)
+
+combine_fig(1)
 # 3.875" wide, 9.4375 " tall
-fig12(2)
+combine_fig(2)
 
 
 
@@ -323,83 +325,13 @@ fig3 <- pos_plots$sef +
           axis.text.x = element_text(color = 'black', size = 10))
 
 # Figure 5
-# fig5 <- 
-pos_plots$enterocyte_diameter +
-    scale_y_continuous(breaks = seq(2e-3, 10e-3, 2e-3), labels = seq(2, 10, 2))
+fig5a <- pos_plots$enterocyte_diameter +
+    scale_y_continuous(breaks = seq(2e-3, 10e-3, 2e-3), labels = seq(2, 10, 2)) +
+    ggtitle('(a)')
 
-'log_enterocyte_density'
+fig5b <- pos_plots$log_enterocyte_density +
+    ggtitle('(b)') +
+    theme(axis.text.x = element_text(color = 'black', size = 10),
+          legend.position = 'bottom')
 
-
-
-
-
-
-
-
-mass_len <- read_csv('mass,length,species
-32,44,"Akodon montensis"
-72,36.5,"Delomys sublineatus"
-157.1,30.3,"Euryoryzomys russatus"
-39,20.7,"Oligoryzomys nigripes"
-103.2,47,"Sooretamys angouya"
-25.4,38.6,"Thaptomys nigrita"
-25.7,23.6,"Peromyscus leucopus"
-37,47.5,"Mus musculus"
-43.5,24.6,"Microtus pennsylvanicus"
-33.6,16.9,"Molossus rufus"
-9.2,14.2,"Myotis lucifugus"
-13.5,10.2,"Molossus molossus"
-34.1,10.8,"Eumops glaucinus"
-38.5,18.4,"Desmodus rotundus"
-17.9,8.5,"Carollia perspicillata"
-69.6,47.8,"Artibeus lituratus"
-14,16.7,"Tadarida brasiliensis"
-15.9,12.4,"Eptesicus fuscus"')
-
-get_len <- function(.s) {
-    mean({spread(morph_df, measure, value) %>% 
-            filter(`species` == .s)}$intestinal_length, na.rm = TRUE)
-}
-
-mass_len %>% 
-    group_by(species) %>% 
-    summarize(len = median(length), 
-              len2 = get_len(species))
-
-
-
-
-
-
-spp_df %>% filter(taxon == 'Bat') %>% select(species, int_length_mass)
-
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
+combine_fig(5)
