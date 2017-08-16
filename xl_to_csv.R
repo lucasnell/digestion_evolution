@@ -116,7 +116,7 @@ morph_df <- new_cols %>%
     arrange(measure, species, id)
 
 
-write_csv(morph_df, './data/clean_data.csv')
+write_csv(morph_df, 'data/clean_data.csv')
 
 
 
@@ -129,8 +129,61 @@ write_csv(morph_df, './data/clean_data.csv')
 
 # ================================================
 
-clear_df <- read_excel('./data/raw_clearance_data.xlsx', range = "B5:C13", 
-                       col_names = c('sef', 'clearance'))
+# Replacing abbreviated names for full species namees
+full_spp <- function(species) {
+    spp <- unique(morph_df$species)
+    spp_split <- sapply(strsplit(spp, ' '), function(x) x[2])
+    species_split <- sapply(strsplit(species, ' '), function(x) x[2])
+    species_out <- sapply(species_split, function(s) spp[spp_split == s][1], 
+                          USE.NAMES = FALSE)
+    # This is the brown rat.
+    species_out[is.na(species_out) & species == 'R. norvegicus'] <- 'Rattus norvegicus'
+    return(species_out)
+}
 
-write_csv(clear_df, './data/clean_clearance_data.csv')
+# Redefining this function for the below table
+find_taxon <- function(species) {
+    taxa <- sapply(species, function(s) morph_df$taxon[morph_df$species == s][1])
+    # In case you didn't know, rats are rodents.
+    taxa[is.na(taxa) & species == 'Rattus norvegicus'] <- 'Rodent'
+    return(taxa)
+}
 
+find_diet <- function(species) {
+    diets <- sapply(species, function(s) morph_df$diet[morph_df$species == s][1])
+    # In case you didn't know, rats are rodents.
+    diets[is.na(diets) & species == 'Rattus norvegicus'] <- 'Omnivorous'
+    return(diets)
+}
+
+
+
+
+# For "L-arabinose clearance (μl min-1 cm-2)" vs SEF (Figure 7A)
+# Note: in the plot, they lumped herbivores and omnivores together as "carb eater <taxon>"
+clear_df <- read_excel('data/raw_data.xlsx', range = 'B17:D25', sheet = 2, 
+           col_names = c('species', 'sef', 'clear'),
+           col_types = c('text', 'numeric', 'numeric')) %>% 
+    mutate(species = full_spp(species),
+           taxon = find_taxon(species),
+           diet = find_diet(species)) %>% 
+    select(taxon, diet, species, everything())
+
+
+# For "Fractional absorption / total intestinal surface (cm2 g0.75)" vs taxon (Figure 7B)
+absorp_df <- read_excel('data/raw_data.xlsx', range = "B3:K11", sheet = 2, 
+                       col_names = c('species', 'FA', 'SEF', 'NSA', 'BM', 'BM_corr', 
+                                     'X_1', 'NSA_SEF', 'X_2', 'FA_corr'),
+                       col_types = rep('text', 10)) %>% 
+    select(species, FA, SEF, BM, NSA) %>% 
+    filter(!is.na(species)) %>% 
+    mutate_at(vars(FA, SEF, BM, NSA), as.numeric) %>% 
+    mutate(taxon = find_taxon(species),
+           fa_c = FA / {(NSA*SEF) / (BM^0.75)}) %>% 
+    select(taxon, species, fa_c)
+
+
+
+
+write_csv(clear_df, 'data/clean_clearance_data.csv')
+write_csv(absorp_df, 'data/clean_absorption_data.csv')

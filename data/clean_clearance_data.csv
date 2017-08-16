@@ -1,10 +1,10 @@
-sef,clearance
-17.655,8.81
-17.182,15.8
-9.609,2.73
-18.785,1.91
-12.381,2.93
-12.74,1.56
-7.24,1.38
-10.5,0.95
-12.234,4.29
+taxon,diet,species,sef,clear
+Bat,Herbivorous,Carollia perspicillata,17.655,8.81
+Bat,Herbivorous,Artibeus lituratus,17.182,15.8
+Bat,Protein,Myotis lucifugus,9.609,2.73
+Bat,Protein,Tadarida brasiliensis,18.785,1.91
+Bat,Protein,Desmodus rotundus,12.381,2.93
+Rodent,Omnivorous,Mus musculus,9.931,1.56
+Rodent,Omnivorous,Rattus norvegicus,7.24,1.38
+Rodent,Protein,Peromyscus leucopus,8.81,0.95
+Rodent,Omnivorous,Akodon montensis,10.61,4.29
