@@ -288,9 +288,82 @@ lapply(pos_fits$prox, summary)
 X <- log(clear_df$sef)
 Y <- log(clear_df$clear)
 names(X) <- names(Y) <- rownames(clear_df)
-clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
-clear_rma
-plot(clear_rma)
+# clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
+# clear_rma
+# plot(clear_rma)
+
+?corphylo
+Xmat <- cbind(log(clear_df$sef), log(clear_df$clear))
+rownames(Xmat) <- rownames(clear_df)
+
+cp <- corphylo(Xmat, phy = clear_tr, method = "Nelder-Mead")
+cp
+
+seed = 2012700501
+
+
+n <- nrow(Xmat)
+phy <- clear_tr
+d <- cp$d
+p <- length(d)
+R <- cp$R
+B2 <- cp$B[2,1]
+Vphy <- cp$Vphy
+MM <- cp$MM
+V <- cp$V
+iD <- t(chol(V))
+
+
+
+set.seed(seed)
+star <- stree(n)
+star$edge.length <- array(1, dim = c(n, 1))
+star$tip.label <- phy$tip.label
+
+cp$U
+
+cp$XX; iD
+
+
+# Perform Nrep simulations and collect the results
+Nrep <- 100
+cor.list <- matrix(0, nrow = Nrep, ncol = 1)
+cor.noP.list <- matrix(0, nrow = Nrep, ncol = 1)
+d.list <- matrix(0, nrow = Nrep, ncol = 2)
+B.list <- matrix(0, nrow = Nrep, ncol = 3)
+B.noP.list <- matrix(0, nrow = Nrep, ncol = 3)
+for (rep in 1:Nrep) {
+    XX <- iD
+    X <- matrix(XX, nrow = n, ncol = 2)
+    rownames(X) <- phy$tip.label
+    
+    # U <- list(NULL, matrix(rnorm(n, mean = 2, sd = 10), nrow = n, ncol = 1))
+    # rownames(U[[2]]) <- phy$tip.label
+    # colnames(U[[2]]) <- "V1"
+    # X[,2] <- X[,2] + B2[1] * U[[2]][,1] - B2[1] * mean(U[[2]][,1])
+    
+    z <- corphylo(X = X, phy = phy, method = "Nelder-Mead")
+    # z.noM <- corphylo(X = X, U = U, phy = phy, method = "Nelder-Mead")
+    z.noP <- corphylo(X = X, phy = star, method = "Nelder-Mead")
+    
+    cor.list[rep] <- z$cor.matrix[1, 2]
+    # cor.noM.list[rep] <- z.noM$cor.matrix[1, 2]
+    cor.noP.list[rep] <- z.noP$cor.matrix[1, 2]
+    # cor.noMP.list[rep] <- cor(cbind(lm(X[,1] ~ 1)$residuals, lm(X[,2] ~ U[[2]])$residuals))[1,2]
+    
+    d.list[rep, ] <- z$d
+    d.noM.list[rep, ] <- z.noM$d
+    
+    B.list[rep, ] <- z$B
+    B.noM.list[rep, ] <- z.noM$B
+    B.noP.list[rep, ] <- z.noP$B
+    
+    show(c(rep, z$convcode, z$cor.matrix[1, 2], z$d))
+}
+
+
+
+
 #' 
 #' 
 #' 
