@@ -29,50 +29,64 @@ suppressPackageStartupMessages({
 #' 
 #' 
 #' 
-#' # Reading csv of morphometric measurements
-#' 
-#' Reading and cleaning `data/morphometrics.csv` file for use.
+#' # Reading and cleaning csv files
 #' 
 #+ source_tidy_csv
 source('tidy_csv.R')
-morph_df
+#' 
+#' 
+#' ## Morphometric data
+#' 
+#' In 'tidy_csv.R` I first create two data sets from morphometric data in 
+#' `data/clean_morph_data.csv`
+#' with the different measurements as columns, plus separate columns for their 
+#' log-transformed versions.
+#' Each data set only needs certain measurements, so only those are included.
+#' All data are present in `data.frame`s (rather than `tibble`s), with species names 
+#' as row names.
+#' 
+#' The first data set consists of two `data.frame`s, each summarizing by species 
+#' only (and takes means over positions).
+#' The only difference between the two data frames is that one is designed for the
+#' analysis of SEF in relation to diet. Thus it has species with no diet data removed.
+#'  
+#' The second data set consists of separate data frames for morphometric data for
+#' each position (distal, medial, proximal).
+#' I need to do my analyses separately for each position because modelling 
+#' within-species and within-individual variance due to position rather than measurement
+#' error or process error would be difficult and not likely possible with this small 
+#' dataset.
+#' 
+#' 
+#' ## Absorption and clearance data
+#' 
+#' `tidy_csv.R` also prepares absorption and clearance data 
+#' (`data/clean_absorption_data.csv` and `data/clean_clearance_data.csv`, respectively).
+#' Each of these is organized into a single `data.frame` with species names as row 
+#' names.
 #' 
 #' 
 #' 
 #' 
-#' All measures found in `morph_df`:
-#' 
-#' - `crypt width`
-#' - `enterocyte density`
-#' - `enterocyte width`
-#' - `intestinal diameter`
-#' - `intestinal length`
-#' - `mass`
-#' - `nsa`
-#' - `sef`
-#' - `villa surface area`
-#' - `villus height`
-#' - `villus width`
 #' 
 #' 
 #' 
 #' 
-#' 
-#' 
-#' 
-#' 
-#' 
-#' 
-#' # Phylogenetic tree
+#' # Phylogenetic trees
 #' 
 #' Reading phylogenetic tree, cleaning species names, and removing unnecessary species 
-#' from it
+#' from it for each set of analyses that differs in the set of unique species.
+#' These analyses are for `SEF ~ diet`, `clearance ~ SEF`, and 
+#' `fractional absorption ~ taxon`, respectively.
+#' The `tr` phylogeny is for all other analyses.
 #' 
-#+ make_tr
+#+ make_trs
 tr <- read.tree('data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
-tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
-tr
+diet_tr <- drop.tip(tr,  tip = tr$tip.label[!tr$tip.label %in% diet_df$species])
+clear_tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% clear_df$species])
+absorp_tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% absorp_df$species])
+tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% spp_df$species])
 #' 
 #' 
 #' 
@@ -84,68 +98,11 @@ tr
 #' # Creating data frames of measurements
 #' 
 #' 
-#' Now I create two data frames with the different measurements as columns, plus separate
-#' columns for their log-transformed versions.
-#' 
-#' The first one summarizes by species only (and takes mean over positions), 
-#' while the second one keeps the positions (distal, medial, proximal) separate.
-#' Each data frame only needs certain measurements, so only those are included.
 #' 
 #' ## Species data frame
 #' 
 #+ make_spp_df
-spp_measures <- c('mass',
-                  'intestinal_length',
-                  'nsa',
-                  'villa_surface_area',
-                  'enterocyte_density',
-                  'sef')
-
-spp_df <- morph_df %>%
-    # Changing from tall to wide format
-    spread(measure, value) %>% 
-    # Selecting measurement columns, plus the identifying columns
-    select_(.dots = append(list('diet', 'taxon', 'species', 'id', 'pos'), 
-                           spp_measures)) %>% 
-    # Removing all rows with all NAs in measures columns
-    filter(Reduce(`+`, lapply(.[,spp_measures], is.na)) < length(spp_measures)) %>% 
-    # Add nsa to all positions' estimates (for total_enterocytes and total_surface below)
-    group_by(taxon, diet, species, id) %>% 
-    mutate(nsa = ifelse(is.na(nsa), nsa[!is.na(nsa)], nsa)) %>% 
-    ungroup %>% 
-    # Doing the calculations now, before taking any means
-    mutate(int_length_mass = intestinal_length / mass^0.4,
-           nsa_mass = nsa / mass^0.75,
-           vill_area_mass = villa_surface_area / mass^0.75,
-           total_enterocytes = enterocyte_density * nsa,
-           log_total_enterocytes = log(enterocyte_density * nsa),
-           total_surface = nsa * sef,
-           log_mass = log(mass)) %>% 
-    select(taxon, diet, species, pos,
-           int_length_mass, nsa_mass, vill_area_mass, 
-           total_enterocytes, log_total_enterocytes, total_surface, sef, 
-           mass, log_mass) %>% 
-    # Taking mean by position (dist, med, prox, or NA)
-    group_by(taxon, diet, species, pos) %>% 
-    summarize_all(mean, na.rm = TRUE) %>% 
-    ungroup %>% 
-    # Now taking mean by species
-    group_by(taxon, diet, species) %>% 
-    summarize_at(.vars = vars(int_length_mass, nsa_mass, vill_area_mass, 
-                              total_enterocytes, log_total_enterocytes, total_surface, 
-                              sef, mass, log_mass), 
-                 mean, na.rm = TRUE) %>% 
-    ungroup %>% 
-    # Converting taxon and diet to factors
-    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
-           diet = factor(diet, levels = c("Herbivorous", "Omnivorous", "Protein"))) %>% 
-    arrange(taxon, diet, species) %>% 
-    # To change row names, it can't be a tibble, so I'm reverting back to normal
-    # data frame
-    as.data.frame
-
-# phylolm requires that the rownames match the species names
-rownames(spp_df) <- spp_df$species
+spp_measures
 
 # Function to get a p value from a bootstrapped phylolm model
 pval <- function(model, parameter = 'taxonBat') {
@@ -176,11 +133,8 @@ pval <- function(model, parameter = 'taxonBat') {
 #' - SEF
 #' 
 
-diet_df <- spp_df %>% filter(!is.na(diet))
-rownames(diet_df) <- diet_df$species
-diet_tr <- tr
-diet_tr <- drop.tip(diet_tr, 
-                    tip = diet_tr$tip.label[!diet_tr$tip.label %in% diet_df$species])
+
+
 set.seed(581120)
 diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
                     model = 'lambda', boot = 2000)
@@ -233,56 +187,14 @@ sapply(spp_fits, pval)
 #' ## Positions data frame
 #' 
 #+ make_pos_df
-pos_measures <- c('mass',
-                  'intestinal_diameter',
-                  'villus_height', 
-                  'villus_width',
-                  'crypt_width',
-                  'sef',
-                  'enterocyte_diameter',
-                  'enterocyte_density')
+pos_measures
 
-pos_df <- morph_df %>%
-    # Changing from tall to wide format
-    spread(measure, value) %>% 
-    select_(.dots = append(list('taxon', 'diet', 'species', 'pos', 'id'), 
-                           as.list(pos_measures))) %>% 
-    # Add mass to all positions' estimates
-    group_by(taxon, diet, species, id) %>% 
-    mutate(mass = ifelse(is.na(mass), mass[!is.na(mass)], mass)) %>% 
-    ungroup %>% 
-    # Now removing rows with pos == NA bc they don't have the other measurements
-    filter(!is.na(pos)) %>% 
-    # Taking the log now, before taking any means
-    mutate_(.dots = setNames(as.list(sprintf('%s(%s)', 'log', pos_measures)), 
-                             paste0('log_', pos_measures))) %>% 
-    # Grouping by, then taking mean of all measurement columns and transformed-
-    # measurement columns
-    group_by(taxon, diet, species, pos) %>% 
-    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), mean, 
-                 na.rm = TRUE) %>% 
-    ungroup %>% 
-    # Converting taxon and diet to factors
-    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
-           diet = factor(diet, levels = c("Herbivorous", "Omnivorous", "Protein"))) %>% 
-    arrange(taxon, diet, species, pos)
 #' 
 #' 
-#' I need to do these analyses separately for each position because modelling 
-#' within-species and within-individual variance due to position rather than measurement
-#' error or process error would be difficult and not likely possible with this small 
-#' dataset.
-#' I'll now make three new `data.frame`s (rather than `tibble`s) 
-#' of measurements for just one position, with species names as row names.
 #' 
-for (p in unique(pos_df$pos)) {
-    out_df <- pos_df %>% 
-        filter(pos == p) %>% 
-        select(-pos) %>% 
-        as.data.frame
-    rownames(out_df) <- out_df$species
-    assign(paste0(p, '_df'), out_df)
-}; rm(p, out_df)
+
+
+
 
 #' 
 #' 
@@ -371,10 +283,6 @@ lapply(pos_fits$prox, summary)
 #'   variables [X and Y] were subject to error")
 #' 
 #+ clear_sef
-clear_tr <- read.tree('data/tree.nwk')
-clear_tr$tip.label <- gsub('_', ' ', clear_tr$tip.label)
-clear_tr <- drop.tip(clear_tr, tip = clear_tr$tip.label[!clear_tr$tip.label %in% clear_df$species])
-clear_tr
 
 
 X <- log(clear_df$sef)
@@ -391,10 +299,7 @@ plot(clear_rma)
 
 absorp_df
 
-absorp_tr <- read.tree('data/tree.nwk')
-absorp_tr$tip.label <- gsub('_', ' ', absorp_tr$tip.label)
-absorp_tr <- drop.tip(absorp_tr, tip = absorp_tr$tip.label[!absorp_tr$tip.label %in% absorp_df$species])
-absorp_tr
+
 
 set.seed(454094511)
 absorp_fit <- suppressWarnings(
