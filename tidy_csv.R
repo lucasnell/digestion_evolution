@@ -1,5 +1,6 @@
-
-# This cleans the csv file for use.
+# 
+# This cleans csv files for use.
+# 
 
 # I'm now making sure all necessary packages are loaded:
 suppressPackageStartupMessages({
@@ -45,3 +46,23 @@ morph_df <- morph_df %>%
     mutate(value = ifelse(species == 'Microtus pennsylvanicus' &
                           measure == 'enterocyte_diameter' &
                           pos %in% c('dist', 'med'), value * 10, value))
+
+
+
+
+# --------------------
+# Clearance and absorption data
+# --------------------
+
+clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'cccdd') %>%
+    # In the plot, they lumped herbivores and omnivores together as "carb eater <taxon>"
+    mutate(diet = ifelse(diet == "Protein", diet, "Carb")) %>% 
+    as.data.frame %>% 
+    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
+           diet = factor(diet, levels = c("Carb", "Protein")))
+row.names(clear_df) <- paste(clear_df$species)
+
+absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccd') %>%
+    as.data.frame %>% 
+    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
+row.names(absorp_df) <- paste(absorp_df$species)

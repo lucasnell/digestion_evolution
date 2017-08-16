@@ -160,7 +160,6 @@ find_diet <- function(species) {
 
 
 # For "L-arabinose clearance (μl min-1 cm-2)" vs SEF (Figure 7A)
-# Note: in the plot, they lumped herbivores and omnivores together as "carb eater <taxon>"
 clear_df <- read_excel('data/raw_data.xlsx', range = 'B17:D25', sheet = 2, 
            col_names = c('species', 'sef', 'clear'),
            col_types = c('text', 'numeric', 'numeric')) %>% 

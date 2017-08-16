@@ -24,13 +24,14 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(phylolm)
     library(ape)
+    library(phytools)
 })
 #' 
 #' 
 #' 
 #' # Reading csv of morphometric measurements
 #' 
-#' Reading and cleaning `./data/morphometrics.csv` file for use.
+#' Reading and cleaning `data/morphometrics.csv` file for use.
 #' 
 #+ source_tidy_csv
 source('tidy_csv.R')
@@ -68,7 +69,7 @@ morph_df
 #' from it
 #' 
 #+ make_tr
-tr <- read.tree('./data/tree.nwk')
+tr <- read.tree('data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
 tr
@@ -145,6 +146,12 @@ spp_df <- morph_df %>%
 
 # phylolm requires that the rownames match the species names
 rownames(spp_df) <- spp_df$species
+
+# Function to get a p value from a bootstrapped phylolm model
+pval <- function(model, parameter = 'taxonBat') {
+    2 * min(mean(model$bootstrap[,parameter] < 0), 
+            mean(model$bootstrap[,parameter] > 0))
+}
 #' 
 #' 
 #' ### Analyses for this data frame
@@ -178,7 +185,10 @@ set.seed(581120)
 diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
                     model = 'lambda', boot = 2000)
 summary(diet_mod)
+pval(diet_mod, 'dietOmnivorous'); pval(diet_mod, 'dietProtein')
 
+#' 
+#' 
 #' 
 #+ sp_analyses
 
@@ -199,10 +209,9 @@ spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocy
 #         )
 #     })
 # names(spp_fits) <- spp_ys
-# save(spp_fits, spp_df, diet_mod, file = './data/spp_models.rda')
-load('./data/spp_models.rda')
-lapply(spp_fits, summary)
-summary(diet_mod)
+# save(spp_fits, spp_df, diet_mod, file = 'data/spp_models.rda')
+load('data/spp_models.rda')
+sapply(spp_fits, pval)
 #' 
 #' 
 #' 
@@ -344,9 +353,9 @@ pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
 # names(pos_fits) <- unique(pos_df$pos)
 # for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys
 # # (Saving the tree too in case you want to re-fit any models in other files)
-# save(pos_fits, dist_df, med_df, prox_df, tr, file = './data/pos_models.rda')
+# save(pos_fits, dist_df, med_df, prox_df, tr, file = 'data/pos_models.rda')
 
-load('./data/pos_models.rda')
+load('data/pos_models.rda')
 lapply(pos_fits$dist, summary)
 lapply(pos_fits$med, summary)
 lapply(pos_fits$prox, summary)
@@ -362,30 +371,37 @@ lapply(pos_fits$prox, summary)
 #'   variables [X and Y] were subject to error")
 #' 
 #+ clear_sef
-
-# set.seed()
-clear_df <- read_csv('./data/clean_clearance_data.csv', col_types = 'dd')
-
-
-summary(lm(log(clearance) ~ log(sef), data = clear_df))
-
-library(lmodel2)
-lmodel2(log(clearance) ~ log(sef), data = clear_df, nperm = 2000, 
-        range.y = 'interval', range.x = 'interval')
+clear_tr <- read.tree('data/tree.nwk')
+clear_tr$tip.label <- gsub('_', ' ', clear_tr$tip.label)
+clear_tr <- drop.tip(clear_tr, tip = clear_tr$tip.label[!clear_tr$tip.label %in% clear_df$species])
+clear_tr
 
 
-
+X <- log(clear_df$sef)
+Y <- log(clear_df$clear)
+names(X) <- names(Y) <- rownames(clear_df)
+clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
+clear_rma
+plot(clear_rma)
 #' 
 #' 
 #' 
 #' 
-#+ make_sp_df
+#+ absorp_taxon
 
+absorp_df
 
+absorp_tr <- read.tree('data/tree.nwk')
+absorp_tr$tip.label <- gsub('_', ' ', absorp_tr$tip.label)
+absorp_tr <- drop.tip(absorp_tr, tip = absorp_tr$tip.label[!absorp_tr$tip.label %in% absorp_df$species])
+absorp_tr
 
-
-
-
+set.seed(454094511)
+absorp_fit <- suppressWarnings(
+    phylolm(fa_c ~ taxon, data = absorp_df, phy = absorp_tr, 
+            model = 'lambda', boot = 2000)
+)
+summary(absorp_fit)
 
 
 #' 
