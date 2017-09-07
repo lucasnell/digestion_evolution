@@ -172,20 +172,71 @@ for (p in unique(pos_df$pos)) {
 # ======================================================================================
 # ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 
-# Clearance and absorption data
+# Clearance data
 
 # ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 # ======================================================================================
 
-clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'cccdd') %>%
-    # In the plot, they lumped herbivores and omnivores together as "carb eater <taxon>"
-    mutate(diet = ifelse(diet == "Protein", diet, "Carb")) %>% 
-    as.data.frame %>% 
+clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
+    mutate(
+        # They lumped herbivores and omnivores together as "carb eater <taxon>"
+        diet = ifelse(diet == "Protein", diet, "Carb"),
+        # Averaging SEF by individual, both on "identity" and log scale
+        sef = (prox + med + dist) / 3,
+        log_sef = (log(prox) + log(med) + log(dist)) / 3,
+        # Taking log of clearance before any means are calculated
+        # Some clearances were negative, so there will be NaNs produced
+        log_clear = log(clear)
+    ) %>% 
+    group_by(diet, taxon, species) %>% 
+    summarize(sef = mean(sef, na.rm = TRUE),
+              log_sef = mean(log_sef, na.rm = TRUE),
+              clear = mean(clear, na.rm = TRUE),
+              log_clear = mean(log_clear, na.rm = TRUE)) %>% 
+    ungroup %>% 
+    select(diet, taxon, species, everything()) %>% 
+    as.data.frame %>%
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
-           diet = factor(diet, levels = c("Carb", "Protein")))
+           diet = factor(diet, levels = c('Carb', 'Protein')))
 row.names(clear_df) <- paste(clear_df$species)
 
-absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccd') %>%
-    as.data.frame %>% 
+
+
+
+
+# ======================================================================================
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+
+# Absorption data
+
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+# ======================================================================================
+
+
+# These species had gavage and injection done separately in different individuals
+sep_absorps <- c('Myotis lucifugus', 'Tadarida brasiliensis', 'Akodon montensis')
+
+absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
+    mutate(
+        # Averaging SEF by individual
+        sef = (prox + med + dist) / 3,
+        rhs = (nsa * sef) / (mass^0.75)
+    ) %>% 
+    group_by(diet, taxon, species) %>% 
+    summarize(rhs = mean(rhs, na.rm = TRUE), 
+              # For sep_absorps species, I'm inversing injection here because...
+              # E(X*Y) = E(X) * E(Y)
+              # E(X/Y) != E(X) / E(Y)
+              # For non-sep_absorps species, I'm setting injection to 1 bc the final
+              # value is already in the gavage column
+              inv_injection = ifelse(species[1] %in% sep_absorps, 
+                                 mean(1 / injection, na.rm = TRUE), 1),
+              fa_c = mean(gavage, na.rm = TRUE) * inv_injection) %>% 
+    ungroup %>% 
+    select(taxon, species, fa_c) %>% 
+    as.data.frame %>%
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
 row.names(absorp_df) <- paste(absorp_df$species)
+
+rm(sep_absorps)
+
