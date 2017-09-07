@@ -8,7 +8,8 @@ library(tidyr)
 library(purrr)
 
 
-xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, col_types = rep('text', 88))
+xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, 
+                 col_types = rep('text', 88), sheet = 1)
 
 # Table of abbreviated species names
 spp_df <- xl[69:86,2:3] %>% 
@@ -19,7 +20,6 @@ spp_df$abbrev[spp_df$abbrev == 'Ds1'] <- 'Ds'
 spp_df$abbrev[spp_df$full == 'Eumops glaucinus'] <- 'Eg'
 spp_df$abbrev[spp_df$full == 'Microtus pennsylvanicus'] <- 'Microtus'
 spp_df$abbrev[spp_df$full == 'Molossus molossus'] <- 'Mmo'
-
 
 
 # Start of final morphometrics data frame, starting with diet, taxon, name, and 
@@ -116,7 +116,16 @@ morph_df <- new_cols %>%
     arrange(measure, species, id)
 
 
-write_csv(morph_df, 'data/clean_data.csv')
+# # These values were input with an extra zero in the Excel file
+morph_df <- morph_df %>%
+    mutate(dist = ifelse(species == 'Microtus pennsylvanicus' &
+                              measure == 'enterocyte width', 
+                         dist * 10, dist),
+           med = ifelse(species == 'Microtus pennsylvanicus' &
+                             measure == 'enterocyte width', 
+                        med * 10, med))
+
+write_csv(morph_df, 'data/clean_morph_data.csv')
 
 
 

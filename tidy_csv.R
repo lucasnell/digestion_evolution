@@ -50,12 +50,6 @@ morph_df <- morph_df %>%
 # This object is no longer necessary
 rm(no_pos)
 
-# These values were input with an extra zero in the Excel file
-morph_df <- morph_df %>% 
-    mutate(value = ifelse(species == 'Microtus pennsylvanicus' &
-                          measure == 'enterocyte_diameter' &
-                          pos %in% c('dist', 'med'), value * 10, value))
-
 
 
 # ======================================================================================
