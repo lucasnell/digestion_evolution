@@ -8,6 +8,15 @@ library(tidyr)
 library(purrr)
 
 
+# ======================================================================================
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+
+# Morphometric data
+
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+# ======================================================================================
+
+
 xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, 
                  col_types = rep('text', 88), sheet = 1)
 
@@ -132,14 +141,17 @@ write_csv(morph_df, 'data/clean_morph_data.csv')
 
 
 
-# ================================================
+# ======================================================================================
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 
 # Clearance data
 
-# ================================================
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+# ======================================================================================
 
 
 # For "L-arabinose clearance (μl min-1 cm-2)" vs SEF (Figure 7A)
+
 
 # ------
 # Necessary functions
@@ -147,8 +159,8 @@ write_csv(morph_df, 'data/clean_morph_data.csv')
 # Replacing abbreviated names for full species namees
 full_spp <- function(species) {
     spp <- unique(morph_df$species)
-    spp_split <- sapply(strsplit(spp, ' '), function(x) x[2])
-    species_split <- sapply(strsplit(species, ' '), function(x) x[2])
+    spp_split <- sapply(strsplit(spp, '\\s+'), function(x) tolower(x[2]))
+    species_split <- sapply(strsplit(species, '\\s+'), function(x) tolower(x[2]))
     species_out <- sapply(species_split, function(s) spp[spp_split == s][1], 
                           USE.NAMES = FALSE)
     # This is the brown rat.
@@ -157,7 +169,7 @@ full_spp <- function(species) {
 }
 # Abbreviate ids once I have the full species info
 abbrev_id <- function(ids) {
-    abbrev_ids <- sapply(strsplit(ids, ' '), 
+    abbrev_ids <- sapply(strsplit(ids, '\\s+'), 
                         function(x) {
                             paste(substr(x[1],1,1), 
                                   substr(x[2], 1, 4),
@@ -203,8 +215,8 @@ sef_df <- xl_sef %>%
     mutate(
         # this one was input incorrectly
         id = gsub("perspicillatac", "perspicillata", id),
-        species = sapply(strsplit(id, " "), 
-                         function(x) paste(x[1:2], collapse = " ")),
+        species = sapply(strsplit(id, "\\s+"), 
+                         function(x) paste(head(x, -1), collapse = " ")),
         species = full_spp(species),
         # now changing ids to abbreviations since I now have full species names
         id = abbrev_id(id),
@@ -245,30 +257,72 @@ write_csv(clear_df, 'data/clean_clearance_data.csv')
 
 
 
-# ================================================
+# ======================================================================================
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 
-# Clearance data
+# Absorption data
 
-# ================================================
-
-
-
-
-
-
+# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+# ======================================================================================
 
 
 # For "Fractional absorption / total intestinal surface (cm2 g0.75)" vs taxon (Figure 7B)
-absorp_df <- read_excel('data/raw_data.xlsx', range = "B3:K11", sheet = 2, 
-                       col_names = c('species', 'FA', 'SEF', 'NSA', 'BM', 'BM_corr', 
-                                     'X_1', 'NSA_SEF', 'X_2', 'FA_corr'),
-                       col_types = rep('text', 10)) %>% 
-    select(species, FA, SEF, BM, NSA) %>% 
-    filter(!is.na(species)) %>% 
-    mutate_at(vars(FA, SEF, BM, NSA), as.numeric) %>% 
-    mutate(taxon = find_taxon(species),
-           fa_c = FA / {(NSA*SEF) / (BM^0.75)}) %>% 
-    select(taxon, species, fa_c)
+
+
+
+xl_abs <- read_excel('data/raw_data.xlsx', sheet = 3, range = "C19:M131",
+                     col_types = rep('text', 11),
+                     col_names = c('id', 'gavage', 'injection', 
+                                   'id2', 'prox', 'med', 'dist', 'animal_avg', 
+                                   'sp_avg', 'nsa', 'mass'))
+
+
+
+
+abs_df <- xl_abs %>%
+    select(id, gavage, injection) %>% 
+    filter(!is.na(id), !is.na(gavage) | !is.na(injection),
+           is_num(gavage), is_num(injection), 
+           !grepl(id, pattern = 'average|absorption', ignore.case = TRUE)) %>% 
+    mutate_at(vars(gavage, injection), as.numeric) %>% 
+    mutate(
+        # this one was input incorrectly
+        id = gsub("Microtus", "M. pennsylvanicus", id),
+        species = sapply(strsplit(id, "\\s+"), 
+                         function(x) paste(head(x, -1), collapse = " ")),
+        species = full_spp(species),
+        # now changing ids to abbreviations since I now have full species names
+        id = abbrev_id(id),
+        # Now for taxon, then diet
+        diet = find_diet(species),
+        taxon = find_taxon(species)
+    ) %>% 
+    select(diet, taxon, species, id, gavage, injection)
+
+
+abs_df2 <- xl_abs %>%
+    select(id2, prox, med, dist, nsa, mass) %>% 
+    filter(!is.na(id2), !is.na(prox) , !is.na(med),
+           !is.na(dist), !is.na(nsa), !is.na(mass)) %>% 
+    mutate_at(vars(prox, med, dist, nsa, mass), as.numeric) %>% 
+    mutate(
+        # this one was input incorrectly
+        id2 = gsub("Microtus", "M. pennsylvanicus ", id2),
+        species = sapply(strsplit(id2, "\\s+"), 
+                         function(x) paste(head(x, -1), collapse = " ")),
+        species = full_spp(species),
+        # now changing ids to abbreviations since I now have full species names
+        id = abbrev_id(id2),
+        # Now for taxon, then diet
+        diet = find_diet(species),
+        taxon = find_taxon(species)
+    ) %>% 
+    select(diet, taxon, species, id, prox, med, dist, nsa, mass)
+
+
+
+absorp_df <- bind_rows(abs_df, abs_df2) %>% 
+    arrange(taxon, diet, species, id)
 
 
 
