@@ -138,6 +138,12 @@ write_csv(morph_df, 'data/clean_morph_data.csv')
 
 # ================================================
 
+
+# For "L-arabinose clearance (μl min-1 cm-2)" vs SEF (Figure 7A)
+
+# ------
+# Necessary functions
+# ------
 # Replacing abbreviated names for full species namees
 full_spp <- function(species) {
     spp <- unique(morph_df$species)
@@ -149,33 +155,107 @@ full_spp <- function(species) {
     species_out[is.na(species_out) & species == 'R. norvegicus'] <- 'Rattus norvegicus'
     return(species_out)
 }
-
-# Redefining this function for the below table
+# Abbreviate ids once I have the full species info
+abbrev_id <- function(ids) {
+    abbrev_ids <- sapply(strsplit(ids, ' '), 
+                        function(x) {
+                            paste(substr(x[1],1,1), 
+                                  substr(x[2], 1, 4),
+                                  x[3],
+                                  sep = "_")
+                        })
+    return(abbrev_ids)
+}
+# Next two functions: Find taxon and diet from a full species name
 find_taxon <- function(species) {
     taxa <- sapply(species, function(s) morph_df$taxon[morph_df$species == s][1])
     # In case you didn't know, rats are rodents.
     taxa[is.na(taxa) & species == 'Rattus norvegicus'] <- 'Rodent'
     return(taxa)
 }
-
 find_diet <- function(species) {
     diets <- sapply(species, function(s) morph_df$diet[morph_df$species == s][1])
     # In case you didn't know, rats are rodents.
     diets[is.na(diets) & species == 'Rattus norvegicus'] <- 'Omnivorous'
     return(diets)
 }
+# Boolean vector for whether items in (character) vector are NAs or could be coerced 
+# into a numeric
+is_num <- function(x) {
+    sapply(x, function(.x) is.na(.x) | !is.na(suppressWarnings(as.numeric(.x))))
+}
+
+
+xl_sef <- read_excel('data/raw_data.xlsx', sheet = 2, range = "B20:E138",
+                     col_types = rep('text', 4),
+                     col_names = c('id', 'prox', 'med', 'dist'))
+
+
+xl_clear <- read_excel('data/raw_data.xlsx', col_names = c('id', 'clear'), 
+                       col_types = rep('text', 2), sheet = 2, range = "I20:J140")
+
+
+sef_df <- xl_sef %>%
+    filter(!is.na(id) | !is.na(prox) | !is.na(med) | !is.na(dist),
+           is_num(prox), is_num(med), is_num(dist), 
+           id != "SEF") %>% 
+    mutate_at(vars(prox, med, dist), as.numeric) %>% 
+    mutate(
+        # this one was input incorrectly
+        id = gsub("perspicillatac", "perspicillata", id),
+        species = sapply(strsplit(id, " "), 
+                         function(x) paste(x[1:2], collapse = " ")),
+        species = full_spp(species),
+        # now changing ids to abbreviations since I now have full species names
+        id = abbrev_id(id),
+        # Now for taxon, then diet
+        diet = find_diet(species),
+        taxon = find_taxon(species)
+    ) %>% 
+    select(diet, taxon, species, id, prox, med, dist)
+
+
+
+clear_df <- xl_clear %>% 
+    filter(!is.na(id), !is.na(clear), is_num(clear)) %>% 
+    mutate(
+        clear = as.numeric(clear),
+        # this one was input incorrectly
+        id = gsub("perspicillatac", "perspicillata", id),
+        species = sapply(strsplit(id, " "), 
+                         function(x) paste(x[1:2], collapse = " ")),
+        species = full_spp(species),
+        # now changing ids to abbreviations since I now have full species names
+        id = abbrev_id(id),
+        # Now for taxon, then diet
+        diet = find_diet(species),
+        taxon = find_taxon(species)
+        ) %>% 
+    select(diet, taxon, species, id, clear)
+
+
+# Combine and write csv
+clear_df <- bind_rows(sef_df, clear_df) %>% 
+    arrange(taxon, diet, species, id)
+
+
+write_csv(clear_df, 'data/clean_clearance_data.csv')
 
 
 
 
-# For "L-arabinose clearance (μl min-1 cm-2)" vs SEF (Figure 7A)
-clear_df <- read_excel('data/raw_data.xlsx', range = 'B17:D25', sheet = 2, 
-           col_names = c('species', 'sef', 'clear'),
-           col_types = c('text', 'numeric', 'numeric')) %>% 
-    mutate(species = full_spp(species),
-           taxon = find_taxon(species),
-           diet = find_diet(species)) %>% 
-    select(taxon, diet, species, everything())
+
+# ================================================
+
+# Clearance data
+
+# ================================================
+
+
+
+
+
+
 
 
 # For "Fractional absorption / total intestinal surface (cm2 g0.75)" vs taxon (Figure 7B)
@@ -193,5 +273,4 @@ absorp_df <- read_excel('data/raw_data.xlsx', range = "B3:K11", sheet = 2,
 
 
 
-write_csv(clear_df, 'data/clean_clearance_data.csv')
 write_csv(absorp_df, 'data/clean_absorption_data.csv')
