@@ -68,6 +68,16 @@ source('tidy_csv.R')
 #' 
 #' 
 #' 
+#' # Summary functions
+#' 
+#' Functions to get p values and 95 CIs, respectively, from a bootstrapped `phylolm`
+#' model object.
+#' 
+pval <- function(model, parameter = 'taxonBat') {
+    2 * min(mean(model$bootstrap[,parameter] < 0), 
+            mean(model$bootstrap[,parameter] > 0))
+}
+ci <- function(model, parameter = 'taxonBat') model$bootconfint95[,parameter]
 #' 
 #' 
 #' 
@@ -92,28 +102,34 @@ tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% spp_df$species])
 #' 
 #' 
 #' 
+#' # `SEF ~ Diet`
+#' 
+#' 
+set.seed(581120)
+diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
+                    model = 'lambda', boot = 2000)
+summary(diet_mod)
+pval(diet_mod, 'dietOmnivorous'); pval(diet_mod, 'dietProtein')
 #' 
 #' 
 #' 
-#' # Creating data frames of measurements
+#' # `Absorption ~ Taxon`
+#' 
+#' 
+#+ absorp_taxon
+set.seed(454094511)
+absorp_fit <- suppressWarnings(
+    phylolm(fa_c ~ taxon, data = absorp_df, phy = absorp_tr, 
+            model = 'lambda', boot = 2000)
+)
+# summary(absorp_fit)
+pval(absorp_fit, 'taxonBat')
+ci(absorp_fit, 'taxonBat')
 #' 
 #' 
 #' 
-#' ## Species data frame
 #' 
-#+ make_spp_df
-spp_measures
-
-# Function to get a p value from a bootstrapped phylolm model
-pval <- function(model, parameter = 'taxonBat') {
-    2 * min(mean(model$bootstrap[,parameter] < 0), 
-            mean(model$bootstrap[,parameter] > 0))
-}
-#' 
-#' 
-#' ### Analyses for this data frame
-#' 
-#' `Model: Y ~ Taxon`
+#' # `Morphometrics ~ Taxon`
 #' 
 #' List of `Y`s:
 #' 
@@ -126,30 +142,15 @@ pval <- function(model, parameter = 'taxonBat') {
 #'   * total intestinal surface = `NSA * SEF`
 #' 
 #' 
-#' `Model: Y ~ Diet`
-#' 
-#' List of `Y`s:
-#' 
-#' - SEF
-#' 
-
-
-
-set.seed(581120)
-diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
-                    model = 'lambda', boot = 2000)
-summary(diet_mod)
-pval(diet_mod, 'dietOmnivorous'); pval(diet_mod, 'dietProtein')
-
+#' These are the column names for the above parameters:
+#+ sp_analyses_cols
+spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
 #' 
 #' 
+#' 
+#' The actual analyses (takes ~6.5 min, which is why it's commented out):
 #' 
 #+ sp_analyses
-
-# (Since I don't yet have fractional absorption data, I'm skipping that for now)
-spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
-
-# # Takes ~6.5 min
 # set.seed(88754829)
 # spp_fits <- lapply(
 #     spp_ys,
@@ -184,52 +185,36 @@ sapply(spp_fits, pval)
 #' 
 #' 
 #' 
-#' ## Positions data frame
+#' # `Morphometrics ~ Taxon`, separately by segment
 #' 
-#+ make_pos_df
-pos_measures
-
-#' 
-#' 
-#' 
-
-
-
-
-#' 
-#' 
-#' 
-#' ### Analyses for this data frame
-#' 
-#' `Model: Y ~ Taxon * Segment`
 #' 
 #' (Segment = proximal, medial, or distal)
 #' 
 #' List of `Y`s:
 #' 
-#' - Intestinal diameter (body mass as covariate)
-#' - Villus height
+#' - Intestinal diameter (log-transformed, body mass as covariate)
+#' - Villus height (body mass as covariate)
 #' - Villus width
 #' - Crypt width
 #' - Surface enlargement factor (SEF)
 #' - Enterocyte diameter
-#' - Enterocytes per cm^2 NSA
+#' - Enterocytes per cm^2 NSA (log-transformed)
 #' 
 #' 
 #' 
 #' 
-#' 
-#' 
+#' Constructing a vector of column names for these parameters using the previously 
+#' constructed `pos_measures` vector.
+#+ pos_measures
 pos_ys <- pos_measures[pos_measures != 'mass']
 pos_ys[pos_ys == 'intestinal_diameter'] <- 'log_intestinal_diameter'
 pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
-
-
-
-
-
-
-# # Took 21.7 minutes
+#' 
+#' 
+#' 
+#' The actual analyses (takes ~21.7 min, which is why it's commented out):
+#' 
+#+ pos_analyses
 # set.seed(25413535)
 # pos_fits <- lapply(
 #     unique(pos_df$pos),
@@ -266,34 +251,48 @@ pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
 # for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys
 # # (Saving the tree too in case you want to re-fit any models in other files)
 # save(pos_fits, dist_df, med_df, prox_df, tr, file = 'data/pos_models.rda')
-
 load('data/pos_models.rda')
 lapply(pos_fits$dist, summary)
 lapply(pos_fits$med, summary)
 lapply(pos_fits$prox, summary)
-
 #' 
 #' 
 #' 
 #' 
-#' # Model: log(Y) ~ log(SEF)
 #' 
-#' - paracellular probe L-arabinose clearance
-#'   ("we used reduced major axis regression (model II regression)... because both 
-#'   variables [X and Y] were subject to error")
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' 
+#' # `log(Clearance) ~ log(SEF)`
+#' 
+#' Clearance = "paracellular probe L-arabinose clearance"
+#' 
+#' From the original manuscript: 
+#' > ... we used reduced major axis regression (model II regression)... because both 
+#' > variables [X and Y] were subject to error
+#' 
+#' Instead of an RMA regression, I'll be using `ape::corphylo` to estimate Pearson 
+#' correlation coefficients.
 #' 
 #+ clear_sef
 
 
-X <- log(clear_df$sef)
-Y <- log(clear_df$clear)
-names(X) <- names(Y) <- rownames(clear_df)
+hist(clear_df$clear)
+
+X <- clear_df$log_sef
+Y <- clear_df$log_clear
+names(X) <- rownames(clear_df)
+names(Y) <- rownames(clear_df)
 # clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
 # clear_rma
 # plot(clear_rma)
 
 ?corphylo
-Xmat <- cbind(log(clear_df$sef), log(clear_df$clear))
+Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
 rownames(Xmat) <- rownames(clear_df)
 
 cp <- corphylo(Xmat, phy = clear_tr, method = "Nelder-Mead")
@@ -366,22 +365,6 @@ for (rep in 1:Nrep) {
 
 #' 
 #' 
-#' 
-#' 
-#+ absorp_taxon
-
-absorp_df
-
-
-
-set.seed(454094511)
-absorp_fit <- suppressWarnings(
-    phylolm(fa_c ~ taxon, data = absorp_df, phy = absorp_tr, 
-            model = 'lambda', boot = 2000)
-)
-summary(absorp_fit)
-
-
 #' 
 #' # Session info
 #' 

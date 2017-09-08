@@ -230,7 +230,7 @@ absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd
               # For non-sep_absorps species, I'm setting injection to 1 bc the final
               # value is already in the gavage column
               inv_injection = ifelse(species[1] %in% sep_absorps, 
-                                 mean(1 / injection, na.rm = TRUE), 1),
+                                     mean(1 / injection, na.rm = TRUE), 1),
               fa_c = mean(gavage, na.rm = TRUE) * inv_injection) %>% 
     ungroup %>% 
     select(taxon, species, fa_c) %>% 
@@ -239,4 +239,3 @@ absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd
 row.names(absorp_df) <- paste(absorp_df$species)
 
 rm(sep_absorps)
-
