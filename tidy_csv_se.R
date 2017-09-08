@@ -228,10 +228,8 @@ clear_se_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd')
 sep_absorps <- c('Myotis lucifugus', 'Tadarida brasiliensis', 'Akodon montensis')
 
 
-# Left off on actually calculating the SE
 
-# absorp_se_df <- 
-read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
+absorp_se_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
     mutate(
         # Averaging SEF by individual
         sef = (prox + med + dist) / 3,
@@ -241,19 +239,42 @@ read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
         # (gavage / injection) / { (nsa * sef) / (mass^0.75) }
         rhs = 1 / {(nsa * sef) / (mass^0.75)}
     ) %>% 
-    group_by(diet, taxon, species) %>% 
-    summarize(rhs = mean(rhs, na.rm = TRUE), 
-              # For sep_absorps species, I'm inversing injection here for the same reason
-              # as for rhs above.
-              # For non-sep_absorps species, I'm setting injection to 1 bc the final
-              # value is already in the gavage column
-              inv_injection = ifelse(species[1] %in% sep_absorps, 
-                                     mean(1 / injection, na.rm = TRUE), 1),
-              fa_c = mean(gavage, na.rm = TRUE) * inv_injection * rhs) %>% 
+    group_by(diet, taxon, species) %>%
+    summarize(
+        # # The below n values for for fa_c2 below. This parameter is not used currently.
+        # n1 = ifelse(species[1] %in% sep_absorps, sum(!is.na(injection)), 0),
+        # n2 = sum(!is.na(gavage)),
+        # n3 = sum(!is.na(rhs)),
+        
+        # For sep_absorps species, I'm inversing injection here for the same reason
+        # as for rhs above.
+        # For non-sep_absorps species, I'm setting injection mean to 1 and variance to 0
+        # bc the final value is already in the gavage column, and doing this makes the
+        # equation below simplify to = V(Y), where Y is gavage
+        inv_injection_v = ifelse(species[1] %in% sep_absorps,
+                               var(1 / injection, na.rm = TRUE), 0),
+        inv_injection = ifelse(species[1] %in% sep_absorps,
+                               mean(1 / injection, na.rm = TRUE), 1),
+        gavage_v = var(gavage, na.rm = TRUE),
+        gavage = mean(gavage, na.rm = TRUE),
+        # Variances for X*Y follow the following function:
+        # V(X*Y) = E(X)^2 * V(Y) + E(Y)^2 * V(X) + V(X) * V(Y)
+        # So I'm doing this for the above two parameters first, then doing it again
+        # when combining it with `rhs` below
+        # "ig_" stands for injection and gavage
+        ig_v = inv_injection^2 * gavage_v + gavage^2 * inv_injection_v +
+            inv_injection_v * gavage_v,
+        ig = inv_injection * gavage,
+        rhs_v = var(rhs, na.rm = TRUE),
+        rhs = mean(rhs, na.rm = TRUE),
+        # I added the sqrt bc I want the output to be the standard deviation
+        fa_c = sqrt(rhs^2 * ig_v + ig^2 * rhs_v + rhs_v * ig_v)#,
+        # I'm just going with SD for now. The below equation doesn't make sense to me.
+        # # Could this possibly work for the SE, or should I just use SD?
+        # fa_c2 = fa_c / sqrt(n1^2 + n2^2 + n3^2)
+    ) %>%
     ungroup %>% 
-    select(taxon, species, fa_c) %>% 
-    as.data.frame %>%
+    select(taxon, species, fa_c) %>%  # , fa_c2) %>%
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
-row.names(absorp_se_df) <- paste(absorp_se_df$species)
 
 rm(sep_absorps)
