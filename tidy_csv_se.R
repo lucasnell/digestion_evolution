@@ -1,5 +1,7 @@
 # 
 # This is the same as tidy_csv.R, except that it returns data frames of standard errors.
+# The data frames are kept as tibbles with no row names because they will not
+# be used directly in phylolm.
 # 
 
 # I'm now making sure all necessary packages are loaded:
@@ -10,6 +12,19 @@ suppressPackageStartupMessages({
     library(magrittr)
 })
 
+
+# Calculating standard error
+se <- function(.x) {
+    .z <- .x[!is.na(.x)]
+    return(sd(.z) / sqrt(length(.z)))
+}
+# Replacing NAs in a vector of standard errors with the average standard error in 
+# that vector
+na_se <- function(.x) {
+    .z <- mean(.x, na.rm = TRUE)
+    .x[is.na(.x)] <- .z
+    return(.x)
+}
 
 # ======================================================================================
 # ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
@@ -47,8 +62,8 @@ morph_df <- morph_df %>%
            measure = gsub('enterocyte_width', 'enterocyte_diameter', 
                           gsub(' ', '_', measure)))
 
-# This object is no longer necessary
-rm(no_pos)
+# These objects are no longer necessary
+rm(no_pos, N)
 
 
 
@@ -64,8 +79,7 @@ rm(no_pos)
 spp_measures <- c('mass', 'intestinal_length', 'nsa', 'villa_surface_area',
                   'enterocyte_density', 'sef')
 
-# spp_df <-
-morph_df %>%
+spp_se_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
     # Selecting measurement columns, plus the identifying columns
@@ -89,7 +103,7 @@ morph_df %>%
            int_length_mass, nsa_mass, vill_area_mass, 
            total_enterocytes, log_total_enterocytes, total_surface, sef, 
            mass, log_mass) %>% 
-    # Taking mean by individual
+    # Taking mean by individual (i.e., across segments)
     group_by(taxon, diet, species, id) %>% 
     summarize_all(mean, na.rm = TRUE) %>% 
     ungroup %>% 
@@ -98,28 +112,21 @@ morph_df %>%
     summarize_at(.vars = vars(int_length_mass, nsa_mass, vill_area_mass, 
                               total_enterocytes, log_total_enterocytes, total_surface, 
                               sef, mass, log_mass), 
-                 function(.x) {
-                     .z <- .x[!is.na(.x)]
-                     return(sd(.z) / sqrt(length(.z)))
-                 }) %>% 
+                 se) %>% 
     ungroup %>% 
-    # Adjusting SEs with NAs (those with length of 1)
-    
+    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
+    mutate_at(.vars = vars(int_length_mass, nsa_mass, vill_area_mass, 
+                           total_enterocytes, log_total_enterocytes, total_surface, 
+                           sef, mass, log_mass), 
+              na_se) %>% 
     # Converting taxon and diet to factors
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
            diet = factor(diet, levels = c("Herbivorous", "Omnivorous", "Protein"))) %>% 
-    arrange(taxon, diet, species) %>% 
-    # To change row names, it can't be a tibble, so I'm reverting back to normal
-    # data frame
-    as.data.frame
-
-# phylolm requires that the rownames match the species names
-rownames(spp_df) <- spp_df$species
-
+    arrange(taxon, diet, species)
 
 # Removing NA from data frame for diet
-diet_df <- spp_df %>% filter(!is.na(diet))
-rownames(diet_df) <- diet_df$species
+diet_se_df <- spp_se_df %>% filter(!is.na(diet))
+
 
 
 
@@ -136,11 +143,11 @@ rownames(diet_df) <- diet_df$species
 pos_measures <- c('mass', 'intestinal_diameter', 'villus_height',  'villus_width',
                   'crypt_width', 'sef', 'enterocyte_diameter', 'enterocyte_density')
 
-pos_df <- morph_df %>%
+pos_se_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
-    select_(.dots = append(list('taxon', 'diet', 'species', 'pos', 'id'), 
-                           as.list(pos_measures))) %>% 
+    select_(.dots = c(list('taxon', 'diet', 'species', 'pos', 'id'), 
+                      as.list(pos_measures))) %>% 
     # Add mass to all positions' estimates
     group_by(taxon, diet, species, id) %>% 
     mutate(mass = ifelse(is.na(mass), mass[!is.na(mass)], mass)) %>% 
@@ -150,11 +157,13 @@ pos_df <- morph_df %>%
     # Taking the log now, before taking any means
     mutate_(.dots = setNames(as.list(sprintf('%s(%s)', 'log', pos_measures)), 
                              paste0('log_', pos_measures))) %>% 
-    # Grouping by, then taking mean of all measurement columns and transformed-
+    # Grouping by, then taking standard error of all measurement columns and transformed-
     # measurement columns
     group_by(taxon, diet, species, pos) %>% 
-    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), mean, 
-                 na.rm = TRUE) %>% 
+    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), se) %>% 
+    ungroup %>% 
+    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
+    mutate_at(.vars = c(pos_measures, paste0('log_', pos_measures)), na_se) %>% 
     ungroup %>% 
     # Converting taxon and diet to factors
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
@@ -162,15 +171,14 @@ pos_df <- morph_df %>%
     arrange(taxon, diet, species, pos)
 
 
-for (p in unique(pos_df$pos)) {
-    out_df <- pos_df %>% 
-        filter(pos == p) %>% 
-        select(-pos) %>% 
-        as.data.frame
-    rownames(out_df) <- out_df$species
-    assign(paste0(p, '_df'), out_df)
-}; rm(p, out_df)
 
+for (p in unique(pos_se_df$pos)) {
+    out_se_df <- pos_se_df %>% 
+        filter(pos == p) %>% 
+        select(-pos)
+    assign(paste0(p, '_se_df'), out_se_df)
+}; rm(p, out_se_df)
+rm(pos_se_df)
 
 
 
@@ -183,7 +191,7 @@ for (p in unique(pos_df$pos)) {
 # ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 # ======================================================================================
 
-clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
+clear_se_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
     mutate(
         # They lumped herbivores and omnivores together as "carb eater <taxon>"
         diet = ifelse(diet == "Protein", diet, "Carb"),
@@ -194,17 +202,14 @@ clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>
         # Some clearances were negative, so there will be NaNs produced
         log_clear = log(clear)
     ) %>% 
+    # SE by species
     group_by(diet, taxon, species) %>% 
-    summarize(sef = mean(sef, na.rm = TRUE),
-              log_sef = mean(log_sef, na.rm = TRUE),
-              clear = mean(clear, na.rm = TRUE),
-              log_clear = mean(log_clear, na.rm = TRUE)) %>% 
-    ungroup %>% 
-    select(diet, taxon, species, everything()) %>% 
-    as.data.frame %>%
+    summarize_at(vars(sef, log_sef, clear, log_clear), se) %>% 
+    ungroup %>%
+    # This dataset has no species with only 1 individual, so no need to replace NAs
+    arrange(diet, taxon, species) %>% 
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
            diet = factor(diet, levels = c('Carb', 'Protein')))
-row.names(clear_df) <- paste(clear_df$species)
 
 
 
@@ -222,26 +227,33 @@ row.names(clear_df) <- paste(clear_df$species)
 # These species had gavage and injection done separately in different individuals
 sep_absorps <- c('Myotis lucifugus', 'Tadarida brasiliensis', 'Akodon montensis')
 
-absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
+
+# Left off on actually calculating the SE
+
+# absorp_se_df <- 
+read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
     mutate(
         # Averaging SEF by individual
         sef = (prox + med + dist) / 3,
-        rhs = (nsa * sef) / (mass^0.75)
+        # I'm inversing this parameter because...
+        # E(X*Y) = E(X) * E(Y), but E(X/Y) != E(X) / E(Y)
+        # And the final parameter (`fa_c`) equals the following:
+        # (gavage / injection) / { (nsa * sef) / (mass^0.75) }
+        rhs = 1 / {(nsa * sef) / (mass^0.75)}
     ) %>% 
     group_by(diet, taxon, species) %>% 
     summarize(rhs = mean(rhs, na.rm = TRUE), 
-              # For sep_absorps species, I'm inversing injection here because...
-              # E(X*Y) = E(X) * E(Y)
-              # E(X/Y) != E(X) / E(Y)
+              # For sep_absorps species, I'm inversing injection here for the same reason
+              # as for rhs above.
               # For non-sep_absorps species, I'm setting injection to 1 bc the final
               # value is already in the gavage column
               inv_injection = ifelse(species[1] %in% sep_absorps, 
                                      mean(1 / injection, na.rm = TRUE), 1),
-              fa_c = mean(gavage, na.rm = TRUE) * inv_injection) %>% 
+              fa_c = mean(gavage, na.rm = TRUE) * inv_injection * rhs) %>% 
     ungroup %>% 
     select(taxon, species, fa_c) %>% 
     as.data.frame %>%
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
-row.names(absorp_df) <- paste(absorp_df$species)
+row.names(absorp_se_df) <- paste(absorp_se_df$species)
 
 rm(sep_absorps)

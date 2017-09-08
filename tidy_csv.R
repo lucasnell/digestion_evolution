@@ -195,9 +195,9 @@ clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>
               log_clear = mean(log_clear, na.rm = TRUE)) %>% 
     ungroup %>% 
     select(diet, taxon, species, everything()) %>% 
-    as.data.frame %>%
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
-           diet = factor(diet, levels = c('Carb', 'Protein')))
+           diet = factor(diet, levels = c('Carb', 'Protein'))) %>% 
+    as.data.frame
 row.names(clear_df) <- paste(clear_df$species)
 
 
@@ -220,22 +220,25 @@ absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd
     mutate(
         # Averaging SEF by individual
         sef = (prox + med + dist) / 3,
-        rhs = (nsa * sef) / (mass^0.75)
+        # I'm inversing this parameter because...
+        # E(X*Y) = E(X) * E(Y), but E(X/Y) != E(X) / E(Y)
+        # And the final parameter (`fa_c`) equals the following:
+        # (gavage / injection) / { (nsa * sef) / (mass^0.75) }
+        rhs = 1 / {(nsa * sef) / (mass^0.75)}
     ) %>% 
     group_by(diet, taxon, species) %>% 
     summarize(rhs = mean(rhs, na.rm = TRUE), 
-              # For sep_absorps species, I'm inversing injection here because...
-              # E(X*Y) = E(X) * E(Y)
-              # E(X/Y) != E(X) / E(Y)
+              # For sep_absorps species, I'm inversing injection here for the same reason
+              # as for rhs above.
               # For non-sep_absorps species, I'm setting injection to 1 bc the final
               # value is already in the gavage column
               inv_injection = ifelse(species[1] %in% sep_absorps, 
                                      mean(1 / injection, na.rm = TRUE), 1),
-              fa_c = mean(gavage, na.rm = TRUE) * inv_injection) %>% 
+              fa_c = mean(gavage, na.rm = TRUE) * inv_injection * rhs) %>% 
     ungroup %>% 
     select(taxon, species, fa_c) %>% 
-    as.data.frame %>%
-    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
+    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat'))) %>% 
+    as.data.frame
 row.names(absorp_df) <- paste(absorp_df$species)
 
 rm(sep_absorps)
