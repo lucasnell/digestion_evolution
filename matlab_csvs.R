@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
 })
 
 source('tidy_csv.R')
+source('tidy_csv_se.R')
 
 spp_df <- prep_df(measures = c('nsa', 'sef', 'mass'), by_sp = FALSE) %>% 
     as_data_frame %>% 
