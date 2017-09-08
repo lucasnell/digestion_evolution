@@ -281,21 +281,33 @@ lapply(pos_fits$prox, summary)
 #+ clear_sef
 
 
-hist(clear_df$clear)
+# hist(clear_df$clear)
+# 
+# X <- clear_df$log_sef
+# Y <- clear_df$log_clear
+# names(X) <- rownames(clear_df)
+# names(Y) <- rownames(clear_df)
+# # clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
+# # clear_rma
+# # plot(clear_rma)
+# 
+# ?corphylo
 
-X <- clear_df$log_sef
-Y <- clear_df$log_clear
-names(X) <- rownames(clear_df)
-names(Y) <- rownames(clear_df)
-# clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
-# clear_rma
-# plot(clear_rma)
+source('tidy_csv_se.R')
+# Modified version of ape::corphylo
+# CI were calculated using Fisher's information
+source('Modified_corphylo.R')
 
-?corphylo
 Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
 rownames(Xmat) <- rownames(clear_df)
 
-cp <- corphylo(Xmat, phy = clear_tr, method = "Nelder-Mead")
+MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
+rownames(MEmat) <- clear_se_df$species
+
+corp(Xmat, phy = clear_tr, SeM = NULL)
+corp(Xmat, phy = clear_tr, SeM = MEmat)
+
+cp <- corphylo(Xmat, SeM = NULL, phy = clear_tr, method = "Nelder-Mead")
 cp
 
 seed = 2012700501
@@ -308,6 +320,7 @@ p <- length(d)
 R <- cp$R
 B2 <- cp$B[2,1]
 Vphy <- cp$Vphy
+XX <- cp$XX
 MM <- cp$MM
 V <- cp$V
 iD <- t(chol(V))
