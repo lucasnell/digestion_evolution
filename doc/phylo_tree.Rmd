@@ -1,11 +1,11 @@
-#' ---
-#' title: "Visualizing phylogenetic tree"
-#' author: "Lucas Nell"
-#' date: "`r format(Sys.Date(), '%d %b %Y')`"
-#' output: github_document
-#' ---
-#' 
-#+ setup, include = FALSE, cache = FALSE
+---
+title: "Visualizing phylogenetic tree"
+author: "Lucas Nell"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output: github_document
+---
+
+```{r setup, include = FALSE, cache = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 suppressPackageStartupMessages({
     library(ape)
@@ -17,16 +17,17 @@ sp_df <- prep_df(measures = c('nsa', 'sef', 'mass'))
 tr <- read.tree('./data/tree.nwk')
 tr$tip.label <- gsub('_', ' ', tr$tip.label)
 tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% (morph_df$species %>% unique)])
-#' 
-#' 
-#' 
-#' 
-#' # Visualizing tree
-#' 
-#' Here is the phylogenetic tree with `log(NSA)` as tip color and `log(SEF)` as tip size.
-#' 
-#' 
-#+ phylo_plot, fig.width=8, fig.height=6, echo = FALSE
+```
+
+
+
+
+# Visualizing tree
+
+Here is the phylogenetic tree with `log(NSA)` as tip color and `log(SEF)` as tip size.
+
+
+```{r phylo_plot, fig.width=8, fig.height=6, echo = FALSE}
 x_end <- 32
 gg_tr <- ggtree(tr)
 gg_tr$data$x <- gg_tr$data$x - max(gg_tr$data$x)
@@ -52,3 +53,4 @@ gg_tr %<+% {sp_df %>% select(species, everything())} +
                          guide = guide_legend(direction = "horizontal",
                                               title.position = 'top', 
                                               title.hjust = 0.5))
+```

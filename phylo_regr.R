@@ -24,7 +24,6 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(phylolm)
     library(ape)
-    library(phytools)
 })
 #' 
 #' 
@@ -344,7 +343,7 @@ mod_summaries <- bind_rows(
 #' 
 #' 
 #' 
-write_csv(mod_summaries, 'data/model_summaries.csv')
+write_csv(mod_summaries, 'output/model_summaries.csv')
 #' 
 #' 
 #' 

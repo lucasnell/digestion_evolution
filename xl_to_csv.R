@@ -1,5 +1,6 @@
 # 
 # This reads the initial Excel file and simplifies it into csv files.
+# It needs to be run only once, and not at all if you have the csv files already.
 # 
 
 library(readxl)
