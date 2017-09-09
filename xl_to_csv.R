@@ -1,5 +1,6 @@
-
-# This reads the initial Excel file and simplifies it into a csv file
+# 
+# This reads the initial Excel file and simplifies it into csv files.
+# 
 
 library(readxl)
 library(dplyr)

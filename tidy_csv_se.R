@@ -191,6 +191,10 @@ rm(pos_se_df)
 # ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 # ======================================================================================
 
+# To remove warning about logging negative clearance values 
+wog <- getOption('warn')
+options(warn = -1)
+
 clear_se_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
     mutate(
         # They lumped herbivores and omnivores together as "carb eater <taxon>"
@@ -211,7 +215,9 @@ clear_se_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd')
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')),
            diet = factor(diet, levels = c('Carb', 'Protein')))
 
-
+# Setting warning setting back to what it was
+options(warn = wog)
+rm(wog)
 
 
 
@@ -235,13 +241,13 @@ absorp_se_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccdddd
         sef = (prox + med + dist) / 3,
         # I'm inversing this parameter because...
         # E(X*Y) = E(X) * E(Y), but E(X/Y) != E(X) / E(Y)
-        # And the final parameter (`fa_c`) equals the following:
+        # And the final parameter (`absorp`) equals the following:
         # (gavage / injection) / { (nsa * sef) / (mass^0.75) }
         rhs = 1 / {(nsa * sef) / (mass^0.75)}
     ) %>% 
     group_by(diet, taxon, species) %>%
     summarize(
-        # # The below n values for for fa_c2 below. This parameter is not used currently.
+        # # The below n values for for absorp2 below. This parameter is not used currently.
         # n1 = ifelse(species[1] %in% sep_absorps, sum(!is.na(injection)), 0),
         # n2 = sum(!is.na(gavage)),
         # n3 = sum(!is.na(rhs)),
@@ -268,13 +274,13 @@ absorp_se_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccdddd
         rhs_v = var(rhs, na.rm = TRUE),
         rhs = mean(rhs, na.rm = TRUE),
         # I added the sqrt bc I want the output to be the standard deviation
-        fa_c = sqrt(rhs^2 * ig_v + ig^2 * rhs_v + rhs_v * ig_v)#,
+        absorp = sqrt(rhs^2 * ig_v + ig^2 * rhs_v + rhs_v * ig_v)#,
         # I'm just going with SD for now. The below equation doesn't make sense to me.
         # # Could this possibly work for the SE, or should I just use SD?
-        # fa_c2 = fa_c / sqrt(n1^2 + n2^2 + n3^2)
+        # absorp2 = absorp / sqrt(n1^2 + n2^2 + n3^2)
     ) %>%
     ungroup %>% 
-    select(taxon, species, fa_c) %>%  # , fa_c2) %>%
+    select(taxon, species, absorp) %>%  # , absorp2) %>%
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
 
 rm(sep_absorps)

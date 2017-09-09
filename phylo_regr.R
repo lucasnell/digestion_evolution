@@ -70,13 +70,8 @@ source('tidy_csv.R')
 #' 
 #' # Summary functions
 #' 
-#' Functions to get p values and 95 CIs, respectively, from a bootstrapped `phylolm`
-#' model object.
+#' Function to get 95% CIs from a bootstrapped `phylolm` model object.
 #' 
-pval <- function(model, parameter = 'taxonBat') {
-    2 * min(mean(model$bootstrap[,parameter] < 0), 
-            mean(model$bootstrap[,parameter] > 0))
-}
 ci <- function(model, parameter = 'taxonBat') model$bootconfint95[,parameter]
 #' 
 #' 
@@ -106,10 +101,10 @@ tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% spp_df$species])
 #' 
 #' 
 set.seed(581120)
-diet_mod <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
+diet_fit <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
                     model = 'lambda', boot = 2000)
-summary(diet_mod)
-pval(diet_mod, 'dietOmnivorous'); pval(diet_mod, 'dietProtein')
+summary(diet_fit)
+ci(diet_fit, c('dietOmnivorous', 'dietProtein'))
 #' 
 #' 
 #' 
@@ -118,12 +113,11 @@ pval(diet_mod, 'dietOmnivorous'); pval(diet_mod, 'dietProtein')
 #' 
 #+ absorp_taxon
 set.seed(454094511)
-absorp_fit <- suppressWarnings(
-    phylolm(fa_c ~ taxon, data = absorp_df, phy = absorp_tr, 
+absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
+    phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
-# summary(absorp_fit)
-pval(absorp_fit, 'taxonBat')
+summary(absorp_fit)
 ci(absorp_fit, 'taxonBat')
 #' 
 #' 
@@ -164,9 +158,10 @@ spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocy
 #         )
 #     })
 # names(spp_fits) <- spp_ys
-# save(spp_fits, spp_df, diet_mod, file = 'data/spp_models.rda')
+# save(spp_fits, spp_df, file = 'data/spp_models.rda')
 load('data/spp_models.rda')
-sapply(spp_fits, pval)
+sapply(spp_fits, ci)
+ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
 #' 
 #' 
 #' 
@@ -252,9 +247,15 @@ pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
 # # (Saving the tree too in case you want to re-fit any models in other files)
 # save(pos_fits, dist_df, med_df, prox_df, tr, file = 'data/pos_models.rda')
 load('data/pos_models.rda')
-lapply(pos_fits$dist, summary)
-lapply(pos_fits$med, summary)
-lapply(pos_fits$prox, summary)
+sapply(pos_fits$dist, ci)
+sapply(pos_fits$med, ci)
+sapply(pos_fits$prox, ci)
+sapply(pos_fits$dist[c('log_intestinal_diameter', 'villus_height')], 
+       ci, parameter = 'log_mass')
+sapply(pos_fits$med[c('log_intestinal_diameter', 'villus_height')], 
+       ci, parameter = 'log_mass')
+sapply(pos_fits$prox[c('log_intestinal_diameter', 'villus_height')], 
+       ci, parameter = 'log_mass')
 #' 
 #' 
 #' 
@@ -275,27 +276,13 @@ lapply(pos_fits$prox, summary)
 #' > ... we used reduced major axis regression (model II regression)... because both 
 #' > variables [X and Y] were subject to error
 #' 
-#' Instead of an RMA regression, I'll be using `ape::corphylo` to estimate Pearson 
-#' correlation coefficients.
+#' Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` 
+#' to estimate Pearson correlation coefficients.
+#' Confidence intervals are calculated using Fisher information.
 #' 
 #+ clear_sef
 
-
-# hist(clear_df$clear)
-# 
-# X <- clear_df$log_sef
-# Y <- clear_df$log_clear
-# names(X) <- rownames(clear_df)
-# names(Y) <- rownames(clear_df)
-# # clear_rma <- phyl.RMA(X, Y, clear_tr, method = 'lambda')
-# # clear_rma
-# # plot(clear_rma)
-# 
-# ?corphylo
-
 source('tidy_csv_se.R')
-# Modified version of ape::corphylo
-# CI were calculated using Fisher's information
 source('Modified_corphylo.R')
 
 Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
@@ -304,78 +291,62 @@ rownames(Xmat) <- rownames(clear_df)
 MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
 rownames(MEmat) <- clear_se_df$species
 
-corp(Xmat, phy = clear_tr, SeM = NULL)
-corp(Xmat, phy = clear_tr, SeM = MEmat)
+clear_cor <- corp(Xmat, phy = clear_tr, SeM = MEmat)
 
-cp <- corphylo(Xmat, SeM = NULL, phy = clear_tr, method = "Nelder-Mead")
-cp
-
-seed = 2012700501
-
-
-n <- nrow(Xmat)
-phy <- clear_tr
-d <- cp$d
-p <- length(d)
-R <- cp$R
-B2 <- cp$B[2,1]
-Vphy <- cp$Vphy
-XX <- cp$XX
-MM <- cp$MM
-V <- cp$V
-iD <- t(chol(V))
-
-
-
-set.seed(seed)
-star <- stree(n)
-star$edge.length <- array(1, dim = c(n, 1))
-star$tip.label <- phy$tip.label
-
-cp$U
-
-cp$XX; iD
-
-
-# Perform Nrep simulations and collect the results
-Nrep <- 100
-cor.list <- matrix(0, nrow = Nrep, ncol = 1)
-cor.noP.list <- matrix(0, nrow = Nrep, ncol = 1)
-d.list <- matrix(0, nrow = Nrep, ncol = 2)
-B.list <- matrix(0, nrow = Nrep, ncol = 3)
-B.noP.list <- matrix(0, nrow = Nrep, ncol = 3)
-for (rep in 1:Nrep) {
-    XX <- iD
-    X <- matrix(XX, nrow = n, ncol = 2)
-    rownames(X) <- phy$tip.label
+# Correlation with 95% CI
+clear_cor['r',]
+#' 
+#' 
+#' 
+#' 
+#' 
+#' # Assembling all output into one object
+#' 
+#' 
+#' 
+#' The following function creates a tibble with 95% CIs for all parameters in a 
+#' single model.
+#' 
+ci_df <- function(.model, .pos = NA) {
     
-    # U <- list(NULL, matrix(rnorm(n, mean = 2, sd = 10), nrow = n, ncol = 1))
-    # rownames(U[[2]]) <- phy$tip.label
-    # colnames(U[[2]]) <- "V1"
-    # X[,2] <- X[,2] + B2[1] * U[[2]][,1] - B2[1] * mean(U[[2]][,1])
+    .parameters <- names(coef(.model))[names(coef(.model)) != '(Intercept)']
     
-    z <- corphylo(X = X, phy = phy, method = "Nelder-Mead")
-    # z.noM <- corphylo(X = X, U = U, phy = phy, method = "Nelder-Mead")
-    z.noP <- corphylo(X = X, phy = star, method = "Nelder-Mead")
+    .df <- as_data_frame(t(ci(.model, .parameters)))
+    colnames(.df) <- c('lower', 'upper')
+    .df <- .df %>% mutate(X = .parameters,
+                   Y = paste(.model$formula)[2], 
+                   pos = .pos,
+                   value = coef(.model)[.parameters]) %>% 
+        select(Y, X, pos, value, lower, upper)
     
-    cor.list[rep] <- z$cor.matrix[1, 2]
-    # cor.noM.list[rep] <- z.noM$cor.matrix[1, 2]
-    cor.noP.list[rep] <- z.noP$cor.matrix[1, 2]
-    # cor.noMP.list[rep] <- cor(cbind(lm(X[,1] ~ 1)$residuals, lm(X[,2] ~ U[[2]])$residuals))[1,2]
-    
-    d.list[rep, ] <- z$d
-    d.noM.list[rep, ] <- z.noM$d
-    
-    B.list[rep, ] <- z$B
-    B.noM.list[rep, ] <- z.noM$B
-    B.noP.list[rep, ] <- z.noP$B
-    
-    show(c(rep, z$convcode, z$cor.matrix[1, 2], z$d))
+    return(.df)
 }
-
-
-
-
+#' 
+#' Running this on all models above.
+#' I also add the output from the correlation between `log_sef` and `log_clear` 
+#' manually at the end, which I have to do because it isn't a `phylolm` object.
+#' 
+#' 
+mod_summaries <- bind_rows(
+    list(
+        ci_df(diet_fit),
+        ci_df(absorp_fit),
+        bind_rows(lapply(spp_fits, ci_df)),
+        bind_rows(
+            lapply(1:3, function(i) {
+                bind_rows(lapply(pos_fits[[i]], ci_df, .pos = names(pos_fits)[i]))
+            })),
+        bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
+        ))
+#' 
+#' 
+#' I'm lastly going to write this summary to a csv file.
+#' 
+#' 
+#' 
+write_csv(mod_summaries, 'data/model_summaries.csv')
+#' 
+#' 
 #' 
 #' 
 #' 

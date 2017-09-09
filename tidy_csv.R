@@ -177,6 +177,10 @@ for (p in unique(pos_df$pos)) {
 # ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
 # ======================================================================================
 
+# To remove warning about logging negative clearance values 
+wog <- getOption('warn')
+options(warn = -1)
+
 clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
     mutate(
         # They lumped herbivores and omnivores together as "carb eater <taxon>"
@@ -200,6 +204,9 @@ clear_df <- read_csv('data/clean_clearance_data.csv', col_types = 'ccccdddd') %>
     as.data.frame
 row.names(clear_df) <- paste(clear_df$species)
 
+# Setting warning setting back to what it was
+options(warn = wog)
+rm(wog)
 
 
 
@@ -222,21 +229,21 @@ absorp_df <- read_csv('data/clean_absorption_data.csv', col_types = 'ccccddddddd
         sef = (prox + med + dist) / 3,
         # I'm inversing this parameter because...
         # E(X*Y) = E(X) * E(Y), but E(X/Y) != E(X) / E(Y)
-        # And the final parameter (`fa_c`) equals the following:
+        # And the final parameter (`absorp`) equals the following:
         # (gavage / injection) / { (nsa * sef) / (mass^0.75) }
         rhs = 1 / {(nsa * sef) / (mass^0.75)}
     ) %>% 
     group_by(diet, taxon, species) %>% 
     summarize(rhs = mean(rhs, na.rm = TRUE), 
-              # For sep_absorps species, I'm inversing injection here for the same reason
-              # as for rhs above.
+              # For sep_absorps species, I'm inversing injection here for the same 
+              # reason as for rhs above.
               # For non-sep_absorps species, I'm setting injection to 1 bc the final
               # value is already in the gavage column
               inv_injection = ifelse(species[1] %in% sep_absorps, 
                                      mean(1 / injection, na.rm = TRUE), 1),
-              fa_c = mean(gavage, na.rm = TRUE) * inv_injection * rhs) %>% 
+              absorp = mean(gavage, na.rm = TRUE) * inv_injection * rhs) %>% 
     ungroup %>% 
-    select(taxon, species, fa_c) %>% 
+    select(taxon, species, absorp) %>% 
     mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat'))) %>% 
     as.data.frame
 row.names(absorp_df) <- paste(absorp_df$species)
