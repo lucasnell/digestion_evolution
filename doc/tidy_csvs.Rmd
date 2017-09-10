@@ -256,7 +256,7 @@ pos_df <- morph_df %>%
         .dots = as.list(c('taxon', 'diet', 'species', 'pos', 
           paste0(rep(c('log_intestinal_diameter', 'villus_height', 'villus_width',
                        'crypt_width', 'sef', 'enterocyte_diameter',
-                       'log_enterocyte_density'), each = 2), 
+                       'log_enterocyte_density', 'log_mass'), each = 2), 
                  c('_mean', '_se'))))
     ) %>% 
     arrange(taxon, diet, species, pos)
