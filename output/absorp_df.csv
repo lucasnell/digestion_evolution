@@ -1,0 +1,17 @@
+taxon,species,stat,absorp
+Rodent,Akodon montensis,mean,0.01716364852482219
+Rodent,Akodon montensis,se,0.0060664323194643995
+Rodent,Microtus pennsylvanicus,mean,0.01763058592966281
+Rodent,Microtus pennsylvanicus,se,0.004639513859448803
+Rodent,Mus musculus,mean,0.011439623578434007
+Rodent,Mus musculus,se,0.0032904395799920904
+Rodent,Peromyscus leucopus,mean,0.02595368257232875
+Rodent,Peromyscus leucopus,se,0.010549423178646442
+Bat,Artibeus lituratus,mean,0.04605240314875732
+Bat,Artibeus lituratus,se,0.00801658913573747
+Bat,Eptesicus fuscus,mean,0.08379662943565036
+Bat,Eptesicus fuscus,se,0.0406748878492875
+Bat,Myotis lucifugus,mean,0.06602630125567045
+Bat,Myotis lucifugus,se,0.03896788729431266
+Bat,Tadarida brasiliensis,mean,0.06274651896394666
+Bat,Tadarida brasiliensis,se,0.03888687626533417
