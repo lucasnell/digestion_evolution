@@ -3,12 +3,41 @@ Clean CSVs into simpler data frames
 Lucas Nell
 10 Sep 2017
 
+-   [Summary of output](#summary-of-output)
+-   [Getting started](#getting-started)
 -   [Full morphometric data frame](#full-morphometric-data-frame)
 -   [Morphometric data aggregated by species](#morphometric-data-aggregated-by-species)
 -   [Morphometric data by species AND position](#morphometric-data-by-species-and-position)
 -   [Clearance data](#clearance-data)
 -   [Absorption data](#absorption-data)
 -   [Saving these data frames](#saving-these-data-frames)
+
+This reads the cleaned CSV files with data for individual animals and simplifies them into CSV files with summary statistics by species and/or intestinal segment. It needs to be run only once, and not at all if you have the csv files already.
+
+Summary of output
+=================
+
+I created two data sets from morphometric data in `output/clean_morph_data.csv`:
+
+1.  Measurements separated by species (found in `output/spp_df.csv`)
+2.  Measurements separated by species and intestinal segment (`output/pos_df.csv`)
+
+I also created one data set each from `output/clean_clearance_data.csv` and `output/clean_absorption_data.csv`. These csvs are found in `output/clear_df.csv` and `output/absorp_df.csv`, respectively.
+
+Each data set is associated with a set of analyses and only needs certain measurements, so only those are included.
+
+The csv files are used in the function `get_df` in the `R/get_data.R` file to retrieve a data frame for a given analysis set. The analysis sets are as follows:
+
+1.  `'spp'`: Measurements separated by species.
+2.  `'diet'`: Measurements by species and with non-`NA` diet data.
+3.  `'pos'`: Measurements by species and position. (You have to also provide the position for this analysis set.)
+4.  `'clear'`: Clearance data by species. (Uses a different set of individuals entirely from the 1–3.)
+5.  `'absorp'`: Absorption data by species. (Uses a different set of individuals entirely from the 1–4.)
+
+For the third analysis set, I need to do the analyses separately for each position because modelling within-species and within-individual variance due to position rather than measurement error or process error would be difficult and not likely possible with this small dataset.
+
+Getting started
+===============
 
 **Load packages:**
 
@@ -98,7 +127,7 @@ spp_measures <- c('mass', 'intestinal_length', 'nsa', 'villa_surface_area',
 Next I manipulated `morph_df` as such to get means and standard errors for each parameter that I will be analyzing.
 
 ``` r
-spp_df <-  morph_df %>%
+spp_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
     # Selecting measurement columns, plus the identifying columns
@@ -117,7 +146,7 @@ spp_df <-  morph_df %>%
            log_total_enterocytes = log(enterocyte_density * nsa),
            log_mass = log(mass)) %>% 
     select(taxon, diet, species, id,
-           int_length_mass, nsa_mass, vill_area_mass, 
+           sef, int_length_mass, nsa_mass, vill_area_mass, 
            log_total_enterocytes, log_mass) %>% 
     # Taking mean by individual (i.e., across segments)
     group_by(taxon, diet, species, id) %>% 
