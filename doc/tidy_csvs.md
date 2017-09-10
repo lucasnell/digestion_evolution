@@ -1,22 +1,18 @@
----
-title: "Clean CSVs into simpler data frames"
-author: "Lucas Nell"
-date: "`r format(Sys.Date(), '%d %b %Y')`"
-output:
-  github_document:
-    toc: true
-    toc_depth: 2
----
+Clean CSVs into simpler data frames
+================
+Lucas Nell
+10 Sep 2017
 
-```{r setup, include = FALSE, cache = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = normalizePath(".."))
-```
+-   [Full morphometric data frame](#full-morphometric-data-frame)
+-   [Morphometric data aggregated by species](#morphometric-data-aggregated-by-species)
+-   [Morphometric data by species AND position](#morphometric-data-by-species-and-position)
+-   [Clearance data](#clearance-data)
+-   [Absorption data](#absorption-data)
+-   [Saving these data frames](#saving-these-data-frames)
 
+**Load packages:**
 
-__Load packages\:__
- 
-```{r packages}
+``` r
 suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
@@ -27,7 +23,7 @@ suppressPackageStartupMessages({
 
 Functions for standard error calculations
 
-```{r se_funs}
+``` r
 # Calculating standard error
 # (The ... is added for compatibility with using alongside mean.)
 se <- function(.x, ...) {
@@ -43,14 +39,12 @@ na_se <- function(.x) {
 }
 ```
 
-
-
-
-# Full morphometric data frame
+Full morphometric data frame
+============================
 
 This data frame of morphometric measurements will be useful for the next two sections.
 
-```{r morpho}
+``` r
 morph_df <- read_csv('output/clean_morph_data.csv', col_types = 'cccccddd') %>%
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
@@ -81,33 +75,29 @@ morph_df <- morph_df %>%
 rm(no_pos, N)
 ```
 
-
-# Morphometric data aggregated by species
+Morphometric data aggregated by species
+=======================================
 
 For the following measures, we need a single morphometric value per species:
 
-- Intestinal length / body mass^0.4
-- NSA / body mass^0.75
-- Villus surface area / body mass^0.75
-- Total number of enterocytes (log-transformed; log body mass as covariate)
-  * Calculated as such: `NSA * mean(<enterocyte density among segments>)`
-- Fractional absorption / (total intestinal surface / mass^0.75)
-  * total intestinal surface = `NSA * SEF`
-
+-   Intestinal length / body mass^0.4
+-   NSA / body mass^0.75
+-   Villus surface area / body mass^0.75
+-   Total number of enterocytes (log-transformed; log body mass as covariate)
+-   Calculated as such: `NSA * mean(<enterocyte density among segments>)`
+-   Fractional absorption / (total intestinal surface / mass^0.75)
+-   total intestinal surface = `NSA * SEF`
 
 We need the following columns from `morph_df` to compute these values:
 
-
-```{r spp_measures}
+``` r
 spp_measures <- c('mass', 'intestinal_length', 'nsa', 'villa_surface_area',
                   'enterocyte_density', 'sef')
 ```
 
+Next I manipulated `morph_df` as such to get means and standard errors for each parameter that I will be analyzing.
 
-Next I manipulated `morph_df` as such to get means and standard errors for each
-parameter that I will be analyzing.
-
-```{r spp_df}
+``` r
 spp_df <-  morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
@@ -143,12 +133,9 @@ spp_df <-  morph_df %>%
     arrange(taxon, diet, species)
 ```
 
+Lastly I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
 
-
-Lastly I add a column named `stat` to distinguish between mean and SE values, making
-filtering for a given statistic easier.
-
-```{r spp_stat}
+``` r
 spp_df <- spp_df %>% 
     gather('measure', 'value', -taxon, -diet, -species) %>% 
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
@@ -159,37 +146,29 @@ spp_df <- spp_df %>%
     spread(measure, value)
 ```
 
+Morphometric data by species AND position
+=========================================
 
+For the following measures, we need 3 morphometric values per species, one per intestinal segment:
 
-
-
-
-
-# Morphometric data by species AND position
-
-For the following measures, we need 3 morphometric values per species, one per
-intestinal segment:
-
-- Intestinal diameter (log-transformed, body mass as covariate)
-- Villus height (body mass as covariate)
-- Villus width
-- Crypt width
-- Surface enlargement factor (SEF)
-- Enterocyte diameter
-- Enterocytes per cm^2 NSA (log-transformed)
+-   Intestinal diameter (log-transformed, body mass as covariate)
+-   Villus height (body mass as covariate)
+-   Villus width
+-   Crypt width
+-   Surface enlargement factor (SEF)
+-   Enterocyte diameter
+-   Enterocytes per cm^2 NSA (log-transformed)
 
 We need the following columns from `morph_df` to compute these values:
 
-```{r pos_measure}
+``` r
 pos_measures <- c('mass', 'intestinal_diameter', 'villus_height',  'villus_width',
                   'crypt_width', 'sef', 'enterocyte_diameter', 'enterocyte_density')
 ```
 
+Next I manipulated `morph_df` as such to get means and standard errors for each parameter that I will be analyzing.
 
-Next I manipulated `morph_df` as such to get means and standard errors for each
-parameter that I will be analyzing.
-
-```{r pos_df}
+``` r
 pos_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
@@ -221,11 +200,9 @@ pos_df <- morph_df %>%
     arrange(taxon, diet, species, pos)
 ```
 
+Lastly I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
 
-Lastly I add a column named `stat` to distinguish between mean and SE values, making
-filtering for a given statistic easier.
-
-```{r gather_pos}
+``` r
 pos_df <- pos_df %>% 
     gather('measure', 'value', -taxon, -diet, -species, -pos) %>% 
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
@@ -236,15 +213,10 @@ pos_df <- pos_df %>%
     spread(measure, value)
 ```
 
+Clearance data
+==============
 
-
-
-
-# Clearance data
-
-
-
-```{r clear_df}
+``` r
 clear_df <- read_csv('output/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
     mutate(
         # They lumped herbivores and omnivores together as "carb eater <taxon>"
@@ -264,12 +236,9 @@ clear_df <- read_csv('output/clean_clearance_data.csv', col_types = 'ccccdddd') 
     ungroup
 ```
 
+As above, I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
 
-
-As above, I add a column named `stat` to distinguish between mean and SE values, making
-filtering for a given statistic easier.
-
-```{r gather_clear}
+``` r
 clear_df <- clear_df %>% 
     gather('measure', 'value', -taxon, -diet, -species) %>% 
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
@@ -280,59 +249,36 @@ clear_df <- clear_df %>%
     spread(measure, value)
 ```
 
+Absorption data
+===============
 
-
-
-
-
-# Absorption data
-
-The absorption data is a little weird in that different individuals were used for
-the various measurements necessary to get the final parameter values for each species.
-Because of this, I have to combine these measurements a bit differently than before.
+The absorption data is a little weird in that different individuals were used for the various measurements necessary to get the final parameter values for each species. Because of this, I have to combine these measurements a bit differently than before.
 
 The final parameter, `absorp`, equals the following:
 
 `(gavage / injection) / { (nsa * sef) / (mass^0.75) }`
 
-
 This can be manipulated to the following:
 
 `gavage * (1 / injection) * { (mass^0.75) / (nsa * sef) }`
 
-
-For three species, the individuals used for measurements for this calculation are 
-split into three groups, corresponding to the three portions of the equation above.
-One set of individuals were used for `gavage`, another for `injection`, and a third
-for `nsa`, `sef`, and `mass`.
+For three species, the individuals used for measurements for this calculation are split into three groups, corresponding to the three portions of the equation above. One set of individuals were used for `gavage`, another for `injection`, and a third for `nsa`, `sef`, and `mass`.
 
 These are the above-mentioned three species:
 
-```{r sep_absorps}
+``` r
 sep_absorps <- c('Myotis lucifugus', 'Tadarida brasiliensis', 'Akodon montensis')
 ```
 
-For the rest of the species, `gavage` and `injection` were measured together, but
-`nsa`, `sef`, and `mass` were measured in a different set of individuals.
+For the rest of the species, `gavage` and `injection` were measured together, but `nsa`, `sef`, and `mass` were measured in a different set of individuals.
 
-This is important because `mean(X/Y) != mean(X) / mean(Y)` and 
-`var(X/Y) != var(X) / var(Y)`.
-But because `mean(X*Y) = mean(X) * mean(Y)` and 
-`var(XY) = mean(X)^2 * var(Y) + mean(Y)^2 * var(X) + var(X) * var(Y)`,
-I can inverse things before taking means or variances to allow me to combine 
-these values.
+This is important because `mean(X/Y) != mean(X) / mean(Y)` and `var(X/Y) != var(X) / var(Y)`. But because `mean(X*Y) = mean(X) * mean(Y)` and `var(XY) = mean(X)^2 * var(Y) + mean(Y)^2 * var(X) + var(X) * var(Y)`, I can inverse things before taking means or variances to allow me to combine these values.
 
-So before taking means or variances, I have inversed `gavage` and 
-`(nsa * sef) / (mass^0.75)`, thus allowing me to use the equations above.
-For the three species with `gavage` and `injection` measured separately, I had to 
-combine variances for `gavage` and `injection` first, then combine the variance of
-`gavage * injection` with `(mass^0.75) / (nsa * sef)`.
+So before taking means or variances, I have inversed `gavage` and `(nsa * sef) / (mass^0.75)`, thus allowing me to use the equations above. For the three species with `gavage` and `injection` measured separately, I had to combine variances for `gavage` and `injection` first, then combine the variance of `gavage * injection` with `(mass^0.75) / (nsa * sef)`.
 
 The term `(mass^0.75) / (nsa * sef)` is called `mns` below.
 
-
-
-```{r absorp_df}
+``` r
 absorp_df <- read_csv('output/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
     mutate(
         # Averaging SEF by individual (i.e., across segments)
@@ -372,13 +318,9 @@ absorp_df <- read_csv('output/clean_absorption_data.csv', col_types = 'ccccddddd
 rm(sep_absorps)
 ```
 
+As above, I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
 
-
-
-As above, I add a column named `stat` to distinguish between mean and SE values, making
-filtering for a given statistic easier.
-
-```{r gather_absorp}
+``` r
 absorp_df <- absorp_df %>% 
     gather('measure', 'value', -taxon, -species) %>% 
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
@@ -389,18 +331,14 @@ absorp_df <- absorp_df %>%
     spread(measure, value)
 ```
 
-
-
-# Saving these data frames
+Saving these data frames
+========================
 
 I'm saving them as csv files so they can be quickly loaded when retrieving a data frame.
 
-```{r save_dfs, eval = FALSE}
+``` r
 write_csv(pos_df, 'output/pos_df.csv')
 write_csv(spp_df, 'output/spp_df.csv')
 write_csv(clear_df, 'output/clear_df.csv')
 write_csv(absorp_df, 'output/absorp_df.csv')
 ```
-
-
-
