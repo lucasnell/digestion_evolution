@@ -11,6 +11,7 @@ output:
 ```{r setup, include = FALSE, cache = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # knitr::opts_knit$set(root.dir = normalizePath(".."))
+# get_data(.df, .stat, .pos = c(NA, 'prox', 'med', 'dist'))
 ```
 
 
@@ -39,8 +40,9 @@ These files provide functions to summarize phylolm objects and to run a version
 of `ape::corphylo` with confidence interval output, respectively.
 
 ```{r source_tidy_csv}
-source('R/model_summaries.R')
-source('R/Modified_corphylo.R')
+# source('R/model_summaries.R')
+# source('R/Modified_corphylo.R')
+invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ```
 
 
@@ -48,7 +50,7 @@ source('R/Modified_corphylo.R')
 ## Cleaned data
 
 ```{r tidy_data}
-source('tidy_csv.R')
+# source('tidy_csv.R')
 ```
 
 

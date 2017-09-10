@@ -14,6 +14,11 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
 
 
+This reads the cleaned CSV files with data for individual animals and simplifies 
+them into CSV files with summary statistics by species and/or intestinal segment.
+It needs to be run only once, and not at all if you have the csv files already.
+
+
 __Load packages\:__
  
 ```{r packages}

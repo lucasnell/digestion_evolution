@@ -1,27 +1,57 @@
-# 
-# This reads the initial Excel file and simplifies it into csv files.
-# It needs to be run only once, and not at all if you have the csv files already.
-# 
+Convert raw Excel file into CSVs
+================
+Lucas Nell
+10 Sep 2017
 
-library(readxl)
-library(dplyr)
-library(readr)
-library(tidyr)
-library(purrr)
+-   [Morphometric data](#morphometric-data)
+-   [Clearance data](#clearance-data)
+-   [Absorption data](#absorption-data)
 
+This reads the initial Excel file and simplifies it into csv files. It needs to be run only once, and not at all if you have the csv files already (the ones that start with "clean\_...").
 
-# ======================================================================================
-# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
+**Load packages:**
 
-# Morphometric data
+``` r
+suppressPackageStartupMessages({
+    library(readxl)
+    library(dplyr)
+    library(readr)
+    library(tidyr)
+    library(purrr)
+})
+```
 
-# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
-# ======================================================================================
+Function to get integer index from Excel alphabetic index
 
+``` r
+.i <- function(xlcol) {
+    xlcol <- tolower(xlcol)
+    rcol <- sum(sapply(1:nchar(xlcol), 
+                       function (i) {
+                           ind_i <- which(letters == substr(xlcol, i, i))
+                           ind <- length(letters)^(nchar(xlcol) - i) * ind_i
+                           return(ind)
+                       }))
+    return(rcol)
+}
+.i('Z')
+```
 
+    ## [1] 26
+
+Morphometric data
+=================
+
+Read from Excel file.
+
+``` r
 xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, 
                  col_types = rep('text', 88), sheet = 1)
+```
 
+Initial manipulation to retrieve desired info and correct ambiguity / "untidy-ness".
+
+``` r
 # Table of abbreviated species names
 spp_df <- xl[69:86,2:3] %>% 
     rename(abbrev = X__2, full = X__3) %>% 
@@ -54,34 +84,11 @@ initial_df <- initial_df %>%
         spp_df$full[spp_df$abbrev == gsub('[0-9]', '', .id)]
     })) %>% 
     select(diet, taxon, species, id, measure, everything())
+```
 
+I'm next going to make a new data frame of column names along with their column location in the Excel file and the number of additional columns to take (after the one specified). It's assumed that all these are located in rows `c(4:34,36:64)`, like the villus height data. Also, `n` should only be 2 or 0, for measures with and without separate proximal, medial, and distal measurements, respectively. Lastly, although I am extracting columns from the Excel file, I want the new csv file to be in "long" format, so I'm binding them by rows.
 
-
-# Function to get integer index from Excel alphabetic index
-.i <- function(xlcol) {
-    xlcol <- tolower(xlcol)
-    rcol <- sum(sapply(1:nchar(xlcol), 
-                       function (i) {
-                           ind_i <- which(letters == substr(xlcol, i, i))
-                           ind <- length(letters)^(nchar(xlcol) - i) * ind_i
-                           return(ind)
-                       }))
-    return(rcol)
-}
-
-.i('Z')
-
-
-# I'm going to make a new data frame of column names along with their column location
-# in the Excel file and the number of additional columns to take (after the one 
-# specified).
-# It's assumed that all these are located in rows c(4:34,36:64), like the villus height
-# data.
-# Also, n should only be 2 or 0, for measures with and without separate proximal, 
-# medial, and distal measurements, respectively.
-# Lastly, although I am extracting columns from the Excel file, I want the new csv file
-# to be in "long" format, so I'm binding them by rows.
-
+``` r
 new_cols <- read_csv('name,col1,n
 "villus width",M,2
 "crypt width",U,2
@@ -135,29 +142,22 @@ morph_df <- morph_df %>%
            med = ifelse(species == 'Microtus pennsylvanicus' &
                              measure == 'enterocyte width', 
                         med * 10, med))
+```
 
+Writing to CSV file.
+
+``` r
 write_csv(morph_df, 'data/clean_morph_data.csv')
+```
 
+Clearance data
+==============
 
+For "L-arabinose clearance (μl min^-1 cm^-2)" vs SEF (Figure 7A)
 
+Necessary functions:
 
-
-
-# ======================================================================================
-# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
-
-# Clearance data
-
-# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
-# ======================================================================================
-
-
-# For "L-arabinose clearance (μl min-1 cm-2)" vs SEF (Figure 7A)
-
-
-# ------
-# Necessary functions
-# ------
+``` r
 # Replacing abbreviated names for full species namees
 full_spp <- function(species) {
     spp <- unique(morph_df$species)
@@ -198,8 +198,11 @@ find_diet <- function(species) {
 is_num <- function(x) {
     sapply(x, function(.x) is.na(.x) | !is.na(suppressWarnings(as.numeric(.x))))
 }
+```
 
+Reading the data.
 
+``` r
 xl_sef <- read_excel('data/raw_data.xlsx', sheet = 2, range = "B20:E138",
                      col_types = rep('text', 4),
                      col_names = c('id', 'prox', 'med', 'dist'))
@@ -207,8 +210,11 @@ xl_sef <- read_excel('data/raw_data.xlsx', sheet = 2, range = "B20:E138",
 
 xl_clear <- read_excel('data/raw_data.xlsx', col_names = c('id', 'clear'), 
                        col_types = rep('text', 2), sheet = 2, range = "I20:J140")
+```
 
+Manipulating for SEF and clearance, then combining them into one data frame.
 
+``` r
 sef_df <- xl_sef %>%
     filter(!is.na(id) | !is.na(prox) | !is.na(med) | !is.na(dist),
            is_num(prox), is_num(med), is_num(dist), 
@@ -251,36 +257,34 @@ clear_df <- xl_clear %>%
 # Combine and write csv
 clear_df <- bind_rows(sef_df, clear_df) %>% 
     arrange(taxon, diet, species, id)
+```
 
+Writing to CSV file.
 
+``` r
 write_csv(clear_df, 'data/clean_clearance_data.csv')
+```
 
+Absorption data
+===============
 
+For "Fractional absorption / total intestinal surface (cm^2 g^0.75)" vs taxon (Figure 7B)
 
+This uses many of the same functions that the clearance data did.
 
+Reading data:
 
-# ======================================================================================
-# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
-
-# Absorption data
-
-# ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==
-# ======================================================================================
-
-
-# For "Fractional absorption / total intestinal surface (cm2 g0.75)" vs taxon (Figure 7B)
-
-
-
+``` r
 xl_abs <- read_excel('data/raw_data.xlsx', sheet = 3, range = "C19:M131",
                      col_types = rep('text', 11),
                      col_names = c('id', 'gavage', 'injection', 
                                    'id2', 'prox', 'med', 'dist', 'animal_avg', 
                                    'sp_avg', 'nsa', 'mass'))
+```
 
+Manipulating for the two main sections of `xl_abs`, then combining them into one data frame.
 
-
-
+``` r
 abs_df <- xl_abs %>%
     select(id, gavage, injection) %>% 
     filter(!is.na(id), !is.na(gavage) | !is.na(injection),
@@ -321,12 +325,12 @@ abs_df2 <- xl_abs %>%
     ) %>% 
     select(diet, taxon, species, id, prox, med, dist, nsa, mass)
 
-
-
 absorp_df <- bind_rows(abs_df, abs_df2) %>% 
     arrange(taxon, diet, species, id)
+```
 
+Writing to CSV file.
 
-
-
+``` r
 write_csv(absorp_df, 'data/clean_absorption_data.csv')
+```
