@@ -1,0 +1,366 @@
+---
+title: "Phylogenetic linear regression"
+author: "Lucas Nell"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+
+
+Loading packages:
+
+```{r load_packages}
+suppressPackageStartupMessages({
+    library(readr)
+    library(dplyr)
+    library(tidyr)
+    library(phylolm)
+    library(ape)
+})
+```
+
+
+
+# Load R files
+
+
+## Functions
+
+These files provide functions to summarize phylolm objects and to run a version
+of `ape::corphylo` with confidence interval output, respectively.
+
+```{r source_tidy_csv}
+source('R/model_summaries.R')
+source('R/Modified_corphylo.R')
+```
+
+
+
+## Cleaned data
+
+```{r tidy_data}
+source('tidy_csv.R')
+```
+
+
+### Morphometric data
+
+In `tidy_csv.R` I first create two data sets from morphometric data in 
+`output/clean_morph_data.csv`
+with the different measurements as columns, plus separate columns for their 
+log-transformed versions.
+Each data set only needs certain measurements, so only those are included.
+All data are present in `data.frame`s (rather than `tibble`s), with species names 
+as row names.
+
+The first data set consists of two `data.frame`s, each summarizing by species 
+only (and takes means over positions).
+The only difference between the two data frames is that one is designed for the
+analysis of SEF in relation to diet. Thus it has species with no diet data removed.
+ 
+The second data set consists of separate data frames for morphometric data for
+each position (distal, medial, proximal).
+I need to do my analyses separately for each position because modelling 
+within-species and within-individual variance due to position rather than measurement
+error or process error would be difficult and not likely possible with this small 
+dataset.
+
+
+### Absorption and clearance data
+
+`tidy_csv.R` also prepares absorption and clearance data 
+(`output/clean_absorption_data.csv` and `output/clean_clearance_data.csv`, respectively).
+Each of these is organized into a single `data.frame` with species names as row 
+names.
+
+
+
+
+
+# Phylogenetic trees
+
+Reading phylogenetic tree, cleaning species names, and removing unnecessary species 
+from it for each set of analyses that differs in the set of unique species.
+These analyses are for `SEF ~ diet`, `clearance ~ SEF`, and 
+`fractional absorption ~ taxon`, respectively.
+The `tr` phylogeny is for all other analyses.
+
+```{r make_trs}
+tr <- read.tree('data/tree.nwk')
+tr$tip.label <- gsub('_', ' ', tr$tip.label)
+diet_tr <- drop.tip(tr,  tip = tr$tip.label[!tr$tip.label %in% diet_df$species])
+clear_tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% clear_df$species])
+absorp_tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% absorp_df$species])
+tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% spp_df$species])
+```
+
+
+
+
+
+# `SEF ~ Diet`
+
+> Function `ci` gets 95% CIs from a bootstrapped `phylolm` model object.
+
+```{r sef_diet}
+set.seed(581120)
+diet_fit <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
+                    model = 'lambda', boot = 2000)
+summary(diet_fit)
+ci(diet_fit, c('dietOmnivorous', 'dietProtein'))
+```
+
+
+
+# `Absorption ~ Taxon`
+
+
+```{r absorp_taxon}
+set.seed(454094511)
+absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
+    phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
+            model = 'lambda', boot = 2000)
+)
+summary(absorp_fit)
+ci(absorp_fit)
+```
+
+
+
+
+# `Morphometrics ~ Taxon`
+
+List of `Y`s:
+
+- Intestinal length / body mass^0.4
+- NSA / body mass^0.75
+- Villus surface area / body mass^0.75
+- Total number of enterocytes (log-transformed; log body mass as covariate)
+  * Calculated as such: `NSA * mean(<enterocyte density among segments>)`
+- Fractional absorption / (total intestinal surface / mass^0.75)
+  * total intestinal surface = `NSA * SEF`
+
+
+These are the column names for the above parameters:
+```{r sp_analyses_cols}
+spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
+```
+
+
+
+The actual analyses (takes ~6.5 min, which is why I saved the output):
+
+```{r sp_analyses, eval = FALSE}
+set.seed(88754829)
+spp_fits <- lapply(
+    spp_ys,
+    function(y) {
+        f <- paste(y, ' ~ taxon',
+                   ifelse(grepl('total_enterocytes', y), '+ log_mass', ''))
+        suppressWarnings(
+            do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
+                                    phy = as.name("tr"), model = 'lambda',
+                                    boot = 2000))
+        )
+    })
+names(spp_fits) <- spp_ys
+save(spp_fits, spp_df, file = 'output/spp_models.rda')
+```
+
+Loading the output and summarizing:
+
+```{r sp_analyses_load}
+load('output/spp_models.rda')
+sapply(spp_fits, ci)
+ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
+```
+
+
+
+
+
+
+
+
+# `Morphometrics ~ Taxon`, separately by segment
+
+
+(Segment = proximal, medial, or distal)
+
+List of `Y`s:
+
+- Intestinal diameter (log-transformed, body mass as covariate)
+- Villus height (body mass as covariate)
+- Villus width
+- Crypt width
+- Surface enlargement factor (SEF)
+- Enterocyte diameter
+- Enterocytes per cm^2 NSA (log-transformed)
+
+
+
+
+Constructing a vector of column names for these parameters using the previously 
+constructed `pos_measures` vector.
+```{r pos_measures}
+pos_ys <- pos_measures[pos_measures != 'mass']
+pos_ys[pos_ys == 'intestinal_diameter'] <- 'log_intestinal_diameter'
+pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
+```
+
+
+
+The actual analyses (takes ~21.7 min, which is why I saved the output):
+
+```{r pos_analyses, eval = FALSE}
+set.seed(25413535)
+pos_fits <- lapply(
+    unique(pos_df$pos),
+    function(pos) {
+        lapply(
+            pos_ys,
+            function(y) {
+                f <- paste(y, ' ~ taxon',
+                           ifelse(grepl('intestinal_diameter|villus_height', y),
+                                  '+ log_mass', ''))
+                # This model doesn't find the peak likelihood unless specifying a
+                # starting value of 0.1.
+                if (y == "log_enterocyte_density" & pos == "prox") {
+                    suppressWarnings(
+                        do.call("phylolm",
+                                list(
+                                    as.formula(f),
+                                    data = as.name(paste0(pos, "_df")),
+                                    phy = as.name("tr"), model = 'lambda',
+                                    boot = 2000,
+                                    starting.value = 0.1)))
+                } else {
+                    suppressWarnings(
+                        do.call("phylolm",
+                                list(
+                                    as.formula(f),
+                                    data = as.name(paste0(pos, "_df")),
+                                    phy = as.name("tr"), model = 'lambda',
+                                    boot = 2000)))
+                }
+            })
+    })
+names(pos_fits) <- unique(pos_df$pos)
+for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys
+save(pos_fits, dist_df, med_df, prox_df, file = 'output/pos_models.rda')
+```
+
+Loading the output and summarizing:
+
+```{r pos_analyses_load}
+load('output/pos_models.rda')
+sapply(pos_fits$dist, ci)
+sapply(pos_fits$med, ci)
+sapply(pos_fits$prox, ci)
+sapply(pos_fits$dist[c('log_intestinal_diameter', 'villus_height')], 
+       ci, parameter = 'log_mass')
+sapply(pos_fits$med[c('log_intestinal_diameter', 'villus_height')], 
+       ci, parameter = 'log_mass')
+sapply(pos_fits$prox[c('log_intestinal_diameter', 'villus_height')], 
+       ci, parameter = 'log_mass')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+# `Clearance ~ SEF`
+
+Clearance = "paracellular probe L-arabinose clearance"
+
+Both are log-transformed.
+
+From the original manuscript: 
+> ... we used reduced major axis regression (model II regression)... because both 
+> variables [X and Y] were subject to error
+
+Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` 
+to estimate Pearson correlation coefficients.
+Confidence intervals are calculated using Fisher information.
+
+```{r clear_sef}
+
+source('tidy_csv_se.R')
+
+Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
+rownames(Xmat) <- rownames(clear_df)
+
+MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
+rownames(MEmat) <- clear_se_df$species
+
+clear_cor <- corp(Xmat, phy = clear_tr, SeM = MEmat)
+
+# Correlation with 95% CI
+clear_cor['r',]
+```
+
+
+
+
+
+# Assembling all output into one object
+
+
+
+The function `ci_df` creates a tibble with 95% CIs for all parameters in a 
+single model.
+I run this on all models above.
+I also add the output from the correlation between `log_sef` and `log_clear` 
+manually at the end, which I have to do because it isn't a `phylolm` object.
+
+
+```{r mod_summaries}
+mod_summaries <- bind_rows(
+    list(
+        ci_df(diet_fit),
+        ci_df(absorp_fit),
+        bind_rows(lapply(spp_fits, ci_df)),
+        bind_rows(
+            lapply(1:3, function(i) {
+                bind_rows(lapply(pos_fits[[i]], ci_df, .pos = names(pos_fits)[i]))
+            })),
+        bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
+        ))
+mod_summaries
+```
+
+
+I lastly write this summary to a csv file.
+
+
+```{r write_summaries}
+write_csv(mod_summaries, 'output/model_summaries.csv')
+```
+
+
+
+
+# Session info
+
+This outlines the package versions I used for these analyses.
+
+```{r session_info, echo = FALSE}
+devtools::session_info()
+```
+
