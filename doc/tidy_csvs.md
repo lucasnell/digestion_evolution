@@ -219,6 +219,8 @@ pos_df <- morph_df %>%
     summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), funs(mean, se), 
                  na.rm = TRUE) %>% 
     ungroup %>% 
+    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
+    mutate_at(vars(ends_with('_se')), na_se) %>%
     # Now only outputting columns that are necessary
     select_(
         .dots = as.list(c('taxon', 'diet', 'species', 'pos', 
