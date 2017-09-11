@@ -10,14 +10,14 @@ output:
 
 ```{r setup, include = FALSE, cache = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-# knitr::opts_knit$set(root.dir = normalizePath(".."))
-# get_data(.df, .stat, .pos = c(NA, 'prox', 'med', 'dist'))
+knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
 
 
 
 
 Loading packages:
+
 
 ```{r load_packages}
 suppressPackageStartupMessages({
@@ -30,95 +30,45 @@ suppressPackageStartupMessages({
 ```
 
 
+# `source` the `R` directory
 
-# Load R files
+The `R` directory provides functions to summarize `phylolm` objects, run a version
+of `ape::corphylo` with confidence interval output, and retrieve morphometric,
+clearance, and absorption data.
+See `tidy_csvs.md` for more info.
 
-
-## Functions
-
-These files provide functions to summarize phylolm objects and to run a version
-of `ape::corphylo` with confidence interval output, respectively.
-
-```{r source_tidy_csv}
-# source('R/model_summaries.R')
-# source('R/Modified_corphylo.R')
+```{r source_R}
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ```
 
 
+The `get_tr` function in `R/get_data.R` reads the main phylogenetic tree, 
+cleans species names, and removes unnecessary species from it for a given analysis set.
 
-## Cleaned data
-
-```{r tidy_data}
-# source('tidy_csv.R')
-```
-
-
-### Morphometric data
-
-In `tidy_csv.R` I first create two data sets from morphometric data in 
-`output/clean_morph_data.csv`
-with the different measurements as columns, plus separate columns for their 
-log-transformed versions.
-Each data set only needs certain measurements, so only those are included.
-All data are present in `data.frame`s (rather than `tibble`s), with species names 
-as row names.
-
-The first data set consists of two `data.frame`s, each summarizing by species 
-only (and takes means over positions).
-The only difference between the two data frames is that one is designed for the
-analysis of SEF in relation to diet. Thus it has species with no diet data removed.
- 
-The second data set consists of separate data frames for morphometric data for
-each position (distal, medial, proximal).
-I need to do my analyses separately for each position because modelling 
-within-species and within-individual variance due to position rather than measurement
-error or process error would be difficult and not likely possible with this small 
-dataset.
-
-
-### Absorption and clearance data
-
-`tidy_csv.R` also prepares absorption and clearance data 
-(`output/clean_absorption_data.csv` and `output/clean_clearance_data.csv`, respectively).
-Each of these is organized into a single `data.frame` with species names as row 
-names.
-
-
-
-
-
-# Phylogenetic trees
-
-Reading phylogenetic tree, cleaning species names, and removing unnecessary species 
-from it for each set of analyses that differs in the set of unique species.
-These analyses are for `SEF ~ diet`, `clearance ~ SEF`, and 
-`fractional absorption ~ taxon`, respectively.
-The `tr` phylogeny is for all other analyses.
-
-```{r make_trs}
-tr <- read.tree('data/tree.nwk')
-tr$tip.label <- gsub('_', ' ', tr$tip.label)
-diet_tr <- drop.tip(tr,  tip = tr$tip.label[!tr$tip.label %in% diet_df$species])
-clear_tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% clear_df$species])
-absorp_tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% absorp_df$species])
-tr <- drop.tip(tr, tip = tr$tip.label[!tr$tip.label %in% spp_df$species])
-```
-
+The function `ci` in `R/model_summaries.R` gets 95% CIs from a bootstrapped 
+`phylolm` model object.
 
 
 
 
 # `SEF ~ Diet`
 
-> Function `ci` gets 95% CIs from a bootstrapped `phylolm` model object.
+Necessary data:
+
+```{r}
+diet_df <- get_df('diet')
+diet_tr <- get_tr('diet')
+```
+
+
+`phylolm` call and output:
 
 ```{r sef_diet}
 set.seed(581120)
 diet_fit <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
                     model = 'lambda', boot = 2000)
-summary(diet_fit)
 ci(diet_fit, c('dietOmnivorous', 'dietProtein'))
+summary(diet_fit)
 ```
 
 
@@ -126,14 +76,23 @@ ci(diet_fit, c('dietOmnivorous', 'dietProtein'))
 # `Absorption ~ Taxon`
 
 
+Necessary data:
+
+```{r absorp_data}
+absorp_df <- get_df('absorp')
+absorp_tr <- get_tr('absorp')
+```
+
+`phylolm` call and output:
+
 ```{r absorp_taxon}
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
-summary(absorp_fit)
 ci(absorp_fit)
+summary(absorp_fit)
 ```
 
 
@@ -141,7 +100,7 @@ ci(absorp_fit)
 
 # `Morphometrics ~ Taxon`
 
-List of `Y`s:
+List of `Morphometrics`:
 
 - Intestinal length / body mass^0.4
 - NSA / body mass^0.75
@@ -158,8 +117,19 @@ spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocy
 ```
 
 
+Necessary data:
 
-The actual analyses (takes ~6.5 min, which is why I saved the output):
+> The `tr` tree is used for both this analysis and the one separated also by segment.
+
+```{r spp_data}
+spp_df <- get_df('spp')
+tr <- get_tr('spp')
+```
+
+
+`phylolm` call:
+
+> The actual analyses (takes ~6.5 min, which is why I saved the output):
 
 ```{r sp_analyses, eval = FALSE}
 set.seed(88754829)
@@ -175,13 +145,13 @@ spp_fits <- lapply(
         )
     })
 names(spp_fits) <- spp_ys
-save(spp_fits, spp_df, file = 'output/spp_models.rda')
+readr::write_rds(spp_fits, 'output/spp_models.rds')
 ```
 
 Loading the output and summarizing:
 
 ```{r sp_analyses_load}
-load('output/spp_models.rda')
+spp_fits <- readr::read_rds('output/spp_models.rds')
 sapply(spp_fits, ci)
 ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
 ```
@@ -211,60 +181,55 @@ List of `Y`s:
 
 
 
-Constructing a vector of column names for these parameters using the previously 
-constructed `pos_measures` vector.
-```{r pos_measures}
-pos_ys <- pos_measures[pos_measures != 'mass']
-pos_ys[pos_ys == 'intestinal_diameter'] <- 'log_intestinal_diameter'
-pos_ys[pos_ys == 'enterocyte_density'] <- 'log_enterocyte_density'
+Below are the column names for these parameters and all the segment types.
+
+```{r pos_ys}
+pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width', 
+            'crypt_width', 'sef', 'enterocyte_diameter', 'log_enterocyte_density')
+seg_types <- c('prox', 'med', 'dist')
 ```
 
 
+`phylolm` call:
 
 The actual analyses (takes ~21.7 min, which is why I saved the output):
 
 ```{r pos_analyses, eval = FALSE}
 set.seed(25413535)
 pos_fits <- lapply(
-    unique(pos_df$pos),
+    seg_types,
     function(pos) {
+        # Assigning to obj named <pos>_df so that the call identifies the position
+        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
         lapply(
             pos_ys,
             function(y) {
                 f <- paste(y, ' ~ taxon',
                            ifelse(grepl('intestinal_diameter|villus_height', y),
                                   '+ log_mass', ''))
+                arg_list <- list(
+                    as.formula(f),
+                    data = as.name(paste0(pos, "_df")),
+                    phy = as.name("tr"), model = 'lambda',
+                    boot = 2000)
                 # This model doesn't find the peak likelihood unless specifying a
                 # starting value of 0.1.
                 if (y == "log_enterocyte_density" & pos == "prox") {
-                    suppressWarnings(
-                        do.call("phylolm",
-                                list(
-                                    as.formula(f),
-                                    data = as.name(paste0(pos, "_df")),
-                                    phy = as.name("tr"), model = 'lambda',
-                                    boot = 2000,
-                                    starting.value = 0.1)))
-                } else {
-                    suppressWarnings(
-                        do.call("phylolm",
-                                list(
-                                    as.formula(f),
-                                    data = as.name(paste0(pos, "_df")),
-                                    phy = as.name("tr"), model = 'lambda',
-                                    boot = 2000)))
+                    arg_list <- c(arg_list, starting.value = 0.1)
                 }
+                # Now call phylolm
+                suppressWarnings(do.call("phylolm", arg_list))
             })
     })
-names(pos_fits) <- unique(pos_df$pos)
-for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys
-save(pos_fits, dist_df, med_df, prox_df, file = 'output/pos_models.rda')
+names(pos_fits) <- seg_types
+for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
+readr::write_rds(pos_fits, 'output/pos_models.rds')
 ```
 
 Loading the output and summarizing:
 
 ```{r pos_analyses_load}
-load('output/pos_models.rda')
+pos_fits <- readr::read_rds('output/pos_models.rds')
 sapply(pos_fits$dist, ci)
 sapply(pos_fits$med, ci)
 sapply(pos_fits$prox, ci)
@@ -303,7 +268,9 @@ Confidence intervals are calculated using Fisher information.
 
 ```{r clear_sef}
 
-source('tidy_csv_se.R')
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
+clear_tr <- get_tr('clear')
 
 Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
 rownames(Xmat) <- rownames(clear_df)
@@ -327,8 +294,8 @@ clear_cor['r',]
 
 The function `ci_df` creates a tibble with 95% CIs for all parameters in a 
 single model.
-I run this on all models above.
-I also add the output from the correlation between `log_sef` and `log_clear` 
+I ran this on all models above.
+I also added the output from the correlation between `log_sef` and `log_clear` 
 manually at the end, which I have to do because it isn't a `phylolm` object.
 
 
@@ -339,8 +306,8 @@ mod_summaries <- bind_rows(
         ci_df(absorp_fit),
         bind_rows(lapply(spp_fits, ci_df)),
         bind_rows(
-            lapply(1:3, function(i) {
-                bind_rows(lapply(pos_fits[[i]], ci_df, .pos = names(pos_fits)[i]))
+            lapply(names(pos_fits), function(p) {
+                bind_rows(lapply(pos_fits[[p]], ci_df, .pos = p))
             })),
         bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
         ))
