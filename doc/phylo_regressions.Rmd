@@ -56,7 +56,7 @@ single model.
 
 Necessary data:
 
-```{r}
+```{r diet_data}
 diet_df <- get_df('diet')
 diet_tr <- get_tr('diet')
 ```
@@ -96,6 +96,12 @@ ci(absorp_fit)
 summary(absorp_fit)
 ```
 
+
+I'm saving output for this fit because I'll be using that for plotting.
+
+```{r save_absorp}
+readr::write_rds(absorp_fit, 'output/absorp_models.rds')
+```
 
 
 

@@ -176,6 +176,12 @@ summary(absorp_fit)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
+I'm saving output for this fit because I'll be using that for plotting.
+
+``` r
+readr::write_rds(absorp_fit, 'output/absorp_models.rds')
+```
+
 `Morphometrics ~ Taxon`
 =======================
 
