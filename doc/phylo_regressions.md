@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-10 Sep 2017
+11 Sep 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
 -   [`SEF ~ Diet`](#sef-diet)
@@ -36,6 +36,8 @@ invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 The `get_tr` function in `R/get_data.R` reads the main phylogenetic tree, cleans species names, and removes unnecessary species from it for a given analysis set.
 
 The function `ci` in `R/model_summaries.R` gets 95% CIs from a bootstrapped `phylolm` model object.
+
+The function `ci_df` creates a tibble with 95% CIs for all parameters in a single model.
 
 `SEF ~ Diet`
 ============
@@ -183,9 +185,9 @@ List of `Morphometrics`:
 -   NSA / body mass^0.75
 -   Villus surface area / body mass^0.75
 -   Total number of enterocytes (log-transformed; log body mass as covariate)
--   Calculated as such: `NSA * mean(<enterocyte density among segments>)`
+    -   Calculated as such: `NSA * mean(<enterocyte density among segments>)`
 -   Fractional absorption / (total intestinal surface / mass^0.75)
--   total intestinal surface = `NSA * SEF`
+    -   total intestinal surface = `NSA * SEF`
 
 These are the column names for the above parameters:
 
@@ -397,7 +399,7 @@ clear_cor['r',]
 Assembling all output into one object
 =====================================
 
-The function `ci_df` creates a tibble with 95% CIs for all parameters in a single model. I ran this on all models above. I also added the output from the correlation between `log_sef` and `log_clear` manually at the end, which I have to do because it isn't a `phylolm` object.
+I ran `ci_df` on all models above. I also added the output from the correlation between `log_sef` and `log_clear` manually at the end, which I have to do because it isn't a `phylolm` object.
 
 ``` r
 mod_summaries <- bind_rows(
@@ -411,23 +413,47 @@ mod_summaries <- bind_rows(
             })),
         bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
         ))
-mod_summaries
+knitr::kable(mod_summaries, format = 'markdown')
 ```
 
-    ## # A tibble: 36 x 6
-    ##                          Y              X   pos       value       lower
-    ##                      <chr>          <chr> <chr>       <dbl>       <dbl>
-    ##  1                     sef dietOmnivorous  <NA> -2.30099013 -5.70825123
-    ##  2                     sef    dietProtein  <NA> -1.05811144 -4.17931886
-    ##  3                  absorp       taxonBat  <NA>  0.04660858  0.03289512
-    ##  4         int_length_mass       taxonBat  <NA> -2.85833278 -4.91661350
-    ##  5                nsa_mass       taxonBat  <NA> -0.43670805 -0.74789057
-    ##  6          vill_area_mass       taxonBat  <NA>  0.94143262 -2.86764651
-    ##  7   log_total_enterocytes       taxonBat  <NA>  0.28531433 -0.28232787
-    ##  8   log_total_enterocytes       log_mass  <NA>  0.71655375  0.32372344
-    ##  9 log_intestinal_diameter       taxonBat  prox  0.06123304 -0.13380318
-    ## 10 log_intestinal_diameter       log_mass  prox  0.29198631  0.16252014
-    ## # ... with 26 more rows, and 1 more variables: upper <dbl>
+| Y                         | X              | pos  |       value|       lower|       upper|
+|:--------------------------|:---------------|:-----|-----------:|-----------:|-----------:|
+| sef                       | dietOmnivorous | NA   |  -2.3009901|  -5.7082512|   1.2984528|
+| sef                       | dietProtein    | NA   |  -1.0581114|  -4.1793189|   2.2992833|
+| absorp                    | taxonBat       | NA   |   0.0466086|   0.0328951|   0.0609565|
+| int\_length\_mass         | taxonBat       | NA   |  -2.8583328|  -4.9166135|  -0.6899693|
+| nsa\_mass                 | taxonBat       | NA   |  -0.4367081|  -0.7478906|  -0.1411825|
+| vill\_area\_mass          | taxonBat       | NA   |   0.9414326|  -2.8676465|   4.9878776|
+| log\_total\_enterocytes   | taxonBat       | NA   |   0.2853143|  -0.2823279|   0.8362962|
+| log\_total\_enterocytes   | log\_mass      | NA   |   0.7165538|   0.3237234|   1.0874341|
+| log\_intestinal\_diameter | taxonBat       | prox |   0.0612330|  -0.1338032|   0.2469784|
+| log\_intestinal\_diameter | log\_mass      | prox |   0.2919863|   0.1625201|   0.4200719|
+| villus\_height            | taxonBat       | prox |   0.0887347|  -0.0261865|   0.2093184|
+| villus\_height            | log\_mass      | prox |   0.1560026|   0.0771714|   0.2339517|
+| villus\_width             | taxonBat       | prox |  -0.0316416|  -0.0474961|  -0.0160158|
+| crypt\_width              | taxonBat       | prox |  -0.0104877|  -0.0315114|   0.0103666|
+| sef                       | taxonBat       | prox |   4.4720094|   1.5529154|   7.4719083|
+| enterocyte\_diameter      | taxonBat       | prox |  -0.0006223|  -0.0017673|   0.0005472|
+| log\_enterocyte\_density  | taxonBat       | prox |   0.5985526|   0.1512608|   1.0464692|
+| log\_intestinal\_diameter | taxonBat       | med  |   0.0079669|  -0.1984294|   0.2049461|
+| log\_intestinal\_diameter | log\_mass      | med  |   0.1927109|   0.0516247|   0.3261071|
+| villus\_height            | taxonBat       | med  |   0.1526178|   0.0545995|   0.2526478|
+| villus\_height            | log\_mass      | med  |   0.0843465|   0.0171766|   0.1501683|
+| villus\_width             | taxonBat       | med  |  -0.0166444|  -0.0288660|  -0.0052407|
+| crypt\_width              | taxonBat       | med  |  -0.0073315|  -0.0132057|  -0.0017368|
+| sef                       | taxonBat       | med  |   5.2512236|   2.5893885|   7.9252450|
+| enterocyte\_diameter      | taxonBat       | med  |  -0.0011836|  -0.0023398|  -0.0000152|
+| log\_enterocyte\_density  | taxonBat       | med  |   0.6254613|  -0.9042551|   2.2500809|
+| log\_intestinal\_diameter | taxonBat       | dist |   0.0109267|  -0.1690558|   0.1936576|
+| log\_intestinal\_diameter | log\_mass      | dist |   0.2637575|   0.1336546|   0.4005606|
+| villus\_height            | taxonBat       | dist |   0.2094520|   0.1292392|   0.2965390|
+| villus\_height            | log\_mass      | dist |   0.0737162|   0.0175383|   0.1285322|
+| villus\_width             | taxonBat       | dist |  -0.0095327|  -0.0230823|   0.0029339|
+| crypt\_width              | taxonBat       | dist |  -0.0082673|  -0.0126474|  -0.0035723|
+| sef                       | taxonBat       | dist |   5.5291580|   3.4258656|   7.6225894|
+| enterocyte\_diameter      | taxonBat       | dist |  -0.0002774|  -0.0015039|   0.0009059|
+| log\_enterocyte\_density  | taxonBat       | dist |   0.7402773|   0.3086293|   1.1674755|
+| log\_sef                  | log\_clear     | NA   |   0.5772012|   0.0877875|   1.0666149|
 
 I lastly write this summary to a csv file.
 
@@ -449,7 +475,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-10
+    ##  date     2017-09-11
 
     ## Packages -----------------------------------------------------------------
 
@@ -470,6 +496,7 @@ This outlines the package versions I used for these analyses.
     ##  graphics   * 3.4.1   2017-07-07 local         
     ##  grDevices  * 3.4.1   2017-07-07 local         
     ##  grid         3.4.1   2017-07-07 local         
+    ##  highr        0.6     2016-05-09 cran (@0.6)   
     ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
     ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
     ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)

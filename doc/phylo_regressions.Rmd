@@ -48,7 +48,8 @@ cleans species names, and removes unnecessary species from it for a given analys
 The function `ci` in `R/model_summaries.R` gets 95% CIs from a bootstrapped 
 `phylolm` model object.
 
-
+The function `ci_df` creates a tibble with 95% CIs for all parameters in a 
+single model.
 
 
 # `SEF ~ Diet`
@@ -106,9 +107,9 @@ List of `Morphometrics`:
 - NSA / body mass^0.75
 - Villus surface area / body mass^0.75
 - Total number of enterocytes (log-transformed; log body mass as covariate)
-  * Calculated as such: `NSA * mean(<enterocyte density among segments>)`
+    * Calculated as such: `NSA * mean(<enterocyte density among segments>)`
 - Fractional absorption / (total intestinal surface / mass^0.75)
-  * total intestinal surface = `NSA * SEF`
+    * total intestinal surface = `NSA * SEF`
 
 
 These are the column names for the above parameters:
@@ -292,9 +293,8 @@ clear_cor['r',]
 
 
 
-The function `ci_df` creates a tibble with 95% CIs for all parameters in a 
-single model.
-I ran this on all models above.
+
+I ran `ci_df` on all models above.
 I also added the output from the correlation between `log_sef` and `log_clear` 
 manually at the end, which I have to do because it isn't a `phylolm` object.
 
@@ -311,7 +311,7 @@ mod_summaries <- bind_rows(
             })),
         bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
         ))
-mod_summaries
+knitr::kable(mod_summaries, format = 'markdown')
 ```
 
 
