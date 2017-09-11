@@ -376,3 +376,15 @@ Writing to CSV file.
 ```{r write_absorp, eval = FALSE}
 write_csv(absorp_df, 'data/clean_absorption_data.csv')
 ```
+
+
+
+
+# Session info
+
+This outlines the package versions I used for this script.
+
+```{r session_info, echo = FALSE}
+devtools::session_info()
+```
+

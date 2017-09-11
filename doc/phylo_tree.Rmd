@@ -66,3 +66,15 @@ Saving this figure.
 ```{r save_phylo, eval = FALSE}
 ggsave('figs/phylo.pdf', phylo, width = 6, height = 4)
 ```
+
+
+
+
+# Session info
+
+This outlines the package versions I used for this script.
+
+```{r session_info, echo = FALSE}
+devtools::session_info()
+```
+

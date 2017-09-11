@@ -445,3 +445,12 @@ write_csv(absorp_df, 'output/absorp_df.csv')
 
 
 
+
+# Session info
+
+This outlines the package versions I used for this script.
+
+```{r session_info, echo = FALSE}
+devtools::session_info()
+```
+
