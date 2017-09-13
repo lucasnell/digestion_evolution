@@ -1,24 +1,45 @@
+---
+title: "Phylogenetic linear regression"
+author: "Lucas Nell"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+__Loading packages and setting `ggplot2` theme\:__
+
+```{r load_packages}
 suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
     library(tidyr)
-    library(magrittr)
     library(phylolm)
     library(ape)
     library(ggplot2)
     library(grid)
     library(gridExtra)
 })
-# Set the default ggplot theme
 theme_set(theme_classic() %+replace% 
               theme(strip.background = element_blank(),
                     strip.text = element_text(size = 10),
                     legend.background = element_blank(),
                     plot.title = element_text(size = 14, hjust = 0)))
+```
 
 
-load('data/spp_models.rda')
 
+
+
+```{r code}
+read_csv('output/model_summaries.csv', col_types = 'cccddd')
 
 
 
@@ -335,3 +356,16 @@ fig5b <- pos_plots$log_enterocyte_density +
           legend.position = 'bottom')
 
 combine_fig(5)
+```
+
+
+
+
+# Session info
+
+This outlines the package versions I used for this script.
+
+```{r session_info, echo = FALSE}
+devtools::session_info()
+```
+

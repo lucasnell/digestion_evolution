@@ -1,0 +1,186 @@
+---
+title: "Create MATLAB TSVs"
+author: "Lucas Nell"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  github_document:
+    toc: true
+    toc_depth: 1
+---
+
+```{r setup, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+This script creates TSVs ("tab-delimited values") for use in the MATLAB code.
+
+
+__Load libraries\:__
+
+
+```{r libraries}
+suppressPackageStartupMessages({
+    library(readr)
+    library(dplyr)
+    library(tidyr)
+    library(phylolm)
+    library(ape)
+    library(ggplot2)
+})
+```
+
+The `R/get_data.R` file provides functions to retrieve morphometric, clearance, 
+and absorption data. See `tidy_csvs.md` for more info.
+
+```{r source_R}
+invisible(source("R/get_data.R"))
+```
+
+# Instructions for MATLAB script
+
+All input files should be tab-delimited text files.
+
+* Data file: 1 row for each species
+* Measurement error file: standard error for each cell in data file
+* MATLAB file to run: `physigv2.m`
+* Run it, and dialogs will show up
+* `taxon` measurement error = 0
+* Use a variance-covariance matrix (using `ape::vcov`) for the phylogenetic tree file
+* You can use likelihoods for p-values: run it with and without, `2*logLik` is chi-square
+* Run it with ML, not REML
+
+
+# By species and/or diet
+
+Retrieve data, change factors to binary variable(s), and remove unnecessary parameters:
+
+```{r spp_data}
+spp_mean <- get_df('spp', 'mean') %>% 
+    as_data_frame %>% 
+    mutate(taxonBat = ifelse(taxon == 'Bat', 1L, 0L), 
+           dietOmnivorous = ifelse(diet == 'Omnivorous', 1L, 0L),
+           dietProtein = ifelse(diet == 'Protein', 1L, 0L)) %>% 
+    select(species, taxonBat, dietOmnivorous, dietProtein, log_mass, everything(), 
+           -diet, -taxon) %>% 
+    arrange(species) %>% 
+    select(-species)
+spp_se <- get_df('spp', 'se') %>%
+    as_data_frame %>% 
+    # no measurement error in diet or taxon:
+    mutate(taxonBat = 0L, 
+           # I multiplied these by values in spp_mean to keep NAs
+           dietOmnivorous = as.integer(spp_mean$dietOmnivorous * 0), 
+           dietProtein = as.integer(spp_mean$dietOmnivorous * 0)) %>%
+    select(species, taxonBat, dietOmnivorous, dietProtein, log_mass, everything(), 
+           -diet, -taxon) %>% 
+    arrange(species) %>% 
+    select(-species)
+```
+
+Write files:
+
+```{r write_spp}
+# for parameters by species
+write_tsv(select(spp_mean, -starts_with("diet"), -sef), 
+          'matlab/data/spp_mean.txt')
+write_tsv(select(spp_se, -starts_with("diet"), -sef), 
+          'matlab/data/spp_se.txt')
+
+# for parameters by diet
+write_tsv(filter(spp_mean, !is.na(dietProtein)) %>% 
+              select(starts_with("diet"), sef), 
+          'matlab/data/diet_mean.txt')
+write_tsv(filter(spp_se, !is.na(dietProtein)) %>% 
+              select(starts_with("diet"), sef), 
+          'matlab/data/diet_se.txt')
+```
+
+## Phylogenetic tree for these data
+
+```{r spp_tree}
+tr <- get_tr('spp')
+tr_df <- vcv(tr)[order(tr$tip.label),order(tr$tip.label)] %>%
+    as_data_frame
+write_tsv(tr_df, 'matlab/data/spp_vcv.txt', col_names = FALSE)
+
+tr <- get_tr('diet')
+tr_df <- vcv(tr)[order(tr$tip.label),order(tr$tip.label)] %>%
+    as_data_frame
+write_tsv(tr_df, 'matlab/data/diet_vcv.txt', col_names = FALSE)
+```
+
+
+
+
+# Absorption
+
+Retrieve data, change factors to binary variable(s), and remove unnecessary parameters:
+
+```{r absorp_data}
+absorp_mean <- get_df('absorp', 'mean') %>% 
+    as_data_frame %>% 
+    mutate(taxonBat = ifelse(taxon == 'Bat', 1L, 0L)) %>% 
+    select(species, taxonBat, everything(), -taxon) %>% 
+    arrange(species) %>% 
+    select(-species)
+absorp_se <- get_df('absorp', 'se') %>%
+    as_data_frame %>% 
+    mutate(taxonBat = 0L) %>%  # <- no measurement error in taxon
+    select(species, taxonBat, everything(), -taxon) %>% 
+    arrange(species) %>% 
+    select(-species)
+```
+
+Write files:
+
+```{r write_absorp}
+write_tsv(absorp_mean,  'matlab/data/absorp_mean.txt')
+write_tsv(absorp_se, 'matlab/data/absorp_se.txt')
+```
+
+## Phylogenetic tree for these data
+
+```{r absorp_tree}
+tr <- get_tr('absorp')
+tr_df <- vcv(tr)[order(tr$tip.label),order(tr$tip.label)] %>%
+    as_data_frame
+write_tsv(tr_df, 'matlab/data/absorp_vcv.txt', col_names = FALSE)
+```
+
+
+
+
+
+# By species and segment
+
+
+Retrieve data, change factors to binary variable(s), remove unnecessary parameters,
+and write output for each segment type:
+
+```{r spp_data2}
+for (s in c('prox', 'med', 'dist')) {
+    pos_mean <- get_df('pos', 'mean', s) %>%
+        as_data_frame %>% 
+        mutate(taxonBat = ifelse(taxon == 'Bat', 1L, 0L)) %>% 
+        select(species, taxonBat, log_mass, everything(), -diet, -taxon) %>% 
+        arrange(species) %>% 
+        select(-species)
+    pos_se <- get_df('pos', 'se', s) %>%
+        as_data_frame %>% 
+        mutate(taxonBat = 0L) %>%  # <-- no measurement error in taxon
+        select(species, taxonBat, log_mass, everything(), -diet, -taxon) %>% 
+        arrange(species) %>% 
+        select(-species)
+    write_tsv(pos_mean, paste0('matlab/data/pos_', s, '_mean.txt'))
+    write_tsv(pos_se, paste0('matlab/data/pos_', s, '_se.txt'))
+}; rm(s, pos_mean, pos_se)
+```
+
+
+## Phylogenetic tree for these data
+
+The same tree is used for these as for analyses by species only, so the file
+`matlab/data/spp_vcv.txt` can be used.
+
