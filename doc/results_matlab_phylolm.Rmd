@@ -84,7 +84,7 @@ parse_output <- function(fn, .pos = NA, .version = NA) {
     return(out_df)
 }
 # parse_output('matlab/output/distal.m', 'dist')
-# parse_output('output/model_summaries.csv')
+# parse_output('output/models_summaries.csv')
 # parse_output('matlab/code_v1/output_spp.m', .version = 'matlab_v1')
 
 summ_df <- pmap_dfr(list(

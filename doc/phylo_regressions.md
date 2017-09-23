@@ -464,7 +464,7 @@ knitr::kable(mod_summaries, format = 'markdown')
 I lastly write this summary to a csv file.
 
 ``` r
-write_csv(mod_summaries, 'output/model_summaries.csv')
+write_csv(mod_summaries, 'output/models_summaries.csv')
 ```
 
 Session info

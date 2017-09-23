@@ -39,7 +39,7 @@ theme_set(theme_classic() %+replace%
 
 
 ```{r code}
-read_csv('output/model_summaries.csv', col_types = 'cccddd')
+read_csv('output/models_summaries.csv', col_types = 'cccddd')
 
 
 
