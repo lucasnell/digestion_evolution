@@ -109,4 +109,22 @@
 % sef ~ dietOmnivorous + dietProtein
 % @@@@@@@@
 
+% Coefficients with (lb,mean,ub) from simulation
+% b0 (intercept) = 12.9276 (4.9936, 12.7668, 19.766)
+% b1 = -1.9155 (-4.8906, -1.8707, 1.1349)
+% b2 = -0.46991 (-3.3691, -0.41969, 2.7351)
+% 
+% sigma2 = 7.0151 (3.9408, 12.044, 22.9562)
+% 
+% Independent variable means, variances, and correlations
+% aX1 = 0.25
+% aX2 = 0.5
+% s2X1 = 0.2
+% s2X2 = 0.26667
+% r(1,2) = -0.57735
+% 
+% LnLikelihood = -58.0064
+% -2LL = 116.0128
+% AIC(par=8) = 132.0128
+
 
