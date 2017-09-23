@@ -30,7 +30,7 @@ Lucas Nell
   recreated using files from `doc`.
 
 * `matlab`: files associated with a MATLAB-implemented method of phylogenetic 
-  regression with measurement error ( *__Note\:__ this is not yet in the repo*)
+  regression with measurement error
     - `code_v1`: MATLAB code for measurement-error phylogenetic regression, version 1
       (original name was `MERegPHYSIG 1Jul10`)
     - `code_v2`: MATLAB code for measurement-error phylogenetic regression, version 2
