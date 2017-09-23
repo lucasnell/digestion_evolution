@@ -52,7 +52,7 @@ The function `ci_df` creates a tibble with 95% CIs for all parameters in a
 single model.
 
 
-# `SEF ~ Diet`
+# `SEF` on `Diet`
 
 Necessary data:
 
@@ -74,7 +74,7 @@ summary(diet_fit)
 
 
 
-# `Absorption ~ Taxon`
+# `Absorption` on `Taxon`
 
 
 Necessary data:
@@ -105,7 +105,7 @@ readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 
 
 
-# `Morphometrics ~ Taxon`
+# `Morphometrics` on `Taxon`
 
 List of `Morphometrics`:
 
@@ -170,7 +170,7 @@ ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
 
 
 
-# `Morphometrics ~ Taxon`, separately by segment
+# `Morphometrics` on `Taxon`, separately by segment
 
 
 (Segment = proximal, medial, or distal)
@@ -259,7 +259,7 @@ sapply(pos_fits$prox[c('log_intestinal_diameter', 'villus_height')],
 
 
 
-# `Clearance ~ SEF`
+# `Clearance` on `SEF`
 
 Clearance = "paracellular probe L-arabinose clearance"
 

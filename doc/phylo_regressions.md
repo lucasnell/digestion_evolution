@@ -4,11 +4,11 @@ Lucas Nell
 23 Sep 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
--   [`SEF ~ Diet`](#sef-diet)
--   [`Absorption ~ Taxon`](#absorption-taxon)
--   [`Morphometrics ~ Taxon`](#morphometrics-taxon)
--   [`Morphometrics ~ Taxon`, separately by segment](#morphometrics-taxon-separately-by-segment)
--   [`Clearance ~ SEF`](#clearance-sef)
+-   [`SEF` on `Diet`](#sef-on-diet)
+-   [`Absorption` on `Taxon`](#absorption-on-taxon)
+-   [`Morphometrics` on `Taxon`](#morphometrics-on-taxon)
+-   [`Morphometrics` on `Taxon`, separately by segment](#morphometrics-on-taxon-separately-by-segment)
+-   [`Clearance` on `SEF`](#clearance-on-sef)
 -   [Assembling all output into one object](#assembling-all-output-into-one-object)
 -   [Session info](#session-info)
 
@@ -39,8 +39,8 @@ The function `ci` in `R/model_summaries.R` gets 95% CIs from a bootstrapped `phy
 
 The function `ci_df` creates a tibble with 95% CIs for all parameters in a single model.
 
-`SEF ~ Diet`
-============
+`SEF` on `Diet`
+===============
 
 Necessary data:
 
@@ -108,8 +108,8 @@ summary(diet_fit)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
 
-`Absorption ~ Taxon`
-====================
+`Absorption` on `Taxon`
+=======================
 
 Necessary data:
 
@@ -182,8 +182,8 @@ I'm saving output for this fit because I'll be using that for plotting.
 readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 ```
 
-`Morphometrics ~ Taxon`
-=======================
+`Morphometrics` on `Taxon`
+==========================
 
 List of `Morphometrics`:
 
@@ -249,8 +249,8 @@ ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
     ##      2.5%     97.5% 
     ## 0.3237234 1.0874341
 
-`Morphometrics ~ Taxon`, separately by segment
-==============================================
+`Morphometrics` on `Taxon`, separately by segment
+=================================================
 
 (Segment = proximal, medial, or distal)
 
@@ -371,8 +371,8 @@ sapply(pos_fits$prox[c('log_intestinal_diameter', 'villus_height')],
     ## 2.5%                0.1625201    0.07717142
     ## 97.5%               0.4200719    0.23395167
 
-`Clearance ~ SEF`
-=================
+`Clearance` on `SEF`
+====================
 
 Clearance = "paracellular probe L-arabinose clearance"
 
