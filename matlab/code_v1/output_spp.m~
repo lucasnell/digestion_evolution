@@ -1,0 +1,61 @@
+
+% @@@@@@@@
+% int_length_mass ~ taxon
+% @@@@@@@@
+% Coefficients with (lb,mean,ub) from simulation
+% b0 (intercept) = 7.735 (-1.8413, 7.6989, 16.8601)
+% b1 = -2.968 (-15.6563, -3.0539, 9.7208)
+% 
+% sigma2 = 7.5238 (3.1649, 8.0121, 14.9454)
+% 
+% Independent variable means, variances, and correlations
+% aX1 = 0.56235
+% s2X1 = 0.014909
+% 
+% LnLikelihood = -31.0981
+% -2LL = 62.1962
+% AIC(par=5) = 72.1962
+
+
+
+% @@@@@@@@
+% nsa_mass ~ taxon
+% @@@@@@@@
+% Coefficients with (lb,mean,ub) from simulation
+% b0 (intercept) = 1.4013 (-0.0034404, 1.3897, 2.6809)
+% b1 = -0.46295 (-2.3317, -0.45387, 1.4062)
+% 
+% sigma2 = 0.16362 (0.058143, 0.16779, 0.31562)
+% 
+% Independent variable means, variances, and correlations
+% aX1 = 0.56235
+% s2X1 = 0.014909
+% 
+% LnLikelihood = 3.0782
+% -2LL = -6.1564
+% AIC(par=5) = 3.8436
+
+
+% @@@@@@@@
+% vill_area_mass ~ taxon
+% @@@@@@@@
+% 6
+
+% --------
+% log_total_enterocytes ~ taxon + log_mass
+% --------
+% 4
+
+
+
+
+
+% --------
+% fa_c ~ taxon
+% --------
+
+
+% --------
+% sef ~ dietOmnivorous + dietProtein
+% --------
+
