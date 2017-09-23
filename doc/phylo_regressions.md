@@ -55,14 +55,6 @@ diet_tr <- get_tr('diet')
 set.seed(581120)
 diet_fit <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
                     model = 'lambda', boot = 2000)
-ci(diet_fit, c('dietOmnivorous', 'dietProtein'))
-```
-
-    ##       dietOmnivorous dietProtein
-    ## 2.5%       -5.708251   -4.179319
-    ## 97.5%       1.298453    2.299283
-
-``` r
 summary(diet_fit)
 ```
 
@@ -111,6 +103,8 @@ summary(diet_fit)
 `Absorption` on `Taxon`
 =======================
 
+"Absorption" here means `Fractional absorption / (total intestinal surface / mass^0.75)`, where `total intestinal surface = NSA * SEF`
+
 Necessary data:
 
 ``` r
@@ -126,13 +120,6 @@ absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
-ci(absorp_fit)
-```
-
-    ##       2.5%      97.5% 
-    ## 0.03289512 0.06095654
-
-``` r
 summary(absorp_fit)
 ```
 
@@ -191,9 +178,7 @@ List of `Morphometrics`:
 -   NSA / body mass^0.75
 -   Villus surface area / body mass^0.75
 -   Total number of enterocytes (log-transformed; log body mass as covariate)
-    -   Calculated as such: `NSA * mean(<enterocyte density among segments>)`
--   Fractional absorption / (total intestinal surface / mass^0.75)
-    -   total intestinal surface = `NSA * SEF`
+    -   Calculated as such: `log(NSA * enterocyte_density)`
 
 These are the column names for the above parameters:
 

@@ -114,9 +114,7 @@ For the following measures, we need a single morphometric value per species:
 -   NSA / body mass^0.75
 -   Villus surface area / body mass^0.75
 -   Total number of enterocytes (log-transformed; log body mass as covariate)
--   Calculated as such: `NSA * mean(<enterocyte density among segments>)`
--   Fractional absorption / (total intestinal surface / mass^0.75)
--   total intestinal surface = `NSA * SEF`
+-   Calculated as such: `log(NSA * enterocyte_density)`
 
 We need the following columns from `morph_df` to compute these values:
 
