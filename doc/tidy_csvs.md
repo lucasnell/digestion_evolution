@@ -1,7 +1,7 @@
 Clean CSVs into simpler data frames
 ================
 Lucas Nell
-11 Sep 2017
+23 Sep 2017
 
 -   [Summary of output](#summary-of-output)
 -   [Getting started](#getting-started)
@@ -18,16 +18,16 @@ This reads the cleaned CSV files with data for individual animals and simplifies
 Summary of output
 =================
 
-I created two data sets from morphometric data in `output/clean_morph_data.csv`:
+I created two data sets from morphometric data in `output/clean_morph.csv`:
 
-1.  Measurements separated by species (found in `output/spp_df.csv`)
-2.  Measurements separated by species and intestinal segment (`output/pos_df.csv`)
+1.  Measurements separated by species (found in `output/tidy_spp.csv`)
+2.  Measurements separated by species and intestinal segment (`output/tidy_pos.csv`)
 
-I also created one data set each from `output/clean_clearance_data.csv` and `output/clean_absorption_data.csv`. These csvs are found in `output/clear_df.csv` and `output/absorp_df.csv`, respectively.
+I also created one data set each from `output/clean_clearance.csv` and `output/clean_absorption.csv`. These csvs are found in `output/tidy_clear.csv` and `output/tidy_absorp.csv`, respectively.
 
 Each data set is associated with a set of analyses and only needs certain measurements, so only those are included.
 
-The csv files are used in the function `get_df` in the `R/get_data.R` file to retrieve a data frame for a given analysis set. The analysis sets are as follows:
+The csv files are used in the function `get_df` in the `R/get_data.R` file to retrieve a data frame for a given analysis set. **The analysis sets are as follows:**
 
 1.  `'spp'`: Measurements separated by species.
 2.  `'diet'`: Measurements by species and with non-`NA` diet data.
@@ -75,7 +75,7 @@ Full morphometric data frame
 This data frame of morphometric measurements will be useful for the next two sections.
 
 ``` r
-morph_df <- read_csv('output/clean_morph_data.csv', col_types = 'cccccddd') %>%
+morph_df <- read_csv('output/clean_morph.csv', col_types = 'cccccddd') %>%
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
                             'Oligoryzomys nigripes', species))
@@ -249,7 +249,7 @@ Clearance data
 ==============
 
 ``` r
-clear_df <- read_csv('output/clean_clearance_data.csv', col_types = 'ccccdddd') %>%
+clear_df <- read_csv('output/clean_clearance.csv', col_types = 'ccccdddd') %>%
     mutate(
         # They lumped herbivores and omnivores together as "carb eater <taxon>"
         diet = ifelse(diet == "Protein", diet, "Carb"),
@@ -311,7 +311,7 @@ So before taking means or variances, I have inversed `gavage` and `(nsa * sef) /
 The term `(mass^0.75) / (nsa * sef)` is called `mns` below.
 
 ``` r
-absorp_df <- read_csv('output/clean_absorption_data.csv', col_types = 'ccccddddddd') %>%
+absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') %>%
     mutate(
         # Averaging SEF by individual (i.e., across segments)
         sef = (prox + med + dist) / 3,
@@ -369,10 +369,10 @@ Saving these data frames
 I'm saving them as csv files so they can be quickly loaded when retrieving a data frame.
 
 ``` r
-write_csv(pos_df, 'output/pos_df.csv')
-write_csv(spp_df, 'output/spp_df.csv')
-write_csv(clear_df, 'output/clear_df.csv')
-write_csv(absorp_df, 'output/absorp_df.csv')
+write_csv(pos_df, 'output/tidy_pos.csv')
+write_csv(spp_df, 'output/tidy_spp.csv')
+write_csv(clear_df, 'output/tidy_clear.csv')
+write_csv(absorp_df, 'output/tidy_absorp.csv')
 ```
 
 Session info
@@ -389,7 +389,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-11
+    ##  date     2017-09-23
 
     ## Packages -----------------------------------------------------------------
 

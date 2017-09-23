@@ -1,5 +1,5 @@
-# This code defines a function 'corp' that is largely the same as Tony's 
-# corphylo function, except that it is parameterized with the trait correlation 
+# This code defines a function 'corp' that is largely the same as Tony Ives' 
+# ape::corphylo function, except that it is parameterized with the trait correlation 
 # matrix rather than the trait covariance matrix.
 # This made it easier to calculate confidence intervals on the estimated 
 # correlation (using Fisher information).

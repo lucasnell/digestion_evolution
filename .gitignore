@@ -6,5 +6,8 @@
 *.docx
 bg_files
 *.pdf
-matlab
+*.prj
+*.html
 ~$*
+*workingMEfile.txt
+*workingDataFile.txt

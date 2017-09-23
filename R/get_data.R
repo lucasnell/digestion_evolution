@@ -1,5 +1,5 @@
 # 
-# Function for retrieving data of mean or standard errors among species
+# Functions for retrieving data of mean, standard errors, or phylogenies among species
 # 
 
 
@@ -13,7 +13,7 @@ get_df <- function(.df, .stat = c('mean', 'se'),
     if (.df == 'pos' & .pos == 'none') stop('provide non-"none" .pos when .df == "pos"')
     if (.df != 'pos' & .pos != 'none') warning('.df != "pos" so .pos argument ignored')
     
-    fn <- paste0('output/', ifelse(.df == 'diet', 'spp', .df), '_df.csv')
+    fn <- paste0('output/tidy_', ifelse(.df == 'diet', 'spp', .df), '.csv')
     
     out_df <- suppressMessages(readr::read_csv(fn))
     out_df <- as.data.frame(out_df)

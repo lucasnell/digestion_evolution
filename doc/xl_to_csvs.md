@@ -1,7 +1,7 @@
 Convert raw Excel file into CSVs
 ================
 Lucas Nell
-11 Sep 2017
+23 Sep 2017
 
 -   [Morphometric data](#morphometric-data)
 -   [Clearance data](#clearance-data)
@@ -148,7 +148,7 @@ morph_df <- morph_df %>%
 Writing to CSV file.
 
 ``` r
-write_csv(morph_df, 'data/clean_morph_data.csv')
+write_csv(morph_df, 'data/clean_morph.csv')
 ```
 
 Clearance data
@@ -263,7 +263,7 @@ clear_df <- bind_rows(sef_df, clear_df) %>%
 Writing to CSV file.
 
 ``` r
-write_csv(clear_df, 'data/clean_clearance_data.csv')
+write_csv(clear_df, 'data/clean_clearance.csv')
 ```
 
 Absorption data
@@ -333,7 +333,7 @@ absorp_df <- bind_rows(abs_df, abs_df2) %>%
 Writing to CSV file.
 
 ``` r
-write_csv(absorp_df, 'data/clean_absorption_data.csv')
+write_csv(absorp_df, 'data/clean_absorption.csv')
 ```
 
 Session info
@@ -350,7 +350,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-11
+    ##  date     2017-09-23
 
     ## Packages -----------------------------------------------------------------
 

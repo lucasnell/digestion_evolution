@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-11 Sep 2017
+23 Sep 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
 -   [`SEF ~ Diet`](#sef-diet)
@@ -179,7 +179,7 @@ summary(absorp_fit)
 I'm saving output for this fit because I'll be using that for plotting.
 
 ``` r
-readr::write_rds(absorp_fit, 'output/absorp_models.rds')
+readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 ```
 
 `Morphometrics ~ Taxon`
@@ -228,13 +228,13 @@ spp_fits <- lapply(
         )
     })
 names(spp_fits) <- spp_ys
-readr::write_rds(spp_fits, 'output/spp_models.rds')
+readr::write_rds(spp_fits, 'output/models_spp.rds')
 ```
 
 Loading the output and summarizing:
 
 ``` r
-spp_fits <- readr::read_rds('output/spp_models.rds')
+spp_fits <- readr::read_rds('output/models_spp.rds')
 sapply(spp_fits, ci)
 ```
 
@@ -305,13 +305,13 @@ pos_fits <- lapply(
     })
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
-readr::write_rds(pos_fits, 'output/pos_models.rds')
+readr::write_rds(pos_fits, 'output/models_pos.rds')
 ```
 
 Loading the output and summarizing:
 
 ``` r
-pos_fits <- readr::read_rds('output/pos_models.rds')
+pos_fits <- readr::read_rds('output/models_pos.rds')
 sapply(pos_fits$dist, ci)
 ```
 
@@ -481,7 +481,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-11
+    ##  date     2017-09-23
 
     ## Packages -----------------------------------------------------------------
 

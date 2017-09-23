@@ -167,7 +167,7 @@ morph_df <- morph_df %>%
 Writing to CSV file.
 
 ```{r write_morph, eval = FALSE}
-write_csv(morph_df, 'data/clean_morph_data.csv')
+write_csv(morph_df, 'data/clean_morph.csv')
 ```
 
 
@@ -291,7 +291,7 @@ clear_df <- bind_rows(sef_df, clear_df) %>%
 Writing to CSV file.
 
 ```{r write_clear, eval = FALSE}
-write_csv(clear_df, 'data/clean_clearance_data.csv')
+write_csv(clear_df, 'data/clean_clearance.csv')
 ```
 
 
@@ -374,7 +374,7 @@ Writing to CSV file.
 
 
 ```{r write_absorp, eval = FALSE}
-write_csv(absorp_df, 'data/clean_absorption_data.csv')
+write_csv(absorp_df, 'data/clean_absorption.csv')
 ```
 
 

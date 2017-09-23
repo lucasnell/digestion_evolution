@@ -1,7 +1,7 @@
 Create MATLAB TSVs
 ================
 Lucas Nell
-13 Sep 2017
+23 Sep 2017
 
 -   [Instructions for MATLAB script](#instructions-for-matlab-script)
 -   [By species and/or diet](#by-species-andor-diet)

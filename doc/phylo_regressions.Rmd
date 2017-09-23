@@ -100,7 +100,7 @@ summary(absorp_fit)
 I'm saving output for this fit because I'll be using that for plotting.
 
 ```{r save_absorp}
-readr::write_rds(absorp_fit, 'output/absorp_models.rds')
+readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 ```
 
 
@@ -152,13 +152,13 @@ spp_fits <- lapply(
         )
     })
 names(spp_fits) <- spp_ys
-readr::write_rds(spp_fits, 'output/spp_models.rds')
+readr::write_rds(spp_fits, 'output/models_spp.rds')
 ```
 
 Loading the output and summarizing:
 
 ```{r sp_analyses_load}
-spp_fits <- readr::read_rds('output/spp_models.rds')
+spp_fits <- readr::read_rds('output/models_spp.rds')
 sapply(spp_fits, ci)
 ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
 ```
@@ -230,13 +230,13 @@ pos_fits <- lapply(
     })
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
-readr::write_rds(pos_fits, 'output/pos_models.rds')
+readr::write_rds(pos_fits, 'output/models_pos.rds')
 ```
 
 Loading the output and summarizing:
 
 ```{r pos_analyses_load}
-pos_fits <- readr::read_rds('output/pos_models.rds')
+pos_fits <- readr::read_rds('output/models_pos.rds')
 sapply(pos_fits$dist, ci)
 sapply(pos_fits$med, ci)
 sapply(pos_fits$prox, ci)
