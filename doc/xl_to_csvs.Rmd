@@ -161,13 +161,18 @@ morph_df <- morph_df %>%
            med = ifelse(species == 'Microtus pennsylvanicus' &
                              measure == 'enterocyte width', 
                         med * 10, med))
+
+# These species' diets weren't included
+morph_df <- morph_df %>%
+    mutate(diet = ifelse(species == 'Microtus pennsylvanicus', 'Herbivorous',
+                         ifelse(species == 'Eptesicus fuscus', 'Protein', diet)))
 ```
 
 
 Writing to CSV file.
 
 ```{r write_morph, eval = FALSE}
-write_csv(morph_df, 'data/clean_morph.csv')
+write_csv(morph_df, 'output/clean_morph.csv')
 ```
 
 

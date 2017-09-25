@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-23 Sep 2017
+25 Sep 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
 -   [`SEF` on `Diet`](#sef-on-diet)
@@ -44,58 +44,60 @@ The function `ci_df` creates a tibble with 95% CIs for all parameters in a singl
 
 Necessary data:
 
+> The `spp_df` data frame is used for both this analysis and `Morphometrics` on `Taxon`. The `tr` tree is used for this analysis, `Morphometrics` on `Taxon`, and `Morphometrics` on `Taxon`, separately by segment.
+
 ``` r
-diet_df <- get_df('diet')
-diet_tr <- get_tr('diet')
+spp_df <- get_df('spp')
+tr <- get_tr('spp')
 ```
 
 `phylolm` call and output:
 
 ``` r
 set.seed(581120)
-diet_fit <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
+diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr, 
                     model = 'lambda', boot = 2000)
 summary(diet_fit)
 ```
 
     ## 
     ## Call:
-    ## phylolm(formula = sef ~ diet, data = diet_df, phy = diet_tr, 
-    ##     model = "lambda", boot = 2000)
+    ## phylolm(formula = sef ~ diet, data = spp_df, phy = tr, model = "lambda", 
+    ##     boot = 2000)
     ## 
     ##    AIC logLik 
-    ##   87.2  -38.6 
+    ##  95.24 -42.62 
     ## 
     ## Raw residuals:
     ##     Min      1Q  Median      3Q     Max 
-    ## -4.6736 -3.2315 -0.5839  3.4188  6.3726 
+    ## -4.8080 -3.1313 -0.7315  2.6783  6.5208 
     ## 
     ## Mean tip height: 96.46239
     ## Parameter estimate(s) using ML:
-    ## lambda : 0.718295
-    ## sigma2: 0.118923 
+    ## lambda : 0.7184342
+    ## sigma2: 0.1088401 
     ## 
     ## Coefficients:
     ##                Estimate   StdErr  t.value lowerbootCI upperbootCI
-    ## (Intercept)    13.47067  2.29622  5.86646     9.42748     17.4570
-    ## dietOmnivorous -2.30099  1.95193 -1.17883    -5.70825      1.2985
-    ## dietProtein    -1.05811  1.78688 -0.59216    -4.17932      2.2993
+    ## (Intercept)    13.60515  2.06616  6.58476     9.90143     17.4994
+    ## dietOmnivorous -2.54462  1.71353 -1.48502    -5.74463      0.6651
+    ## dietProtein    -1.34085  1.58377 -0.84662    -4.51318      1.5151
     ##                  p.value    
-    ## (Intercept)    5.533e-05 ***
-    ## dietOmnivorous    0.2596    
-    ## dietProtein       0.5639    
+    ## (Intercept)    8.661e-06 ***
+    ## dietOmnivorous    0.1582    
+    ## dietProtein       0.4105    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Note: p-values are conditional on lambda=0.718295.
+    ## Note: p-values are conditional on lambda=0.7184342.
     ## 
-    ## sigma2: 0.118923
-    ##       bootstrap mean: 0.08165768 (on raw scale)
-    ##                       0.06906805 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.02363493,0.2130501)
+    ## sigma2: 0.1088401
+    ##       bootstrap mean: 0.07769253 (on raw scale)
+    ##                       0.06538831 (on log scale, then back transformed)
+    ##       bootstrap 95% CI: (0.02197186,0.2035464)
     ## 
-    ## lambda: 0.718295
-    ##       bootstrap mean: 0.3968617 (on raw scale)
+    ## lambda: 0.7184342
+    ##       bootstrap mean: 0.4118461 (on raw scale)
     ##       bootstrap 95% CI: (1e-07,1)
     ## 
     ## Parametric bootstrap results based on 2000 fitted replicates
@@ -186,14 +188,7 @@ These are the column names for the above parameters:
 spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
 ```
 
-Necessary data:
-
-> The `tr` tree is used for both this analysis and the one separated also by segment.
-
-``` r
-spp_df <- get_df('spp')
-tr <- get_tr('spp')
-```
+Necessary data: `spp_df` and `tr` are already created from fitting `sef ~ diet`.
 
 `phylolm` call:
 
@@ -409,8 +404,8 @@ knitr::kable(mod_summaries, format = 'markdown')
 
 | Y                         | X              | pos  |       value|       lower|       upper|
 |:--------------------------|:---------------|:-----|-----------:|-----------:|-----------:|
-| sef                       | dietOmnivorous | NA   |  -2.3009901|  -5.7082512|   1.2984528|
-| sef                       | dietProtein    | NA   |  -1.0581114|  -4.1793189|   2.2992833|
+| sef                       | dietOmnivorous | NA   |  -2.5446199|  -5.7446261|   0.6650802|
+| sef                       | dietProtein    | NA   |  -1.3408502|  -4.5131826|   1.5150948|
 | absorp                    | taxonBat       | NA   |   0.0466086|   0.0328951|   0.0609565|
 | int\_length\_mass         | taxonBat       | NA   |  -2.8583328|  -4.9166135|  -0.6899693|
 | nsa\_mass                 | taxonBat       | NA   |  -0.4367081|  -0.7478906|  -0.1411825|
@@ -466,7 +461,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-23
+    ##  date     2017-09-25
 
     ## Packages -----------------------------------------------------------------
 

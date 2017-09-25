@@ -1,10 +1,10 @@
 Create MATLAB TSVs
 ================
 Lucas Nell
-23 Sep 2017
+25 Sep 2017
 
 -   [Instructions for MATLAB script](#instructions-for-matlab-script)
--   [By species and/or diet](#by-species-andor-diet)
+-   [By species](#by-species)
 -   [Absorption](#absorption)
 -   [By species and segment](#by-species-and-segment)
 
@@ -43,8 +43,8 @@ All input files should be tab-delimited text files.
 -   You can use likelihoods for p-values: run it with and without, `2*logLik` is chi-square
 -   Run it with ML, not REML
 
-By species and/or diet
-======================
+By species
+==========
 
 Retrieve data, change factors to binary variable(s), and remove unnecessary parameters:
 
@@ -61,10 +61,7 @@ spp_mean <- get_df('spp', 'mean') %>%
 spp_se <- get_df('spp', 'se') %>%
     as_data_frame %>% 
     # no measurement error in diet or taxon:
-    mutate(taxonBat = 0L, 
-           # I multiplied these by values in spp_mean to keep NAs
-           dietOmnivorous = as.integer(spp_mean$dietOmnivorous * 0), 
-           dietProtein = as.integer(spp_mean$dietOmnivorous * 0)) %>%
+    mutate(taxonBat = 0L, dietOmnivorous = 0L, dietProtein = 0L) %>%
     select(species, taxonBat, dietOmnivorous, dietProtein, log_mass, everything(), 
            -diet, -taxon) %>% 
     arrange(species) %>% 
@@ -74,19 +71,8 @@ spp_se <- get_df('spp', 'se') %>%
 Write files:
 
 ``` r
-# for parameters by species
-write_tsv(select(spp_mean, -starts_with("diet"), -sef), 
-          'matlab/data/spp_mean.txt')
-write_tsv(select(spp_se, -starts_with("diet"), -sef), 
-          'matlab/data/spp_se.txt')
-
-# for parameters by diet
-write_tsv(filter(spp_mean, !is.na(dietProtein)) %>% 
-              select(starts_with("diet"), sef), 
-          'matlab/data/diet_mean.txt')
-write_tsv(filter(spp_se, !is.na(dietProtein)) %>% 
-              select(starts_with("diet"), sef), 
-          'matlab/data/diet_se.txt')
+write_tsv(spp_mean, 'matlab/data/spp_mean.txt')
+write_tsv(spp_se, 'matlab/data/spp_se.txt')
 ```
 
 Phylogenetic tree for these data
@@ -97,11 +83,6 @@ tr <- get_tr('spp')
 tr_df <- vcv(tr)[order(tr$tip.label),order(tr$tip.label)] %>%
     as_data_frame
 write_tsv(tr_df, 'matlab/data/spp_vcv.txt', col_names = FALSE)
-
-tr <- get_tr('diet')
-tr_df <- vcv(tr)[order(tr$tip.label),order(tr$tip.label)] %>%
-    as_data_frame
-write_tsv(tr_df, 'matlab/data/diet_vcv.txt', col_names = FALSE)
 ```
 
 Absorption

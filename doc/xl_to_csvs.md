@@ -1,7 +1,7 @@
 Convert raw Excel file into CSVs
 ================
 Lucas Nell
-23 Sep 2017
+25 Sep 2017
 
 -   [Morphometric data](#morphometric-data)
 -   [Clearance data](#clearance-data)
@@ -143,12 +143,17 @@ morph_df <- morph_df %>%
            med = ifelse(species == 'Microtus pennsylvanicus' &
                              measure == 'enterocyte width', 
                         med * 10, med))
+
+# These species' diets weren't included
+morph_df <- morph_df %>%
+    mutate(diet = ifelse(species == 'Microtus pennsylvanicus', 'Herbivorous',
+                         ifelse(species == 'Eptesicus fuscus', 'Protein', diet)))
 ```
 
 Writing to CSV file.
 
 ``` r
-write_csv(morph_df, 'data/clean_morph.csv')
+write_csv(morph_df, 'output/clean_morph.csv')
 ```
 
 Clearance data
@@ -350,7 +355,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-23
+    ##  date     2017-09-25
 
     ## Packages -----------------------------------------------------------------
 

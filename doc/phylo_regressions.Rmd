@@ -56,9 +56,13 @@ single model.
 
 Necessary data:
 
+> The `spp_df` data frame is used for both this analysis and `Morphometrics` on `Taxon`.
+> The `tr` tree is used for this analysis, `Morphometrics` on `Taxon`, and
+> `Morphometrics` on `Taxon`, separately by segment.
+
 ```{r diet_data}
-diet_df <- get_df('diet')
-diet_tr <- get_tr('diet')
+spp_df <- get_df('spp')
+tr <- get_tr('spp')
 ```
 
 
@@ -66,7 +70,7 @@ diet_tr <- get_tr('diet')
 
 ```{r sef_diet}
 set.seed(581120)
-diet_fit <- phylolm(sef ~ diet, data = diet_df, phy = diet_tr, 
+diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr, 
                     model = 'lambda', boot = 2000)
 summary(diet_fit)
 ```
@@ -124,13 +128,7 @@ spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocy
 
 
 Necessary data:
-
-> The `tr` tree is used for both this analysis and the one separated also by segment.
-
-```{r spp_data}
-spp_df <- get_df('spp')
-tr <- get_tr('spp')
-```
+`spp_df` and `tr` are already created from fitting `sef ~ diet`.
 
 
 `phylolm` call:

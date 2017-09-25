@@ -6,14 +6,14 @@
 get_df <- function(.df, .stat = c('mean', 'se'), 
                    .pos = c('none', 'prox', 'med', 'dist')) {
     
-    .df <- match.arg(.df, c('spp', 'diet', 'clear', 'absorp', 'pos'))
+    .df <- match.arg(.df, c('spp', 'clear', 'absorp', 'pos'))
     .stat  <- match.arg(.stat)
     .pos  <- match.arg(.pos)
     
     if (.df == 'pos' & .pos == 'none') stop('provide non-"none" .pos when .df == "pos"')
     if (.df != 'pos' & .pos != 'none') warning('.df != "pos" so .pos argument ignored')
     
-    fn <- paste0('output/tidy_', ifelse(.df == 'diet', 'spp', .df), '.csv')
+    fn <- paste0('output/tidy_', .df, '.csv')
     
     out_df <- suppressMessages(readr::read_csv(fn))
     out_df <- as.data.frame(out_df)
@@ -21,9 +21,6 @@ get_df <- function(.df, .stat = c('mean', 'se'),
     
     if (.pos != 'none' & .df == 'pos') {
         out_df <- out_df[out_df$pos == .pos,]
-    }
-    if (.df == 'diet') {
-        out_df <- out_df[!is.na(out_df$diet),]
     }
     
     out_df <- out_df[out_df$stat == .stat,]

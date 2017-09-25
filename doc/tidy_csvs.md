@@ -1,7 +1,7 @@
 Clean CSVs into simpler data frames
 ================
 Lucas Nell
-23 Sep 2017
+25 Sep 2017
 
 -   [Summary of output](#summary-of-output)
 -   [Getting started](#getting-started)
@@ -30,12 +30,11 @@ Each data set is associated with a set of analyses and only needs certain measur
 The csv files are used in the function `get_df` in the `R/get_data.R` file to retrieve a data frame for a given analysis set. **The analysis sets are as follows:**
 
 1.  `'spp'`: Measurements separated by species.
-2.  `'diet'`: Measurements by species and with non-`NA` diet data.
-3.  `'pos'`: Measurements by species and position. (You have to also provide the position for this analysis set.)
-4.  `'clear'`: Clearance data by species. (Uses a different set of individuals entirely from the 1–3.)
-5.  `'absorp'`: Absorption data by species. (Uses a different set of individuals entirely from the 1–4.)
+2.  `'pos'`: Measurements by species and position. (You have to also provide the position for this analysis set.)
+3.  `'clear'`: Clearance data by species. (Uses a different set of individuals entirely from the 1–2.)
+4.  `'absorp'`: Absorption data by species. (Uses a different set of individuals entirely from the 1–3.)
 
-For the third analysis set, I need to do the analyses separately for each position because modelling within-species and within-individual variance due to position rather than measurement error or process error would be difficult and not likely possible with this small dataset.
+For the second analysis set, I need to do the analyses separately for each position because modelling within-species and within-individual variance due to position rather than measurement error or process error would be difficult and not likely possible with this small dataset.
 
 Getting started
 ===============
@@ -387,7 +386,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-23
+    ##  date     2017-09-25
 
     ## Packages -----------------------------------------------------------------
 

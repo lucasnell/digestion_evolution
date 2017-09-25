@@ -16,18 +16,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,crypt width,0.04828104575163398,0.0517
 Protein,Bat,Desmodus rotundus,Dr1,crypt width,0.03532679738562092,0.03972549019607844,0.0382
 Protein,Bat,Desmodus rotundus,Dr2,crypt width,0.03741031227305737,0.03262254901960785,0.034834733893557415
 Protein,Bat,Desmodus rotundus,Dr3,crypt width,0.04064444444444445,0.03814472455648926,0.04152352941176471
-NA,Bat,Eptesicus fuscus,Eptesicus1,crypt width,0.0333,0.03632,0.03688
-NA,Bat,Eptesicus fuscus,Eptesicus2,crypt width,0.03953,0.04349,0.04149
-NA,Bat,Eptesicus fuscus,Eptesicus3,crypt width,0.03675,0.03691,0.03498
+Protein,Bat,Eptesicus fuscus,Eptesicus1,crypt width,0.0333,0.03632,0.03688
+Protein,Bat,Eptesicus fuscus,Eptesicus2,crypt width,0.03953,0.04349,0.04149
+Protein,Bat,Eptesicus fuscus,Eptesicus3,crypt width,0.03675,0.03691,0.03498
 Protein,Bat,Eumops glaucinus,Eg,crypt width,0.016808823529411765,0.024799927378358746,0.03336013071895425
 Protein,Rodent,Euryoryzomys russatus,E1,crypt width,0.04181781045751634,0.04321078431372549,0.04238186274509804
 Protein,Rodent,Euryoryzomys russatus,E2,crypt width,0.03861136249371544,0.04014031862745099,0.054592903828197946
 Protein,Rodent,Euryoryzomys russatus,E3,crypt width,0.04168347338935574,0.04891633986928104,0.04751797385620915
-NA,Rodent,Microtus pennsylvanicus,Microtus1,crypt width,0.03807,0.03497,0.03332
-NA,Rodent,Microtus pennsylvanicus,Microtus2,crypt width,0.04579,0.04127,0.03718
-NA,Rodent,Microtus pennsylvanicus,Microtus3,crypt width,0.04286,0.03759,0.03576
-NA,Rodent,Microtus pennsylvanicus,Microtus4,crypt width,0.04748,0.03928,0.03515
-NA,Rodent,Microtus pennsylvanicus,Microtus5,crypt width,0.04022,0.04261,0.04506
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,crypt width,0.03807,0.03497,0.03332
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,crypt width,0.04579,0.04127,0.03718
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,crypt width,0.04286,0.03759,0.03576
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,crypt width,0.04748,0.03928,0.03515
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,crypt width,0.04022,0.04261,0.04506
 Protein,Bat,Molossus molossus,Mmo1,crypt width,0.032544860368389786,0.03140261437908496,0.03545686274509804
 Protein,Bat,Molossus molossus,Mmo2,crypt width,0.03150599128540305,0.03435947712418301,0.03459803921568627
 Protein,Bat,Molossus molossus,Mmo3,crypt width,0.026101307189542487,0.03101437908496732,0.027743018419489007
@@ -76,18 +76,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,enterocyte density,26959395.527997352,
 Protein,Bat,Desmodus rotundus,Dr1,enterocyte density,47844275.16204505,41730957.8985039,34720731.62225518
 Protein,Bat,Desmodus rotundus,Dr2,enterocyte density,37353877.370448895,42388446.070766374,34016408.64928715
 Protein,Bat,Desmodus rotundus,Dr3,enterocyte density,31062126.13281311,45063618.16152716,34387914.307476245
-NA,Bat,Eptesicus fuscus,Eptesicus1,enterocyte density,49720920.90722845,34147899.11452869,24612843.214287404
-NA,Bat,Eptesicus fuscus,Eptesicus2,enterocyte density,48152925.16396516,31163548.121159382,19082958.260560796
-NA,Bat,Eptesicus fuscus,Eptesicus3,enterocyte density,34905194.80555971,33030102.788993627,22886355.637214478
+Protein,Bat,Eptesicus fuscus,Eptesicus1,enterocyte density,49720920.90722845,34147899.11452869,24612843.214287404
+Protein,Bat,Eptesicus fuscus,Eptesicus2,enterocyte density,48152925.16396516,31163548.121159382,19082958.260560796
+Protein,Bat,Eptesicus fuscus,Eptesicus3,enterocyte density,34905194.80555971,33030102.788993627,22886355.637214478
 Protein,Bat,Eumops glaucinus,Eg,enterocyte density,70331189.08225043,54809791.876699194,26926322.76328473
 Protein,Rodent,Euryoryzomys russatus,E1,enterocyte density,41092347.986341946,33288329.10874792,23990805.943993412
 Protein,Rodent,Euryoryzomys russatus,E2,enterocyte density,40949406.03278377,29305363.528928574,17879546.585493557
 Protein,Rodent,Euryoryzomys russatus,E3,enterocyte density,33316474.997141514,20656631.270098004,18018431.37324389
-NA,Rodent,Microtus pennsylvanicus,Microtus1,enterocyte density,24131519.523607947,24403144.332275223,18786690.67748046
-NA,Rodent,Microtus pennsylvanicus,Microtus2,enterocyte density,20427516.085665066,23588471.253948655,22528182.053878292
-NA,Rodent,Microtus pennsylvanicus,Microtus3,enterocyte density,24582336.542449087,22212556.9202955,19923794.463427313
-NA,Rodent,Microtus pennsylvanicus,Microtus4,enterocyte density,23685297.170795146,22414838.801026218,16005071.641462335
-NA,Rodent,Microtus pennsylvanicus,Microtus5,enterocyte density,17881224.999866452,27910229.135038868,20742940.60816476
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,enterocyte density,24131519.523607947,24403144.332275223,18786690.67748046
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,enterocyte density,20427516.085665066,23588471.253948655,22528182.053878292
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,enterocyte density,24582336.542449087,22212556.9202955,19923794.463427313
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,enterocyte density,23685297.170795146,22414838.801026218,16005071.641462335
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,enterocyte density,17881224.999866452,27910229.135038868,20742940.60816476
 Protein,Bat,Molossus molossus,Mmo1,enterocyte density,34849517.305102706,62957114.40895827,25680859.589928113
 Protein,Bat,Molossus molossus,Mmo2,enterocyte density,47931083.81107145,59990906.09634645,36093447.573399715
 Protein,Bat,Molossus molossus,Mmo3,enterocyte density,70524306.92673862,34895416.36718917,70752104.47410578
@@ -136,18 +136,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,enterocyte width,0.0069004608681079264
 Protein,Bat,Desmodus rotundus,Dr1,enterocyte width,0.005714902357704215,0.006155095618494311,0.006942607156460755
 Protein,Bat,Desmodus rotundus,Dr2,enterocyte width,0.006493160428422577,0.005945532393653309,0.006347108750907771
 Protein,Bat,Desmodus rotundus,Dr3,enterocyte width,0.0064872664041461985,0.005916707928962831,0.006324019956985643
-NA,Bat,Eptesicus fuscus,Eptesicus1,enterocyte width,0.006825146570022591,0.0069704869582189015,0.007030074659392883
-NA,Bat,Eptesicus fuscus,Eptesicus2,enterocyte width,0.005552902502137868,0.006030962963856439,0.006653359946773121
-NA,Bat,Eptesicus fuscus,Eptesicus3,enterocyte width,0.006811200337835536,0.006012433712918315,0.005908454407411566
+Protein,Bat,Eptesicus fuscus,Eptesicus1,enterocyte width,0.006825146570022591,0.0069704869582189015,0.007030074659392883
+Protein,Bat,Eptesicus fuscus,Eptesicus2,enterocyte width,0.005552902502137868,0.006030962963856439,0.006653359946773121
+Protein,Bat,Eptesicus fuscus,Eptesicus3,enterocyte width,0.006811200337835536,0.006012433712918315,0.005908454407411566
 Protein,Bat,Eumops glaucinus,Eg,enterocyte width,0.006248700896480597,0.006117106976257302,0.007379883805374
 Protein,Rodent,Euryoryzomys russatus,E1,enterocyte width,0.007291286754569487,0.007052919699048359,0.006453459356452133
 Protein,Rodent,Euryoryzomys russatus,E2,enterocyte width,0.0068954974582425554,0.007037414540870739,0.007893094892277899
 Protein,Rodent,Euryoryzomys russatus,E3,enterocyte width,0.0077477951640426285,0.006622254267768431,0.006086951447245565
-NA,Rodent,Microtus pennsylvanicus,Microtus1,enterocyte width,0.008826396349635777,0.008528939825932506,0.008682665984924544
-NA,Rodent,Microtus pennsylvanicus,Microtus2,enterocyte width,0.008431705627327566,0.008521933109404028,0.007580563923370918
-NA,Rodent,Microtus pennsylvanicus,Microtus3,enterocyte width,0.007896171512990373,0.007991565429222,0.007977180182003453
-NA,Rodent,Microtus pennsylvanicus,Microtus4,enterocyte width,0.008384757829984572,0.008480411538356986,0.008228810292447368
-NA,Rodent,Microtus pennsylvanicus,Microtus5,enterocyte width,0.008237544990100836,0.007635325913382653,0.00824478746420527
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,enterocyte width,0.008826396349635777,0.008528939825932506,0.008682665984924544
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,enterocyte width,0.008431705627327566,0.008521933109404028,0.007580563923370918
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,enterocyte width,0.007896171512990373,0.007991565429222,0.007977180182003453
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,enterocyte width,0.008384757829984572,0.008480411538356986,0.008228810292447368
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,enterocyte width,0.008237544990100836,0.007635325913382653,0.00824478746420527
 Protein,Bat,Molossus molossus,Mmo1,enterocyte width,0.007106197955686447,0.004517590215098385,0.006272026702418859
 Protein,Bat,Molossus molossus,Mmo2,enterocyte width,0.00609606934300029,0.005530008299616143,0.005956772203831027
 Protein,Bat,Molossus molossus,Mmo3,enterocyte width,0.004925155527116312,0.00623344366236523,0.004907603569311931
@@ -196,18 +196,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,intestinal diameter,0.9,0.902500000000
 Protein,Bat,Desmodus rotundus,Dr1,intestinal diameter,0.6825,0.5599999999999999,0.5125
 Protein,Bat,Desmodus rotundus,Dr2,intestinal diameter,0.495,0.45749999999999996,0.40249999999999997
 Protein,Bat,Desmodus rotundus,Dr3,intestinal diameter,0.73,0.6375,0.595
-NA,Bat,Eptesicus fuscus,Eptesicus1,intestinal diameter,0.75,0.607,0.607
-NA,Bat,Eptesicus fuscus,Eptesicus2,intestinal diameter,0.73367,0.639,0.681
-NA,Bat,Eptesicus fuscus,Eptesicus3,intestinal diameter,0.644,0.476,0.47
+Protein,Bat,Eptesicus fuscus,Eptesicus1,intestinal diameter,0.75,0.607,0.607
+Protein,Bat,Eptesicus fuscus,Eptesicus2,intestinal diameter,0.73367,0.639,0.681
+Protein,Bat,Eptesicus fuscus,Eptesicus3,intestinal diameter,0.644,0.476,0.47
 Protein,Bat,Eumops glaucinus,Eg,intestinal diameter,0.7650000000000001,0.85,0.6950000000000001
 Protein,Rodent,Euryoryzomys russatus,E1,intestinal diameter,1.3499999999999999,1.0474999999999999,1.13
 Protein,Rodent,Euryoryzomys russatus,E2,intestinal diameter,1.2825000000000002,1.185,1.1325
 Protein,Rodent,Euryoryzomys russatus,E3,intestinal diameter,1.45,1.595,1.4975
-NA,Rodent,Microtus pennsylvanicus,Microtus1,intestinal diameter,0.52433,0.590333,0.59433
-NA,Rodent,Microtus pennsylvanicus,Microtus2,intestinal diameter,0.716667,0.750667,0.6135
-NA,Rodent,Microtus pennsylvanicus,Microtus3,intestinal diameter,0.606,0.815667,0.758
-NA,Rodent,Microtus pennsylvanicus,Microtus4,intestinal diameter,0.645,0.792667,0.748
-NA,Rodent,Microtus pennsylvanicus,Microtus5,intestinal diameter,0.697,0.792667,0.8705
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,intestinal diameter,0.52433,0.590333,0.59433
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,intestinal diameter,0.716667,0.750667,0.6135
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,intestinal diameter,0.606,0.815667,0.758
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,intestinal diameter,0.645,0.792667,0.748
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,intestinal diameter,0.697,0.792667,0.8705
 Protein,Bat,Molossus molossus,Mmo1,intestinal diameter,0.5425,0.5625,0.5375
 Protein,Bat,Molossus molossus,Mmo2,intestinal diameter,0.57,0.5700000000000001,0.55
 Protein,Bat,Molossus molossus,Mmo3,intestinal diameter,0.5575,0.6375,0.5775
@@ -256,18 +256,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,intestinal length,35.8,NA,NA
 Protein,Bat,Desmodus rotundus,Dr1,intestinal length,19.2,NA,NA
 Protein,Bat,Desmodus rotundus,Dr2,intestinal length,17.6,NA,NA
 Protein,Bat,Desmodus rotundus,Dr3,intestinal length,18.5,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus1,intestinal length,7.5,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus2,intestinal length,15.25,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus3,intestinal length,13.4,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus1,intestinal length,7.5,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus2,intestinal length,15.25,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus3,intestinal length,13.4,NA,NA
 Protein,Bat,Eumops glaucinus,Eg,intestinal length,10.8,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E1,intestinal length,30.5,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E2,intestinal length,26.2,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E3,intestinal length,34.3,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus1,intestinal length,24.2,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus2,intestinal length,25,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus3,intestinal length,28.5,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus4,intestinal length,28.1,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus5,intestinal length,17.5,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,intestinal length,24.2,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,intestinal length,25,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,intestinal length,28.5,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,intestinal length,28.1,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,intestinal length,17.5,NA,NA
 Protein,Bat,Molossus molossus,Mmo1,intestinal length,9.3,NA,NA
 Protein,Bat,Molossus molossus,Mmo2,intestinal length,8.9,NA,NA
 Protein,Bat,Molossus molossus,Mmo3,intestinal length,12.3,NA,NA
@@ -316,18 +316,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,mass,72.4,NA,NA
 Protein,Bat,Desmodus rotundus,Dr1,mass,34,NA,NA
 Protein,Bat,Desmodus rotundus,Dr2,mass,43.5,NA,NA
 Protein,Bat,Desmodus rotundus,Dr3,mass,38,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus1,mass,14.3,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus2,mass,22.2,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus3,mass,11.3,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus1,mass,14.3,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus2,mass,22.2,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus3,mass,11.3,NA,NA
 Protein,Bat,Eumops glaucinus,Eg,mass,34.14,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E1,mass,153,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E2,mass,149.9,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E3,mass,168.5,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus1,mass,36.6,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus2,mass,48.8,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus3,mass,40,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus4,mass,57.7,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus5,mass,34.3,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,mass,36.6,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,mass,48.8,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,mass,40,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,mass,57.7,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,mass,34.3,NA,NA
 Protein,Bat,Molossus molossus,Mmo1,mass,10.91,NA,NA
 Protein,Bat,Molossus molossus,Mmo2,mass,14.78,NA,NA
 Protein,Bat,Molossus molossus,Mmo3,mass,14.78,NA,NA
@@ -376,18 +376,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,nsa,32.041,NA,NA
 Protein,Bat,Desmodus rotundus,Dr1,nsa,11.231999999999998,NA,NA
 Protein,Bat,Desmodus rotundus,Dr2,nsa,7.9493333333333345,NA,NA
 Protein,Bat,Desmodus rotundus,Dr3,nsa,12.102083333333333,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus1,nsa,4.91,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus2,nsa,10.439489166666666,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus3,nsa,7.101999999999999,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus1,nsa,4.91,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus2,nsa,10.439489166666666,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus3,nsa,7.101999999999999,NA,NA
 Protein,Bat,Eumops glaucinus,Eg,nsa,8.316,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E1,nsa,35.86291666666666,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E2,nsa,31.439999999999998,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E3,nsa,51.93591666666666,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus1,nsa,13.785876866666666,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus2,nsa,17.340283333333335,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus3,nsa,20.7068365,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus4,nsa,20.472414233333335,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus5,nsa,13.7676408333333,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,nsa,13.785876866666666,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,nsa,17.340283333333335,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,nsa,20.7068365,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,nsa,20.472414233333335,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,nsa,13.7676408333333,NA,NA
 Protein,Bat,Molossus molossus,Mmo1,nsa,5.09175,NA,NA
 Protein,Bat,Molossus molossus,Mmo2,nsa,5.013666666666667,NA,NA
 Protein,Bat,Molossus molossus,Mmo3,nsa,7.267250000000001,NA,NA
@@ -436,18 +436,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,sef,10.64422227719045,8.39225869615852
 Protein,Bat,Desmodus rotundus,Dr1,sef,12.84508577395673,13.081366569099812,13.783971180585441
 Protein,Bat,Desmodus rotundus,Dr2,sef,12.91133900524255,12.283731547050586,11.410830028854233
 Protein,Bat,Desmodus rotundus,Dr3,sef,10.81807138317218,12.905967812816362,11.385431160525183
-NA,Bat,Eptesicus fuscus,Eptesicus1,sef,18.776601982152492,13.610203786912297,10.155891073334754
-NA,Bat,Eptesicus fuscus,Eptesicus2,sef,12.187697970723987,9.463517947148253,7.174725985583567
-NA,Bat,Eptesicus fuscus,Eptesicus3,sef,13.289569031697994,9.948026726822377,6.831709523520441
+Protein,Bat,Eptesicus fuscus,Eptesicus1,sef,18.776601982152492,13.610203786912297,10.155891073334754
+Protein,Bat,Eptesicus fuscus,Eptesicus2,sef,12.187697970723987,9.463517947148253,7.174725985583567
+Protein,Bat,Eptesicus fuscus,Eptesicus3,sef,13.289569031697994,9.948026726822377,6.831709523520441
 Protein,Bat,Eumops glaucinus,Eg,sef,22.006225222888723,16.60291245246597,12.183111899586724
 Protein,Rodent,Euryoryzomys russatus,E1,sef,17.61099387544508,13.513077301429966,8.438020363255134
 Protein,Rodent,Euryoryzomys russatus,E2,sef,15.675245651297848,11.837923741665294,9.34985405296967
 Protein,Rodent,Euryoryzomys russatus,E3,sef,16.1927728561144,7.766268178808756,5.768093007331381
-NA,Rodent,Microtus pennsylvanicus,Microtus1,sef,15.290239913369428,14.467506079497797,11.690924366186566
-NA,Rodent,Microtus pennsylvanicus,Microtus2,sef,11.895733276927928,13.973315134112385,10.701040496195073
-NA,Rodent,Microtus pennsylvanicus,Microtus3,sef,12.563530822739063,11.655532518478873,10.478815849568951
-NA,Rodent,Microtus pennsylvanicus,Microtus4,sef,13.01328151304606,13.193706049286206,9.059048274425473
-NA,Rodent,Microtus pennsylvanicus,Microtus5,sef,10.337710815186048,13.322105980562485,11.637891513875816
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,sef,15.290239913369428,14.467506079497797,11.690924366186566
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,sef,11.895733276927928,13.973315134112385,10.701040496195073
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,sef,12.563530822739063,11.655532518478873,10.478815849568951
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,sef,13.01328151304606,13.193706049286206,9.059048274425473
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,sef,10.337710815186048,13.322105980562485,11.637891513875816
 Protein,Bat,Molossus molossus,Mmo1,sef,14.356528080012993,10.647636809006185,8.60058604622814
 Protein,Bat,Molossus molossus,Mmo2,sef,14.63495785886926,14.995643781031562,10.75712012985097
 Protein,Bat,Molossus molossus,Mmo3,sef,13.944510924453068,11.249566648073024,13.934847575223243
@@ -496,18 +496,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,villa surface area,234.50099070096076,
 Protein,Bat,Desmodus rotundus,Dr1,villa surface area,141.22143711496483,NA,NA
 Protein,Bat,Desmodus rotundus,Dr2,villa surface area,92.921184106596,NA,NA
 Protein,Bat,Desmodus rotundus,Dr3,villa surface area,134.55978223291072,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus1,villa surface area,68.38023303200018,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus2,villa surface area,95.37616035387562,NA,NA
-NA,Bat,Eptesicus fuscus,Eptesicus3,villa surface area,69.69622310814279,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus1,villa surface area,68.38023303200018,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus2,villa surface area,95.37616035387562,NA,NA
+Protein,Bat,Eptesicus fuscus,Eptesicus3,villa surface area,69.69622310814279,NA,NA
 Protein,Bat,Eumops glaucinus,Eg,villa surface area,137.50690634975325,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E1,villa surface area,464.1426493651302,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E2,villa surface area,375.77560610341226,NA,NA
 Protein,Rodent,Euryoryzomys russatus,E3,villa surface area,479.9223415380997,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus1,villa surface area,182.1728750936649,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus2,villa surface area,204.2666789112405,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus3,villa surface area,227.34249306437454,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus4,villa surface area,204.59401568976,NA,NA
-NA,Rodent,Microtus pennsylvanicus,Microtus5,villa surface area,212.06772922179167,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,villa surface area,182.1728750936649,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,villa surface area,204.2666789112405,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,villa surface area,227.34249306437454,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,villa surface area,204.59401568976,NA,NA
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,villa surface area,212.06772922179167,NA,NA
 Protein,Bat,Molossus molossus,Mmo1,villa surface area,54.062116378234435,NA,NA
 Protein,Bat,Molossus molossus,Mmo2,villa surface area,64.43411443497087,NA,NA
 Protein,Bat,Molossus molossus,Mmo3,villa surface area,90.23408787974947,NA,NA
@@ -556,18 +556,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,villus height,0.5437282913165266,0.447
 Protein,Bat,Desmodus rotundus,Dr1,villus height,0.4789039215686274,NA,0.5229880174291939
 Protein,Bat,Desmodus rotundus,Dr2,villus height,0.528663725490196,0.4537982026143791,0.38847140522875817
 Protein,Bat,Desmodus rotundus,Dr3,villus height,0.4718702614379085,0.5582475490196078,0.4896965452847805
-NA,Bat,Eptesicus fuscus,Eptesicus1,villus height,0.66023,0.51924,0.37819
-NA,Bat,Eptesicus fuscus,Eptesicus2,villus height,0.53716,0.43291,0.31531
-NA,Bat,Eptesicus fuscus,Eptesicus3,villus height,0.5169,0.38323,0.24662
+Protein,Bat,Eptesicus fuscus,Eptesicus1,villus height,0.66023,0.51924,0.37819
+Protein,Bat,Eptesicus fuscus,Eptesicus2,villus height,0.53716,0.43291,0.31531
+Protein,Bat,Eptesicus fuscus,Eptesicus3,villus height,0.5169,0.38323,0.24662
 Protein,Bat,Eumops glaucinus,Eg,villus height,0.4830798366013072,0.485688888888889,0.39392745098039217
 Protein,Rodent,Euryoryzomys russatus,E1,villus height,0.93090576171875,0.6710279947916666,0.3607635524798155
 Protein,Rodent,Euryoryzomys russatus,E2,villus height,0.8759027777777777,0.6084375000000001,0.5131067538126362
 Protein,Rodent,Euryoryzomys russatus,E3,villus height,0.8073710937499999,0.35977450980392156,0.29087581699346404
-NA,Rodent,Microtus pennsylvanicus,Microtus1,villus height,0.65608,0.56868,0.41164
-NA,Rodent,Microtus pennsylvanicus,Microtus2,villus height,0.63993,0.65324,0.43655
-NA,Rodent,Microtus pennsylvanicus,Microtus3,villus height,0.60158,0.49603,0.41771
-NA,Rodent,Microtus pennsylvanicus,Microtus4,villus height,0.67831,0.57463,0.33981
-NA,Rodent,Microtus pennsylvanicus,Microtus5,villus height,0.43377,0.62173,0.55647
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,villus height,0.65608,0.56868,0.41164
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,villus height,0.63993,0.65324,0.43655
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,villus height,0.60158,0.49603,0.41771
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,villus height,0.67831,0.57463,0.33981
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,villus height,0.43377,0.62173,0.55647
 Protein,Bat,Molossus molossus,Mmo1,villus height,0.518554248366013,0.3562047930283225,0.2883071895424837
 Protein,Bat,Molossus molossus,Mmo2,villus height,0.4574686274509804,0.5390114379084968,0.351402614379085
 Protein,Bat,Molossus molossus,Mmo3,villus height,0.41831985294117646,0.35506590413943356,0.4196880900508351
@@ -616,18 +616,18 @@ Omnivorous,Rodent,Delomys sublineatus,Ds3,villus width,0.09448412698412699,0.097
 Protein,Bat,Desmodus rotundus,Dr1,villus width,0.06673406862745099,0.05471677559912854,0.057283950617283946
 Protein,Bat,Desmodus rotundus,Dr2,villus width,0.07825882352941176,0.07476252723311548,0.05083300653594771
 Protein,Bat,Desmodus rotundus,Dr3,villus width,0.08253485838779956,0.08725898692810456,0.07544335511982571
-NA,Bat,Eptesicus fuscus,Eptesicus1,villus width,0.06014,0.06708,0.06299
-NA,Bat,Eptesicus fuscus,Eptesicus2,villus width,0.08729,0.08538,0.08743
-NA,Bat,Eptesicus fuscus,Eptesicus3,villus width,0.06969,0.07025,0.06969
+Protein,Bat,Eptesicus fuscus,Eptesicus1,villus width,0.06014,0.06708,0.06299
+Protein,Bat,Eptesicus fuscus,Eptesicus2,villus width,0.08729,0.08538,0.08743
+Protein,Bat,Eptesicus fuscus,Eptesicus3,villus width,0.06969,0.07025,0.06969
 Protein,Bat,Eumops glaucinus,Eg,villus width,0.050362745098039216,0.06091143790849672,0.045774976657329595
 Protein,Rodent,Euryoryzomys russatus,E1,villus width,0.11864908854166666,0.10158420138888889,0.0752619825708061
 Protein,Rodent,Euryoryzomys russatus,E2,villus width,0.14134114583333332,0.11977430555555553,0.09355718954248365
 Protein,Rodent,Euryoryzomys russatus,E3,villus width,0.10581510416666666,0.07049183006535947,0.10545424836601307
-NA,Rodent,Microtus pennsylvanicus,Microtus1,villus width,0.08443,0.07742,0.06405
-NA,Rodent,Microtus pennsylvanicus,Microtus2,villus width,0.11453,0.09344,0.08013
-NA,Rodent,Microtus pennsylvanicus,Microtus3,villus width,0.0948,0.08658,0.08036
-NA,Rodent,Microtus pennsylvanicus,Microtus4,villus width,0.10003,0.08479,0.0723
-NA,Rodent,Microtus pennsylvanicus,Microtus5,villus width,0.07594,0.08898,0.08773
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus1,villus width,0.08443,0.07742,0.06405
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus2,villus width,0.11453,0.09344,0.08013
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus3,villus width,0.0948,0.08658,0.08036
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus4,villus width,0.10003,0.08479,0.0723
+Herbivorous,Rodent,Microtus pennsylvanicus,Microtus5,villus width,0.07594,0.08898,0.08773
 Protein,Bat,Molossus molossus,Mmo1,villus width,0.06980718954248366,0.06264596949891067,0.04852124183006536
 Protein,Bat,Molossus molossus,Mmo2,villus width,0.04639477124183007,0.06181764705882352,0.042137908496732025
 Protein,Bat,Molossus molossus,Mmo3,villus width,0.061203431372549015,0.05329003267973856,0.05627083333333333
