@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-25 Sep 2017
+29 Sep 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
 -   [`SEF` on `Diet`](#sef-on-diet)
@@ -460,8 +460,8 @@ This outlines the package versions I used for these analyses.
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
-    ##  tz       America/Chicago             
-    ##  date     2017-09-25
+    ##  tz       <NA>                        
+    ##  date     2017-09-29
 
     ## Packages -----------------------------------------------------------------
 

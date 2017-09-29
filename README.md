@@ -73,3 +73,4 @@ Lucas Nell
     - `Modified_corphylo.R`: modified version of `ape::corphylo` that outputs 
       confidence intervals using Fisher information
 
+* `running`: files to fully run script in `phylo_regressions.Rmd`
