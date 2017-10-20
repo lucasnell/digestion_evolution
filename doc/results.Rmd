@@ -1,0 +1,78 @@
+--- 
+title: "phylolm results" 
+author: "Lucas Nell" 
+date: "`r format(Sys.Date(), '%d %b %Y')`" 
+output: 
+  github_document: 
+    toc: true 
+    toc_depth: 1 
+editor_options: 
+  chunk_output_type: console
+--- 
+ 
+```{r setup, include = FALSE, cache = FALSE} 
+knitr::opts_chunk$set(echo = FALSE) 
+knitr::opts_knit$set(root.dir = normalizePath("..")) 
+``` 
+ 
+ 
+This script displays results from 
+[`phylolm`](https://doi.org/10.1093/sysbio/syu005). 
+Column `estimate` is the coefficient estimate for the specified `X`, while 
+`lower` and `upper` are lower and upper bounds of the 95% confidence interval
+for the coefficient estimate obtained by parametric bootstrapping.
+Multiple `X` parameters for a given `Y` indicate that both `X`s were included
+in the regression with `Y`, *not* that separate regressions were performed for 
+each `X`.
+ 
+ 
+```{r libraries} 
+# Packages needed for this script 
+suppressPackageStartupMessages({
+    library(readr)
+    library(dplyr)
+    library(tidyr)
+    library(stringr)
+    library(purrr)
+}) 
+``` 
+ 
+ 
+```{r parse_output} 
+summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccddd') %>%  
+    mutate(X = ifelse(X == 'taxonBat', 'taxon', X),
+           pos = ifelse(is.na(pos), 'all', pos)) %>%  
+    rename(estimate = value) %>%
+    select(pos, Y, X, estimate, lower, upper) %>% 
+    arrange(pos, Y, X) %>%
+    nest(-pos)
+``` 
+ 
+ 
+# Positions combined 
+ 
+```{r spp_summs} 
+knitr::kable(filter(summ_df, pos == 'all')$data[[1]]) 
+``` 
+ 
+ 
+# Proximal 
+ 
+```{r prox_summs} 
+knitr::kable(filter(summ_df, pos == 'prox')$data[[1]])
+``` 
+ 
+ 
+# Medial 
+ 
+```{r med_summs} 
+knitr::kable(filter(summ_df, pos == 'med')$data[[1]])
+``` 
+ 
+ 
+# Distal 
+ 
+```{r dist_summs} 
+knitr::kable(filter(summ_df, pos == 'dist')$data[[1]])
+``` 
+ 
