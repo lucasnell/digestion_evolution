@@ -7,17 +7,6 @@ Phylogenetic analyses related to the mechanistic basis of higher paracellular ab
 Lucas Nell
 
 
-## Why I'm removing measurement error models
-
-I'm going to remove analyses incorporating measurement error from this repository
-because the confidence intervals are so wide as to be useless.
-Measurement error models should reduce CI width, except for when (in the case of 
-a within-species comparison) intra-species variance is high in comparison with 
-inter-species variance.
-Such a situation makes it difficult/impossible for the model to distinguish
-between the two sources of variance.
-Thus, very wide confidence intervals.
-
 
 ## Description of contents
 
