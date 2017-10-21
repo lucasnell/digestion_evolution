@@ -18,29 +18,16 @@ Lucas Nell
       [timetree.org](http://timetree.org/)
 
 * `doc`: 
-    - `matlab_tsvs`: create tab-delimited text files for use in MATLAB analyses
-    - `phylo_regr_plots`: plots from analyses. Defunct for now
+    - `plots`: plots from analyses.
     - `phylo_regressions`: `phylolm` and `corphylo` analyses
     - `phylo_tree`: create pdf of phylogeny in `figs/`
-    - `results_matlab_phylolm`: compare `phylolm` results to those from MATLAB
+    - `results`: table of coefficient estimates with confidence intervals.
     - `tidy_csvs`: convert cleaned CSVs to tidy ones that are directly used in
       analyses and plots
     - `xl_to_csvs`: convert raw Excel file sheets to readable, "clean" CSV files
 
 * `figs`: PDFs of all figures. These are not present in this repo, but can be
   recreated using files from `doc`.
-
-* `matlab`: files associated with a MATLAB-implemented method of phylogenetic 
-  regression with measurement error
-    - `code_v1`: MATLAB code for measurement-error phylogenetic regression, version 1
-      (original name was `MERegPHYSIG 1Jul10`)
-    - `code_v2`: MATLAB code for measurement-error phylogenetic regression, version 2
-      (original name was `MERegPHYSIGv2 29Jan17`)
-    - `data`: input data for MATLAB code. Files ending in `_mean` are the data files,
-      `_se` are measurement error files, and `_vcv` are the covariance matrix files.
-      See [`doc/matlab_tsvs`](doc/matlab_tsvs.md) for more info.
-    - `output`: output from ME regressions, one `*.m` file for each intestinal
-      segment and one file for all analyses by species (including `sef ~ diet`)
 
 * `output`: output and intermediate datasets. Below, files in parentheses are where
   a given data file was created.
