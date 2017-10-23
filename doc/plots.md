@@ -1,25 +1,22 @@
----
-title: "Regression plots"
-author: "Lucas Nell"
-date: "`r format(Sys.Date(), '%d %b %Y', tz = 'America/Chicago')`"
-output:
-  github_document:
-    toc: true
-    toc_depth: 2
-editor_options: 
-  chunk_output_type: console
----
+Regression plots
+================
+Lucas Nell
+23 Oct 2017
 
-```{r setup, include = FALSE, cache = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = normalizePath(".."))
-# Useful if you keep getting `polygon edge not found` error
-# From here: http://disq.us/t/24rt791
-# options("device" = "quartz"); graphics.off()
-```
+-   [Loading model data](#loading-model-data)
+-   [Function to calculate confidence intervals](#function-to-calculate-confidence-intervals)
+-   [Individual plots for models by species only](#individual-plots-for-models-by-species-only)
+    -   [Function to create base plots](#function-to-create-base-plots)
+    -   [Creating plot objects](#creating-plot-objects)
+-   [Individual plots for models by species and intestinal segment](#individual-plots-for-models-by-species-and-intestinal-segment)
+    -   [Objects to create base plots](#objects-to-create-base-plots)
+    -   [Creating plot objects](#creating-plot-objects-1)
+-   [Individual plots for clearance and absorption](#individual-plots-for-clearance-and-absorption)
+-   [Creating and saving final plots](#creating-and-saving-final-plots)
+    -   [Function to combine plots](#function-to-combine-plots)
+-   [Session info](#session-info)
 
-
-```{r load_packages}
+``` r
 # Packages needed for this script
 suppressPackageStartupMessages({
     library(readr)
@@ -45,11 +42,10 @@ theme_set(theme_classic() %+replace%
                     plot.title = element_text(size = 14, hjust = 0)))
 ```
 
+Loading model data
+==================
 
-# Loading model data
-
-
-```{r code}
+``` r
 models <- list(absorp = read_rds('output/models_absorp.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
@@ -67,10 +63,10 @@ data <- list(absorp = get_df('absorp') %>% as_tibble,
              clear = get_df('clear') %>% as_tibble)
 ```
 
+Function to calculate confidence intervals
+==========================================
 
-# Function to calculate confidence intervals
-
-```{r ci_funs}
+``` r
 # Creates data frame containing 95% CI based on bootstrapping for one model
 mod_ci <- function(.model){
     
@@ -119,13 +115,13 @@ mod_ci <- function(.model){
 }
 ```
 
+Individual plots for models by species only
+===========================================
 
-# Individual plots for models by species only
+Function to create base plots
+-----------------------------
 
-
-## Function to create base plots
-
-```{r plots_spp_only_base}
+``` r
 taxon_only_no_mass <- function(.model, y_axis_title, title = NULL) {
     y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
     .p <- mod_ci(.model) %>%
@@ -164,9 +160,10 @@ taxon_only_no_mass <- function(.model, y_axis_title, title = NULL) {
 }
 ```
 
-## Creating plot objects
+Creating plot objects
+---------------------
 
-```{r plots_spp_only}
+``` r
 # Figure 1A
 fig1a <- taxon_only_no_mass(models$spp$int_length_mass, 
                             expression(atop("Intestinal length / body" ~ mass^{0.4},
@@ -191,16 +188,13 @@ fig6 <- taxon_only_no_mass(models$spp$log_total_enterocytes,
 # Mention that bars represent model predictions at mean log(body mass) among all species
 ```
 
+Individual plots for models by species and intestinal segment
+=============================================================
 
+Objects to create base plots
+----------------------------
 
-
-
-
-# Individual plots for models by species and intestinal segment
-
-## Objects to create base plots
-
-```{r plots_spp_seg_base}
+``` r
 # Making data frame of confidence intervals
 # (Nesting by parameter, not position, bc the former is how they'll be plotted.)
 pos_ci <- lapply(names(models$pos$prox), 
@@ -283,10 +277,10 @@ add_title <- function(.p, .title) {
 }
 ```
 
+Creating plot objects
+---------------------
 
-## Creating plot objects
-
-```{r plots_spp_pos}
+``` r
 # Plots for each parameter.
 # I'm avoiding facets bc they make `ggplotGrob`s annoying to combine
 pos_plots <- lapply(unique(data$pos$measure), spp_pos_plot)
@@ -335,11 +329,10 @@ fig5b <- {pos_plots$log_enterocyte_density +
     add_title('B')
 ```
 
+Individual plots for clearance and absorption
+=============================================
 
-
-# Individual plots for clearance and absorption
-
-```{r plots_absorp_clear}
+``` r
 fig7a <- data$clear %>%
     mutate(sef = exp(log_sef), clear = exp(log_clear),
            spp_type = interaction(diet, taxon) %>% 
@@ -378,11 +371,13 @@ fig7b <- taxon_only_no_mass(models$absorp,
                    "B")
 ```
 
-# Creating and saving final plots
+Creating and saving final plots
+===============================
 
-## Function to combine plots
+Function to combine plots
+-------------------------
 
-```{r final_plots_fxn}
+``` r
 # Combining multiple figures using the naming scheme `figX` where `X` is the 
 # figure number I'm interested in plotting
 # It also works for single figures.
@@ -405,9 +400,7 @@ save_fig <- function(fig_num, which_size = 'first', .seed = NULL, ...) {
 }
 ```
 
-
-
-```{r final_plots_creating}
+``` r
 # originally 3.875" wide, 9.4375 " tall
 save_fig(1, width = 3.875, height = 3.125 * 3, .seed = 1)
 save_fig(2, 'last', width = 3.875, height = 3.125 * 3, .seed = 2)
@@ -418,14 +411,74 @@ save_fig(6, width = 3.875, height = 3.125, .seed = 6)
 save_fig(7, 'last', width = 3.875, height = 3.125 * 2, .seed = 7)
 ```
 
-
-
-
-# Session info
+Session info
+============
 
 This outlines the package versions I used for this script.
 
-```{r session_info, echo = FALSE}
-devtools::session_info()
-```
+    ## Session info -------------------------------------------------------------
 
+    ##  setting  value                       
+    ##  version  R version 3.4.2 (2017-09-28)
+    ##  system   x86_64, darwin15.6.0        
+    ##  ui       X11                         
+    ##  language (EN)                        
+    ##  collate  en_US.UTF-8                 
+    ##  tz       <NA>                        
+    ##  date     2017-10-23
+
+    ## Packages -----------------------------------------------------------------
+
+    ##  package    * version date       source        
+    ##  ape        * 4.1     2017-02-14 CRAN (R 3.4.0)
+    ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.4.0)
+    ##  backports    1.1.1   2017-09-25 CRAN (R 3.4.2)
+    ##  base       * 3.4.2   2017-10-04 local         
+    ##  bindr        0.1     2016-11-13 CRAN (R 3.4.0)
+    ##  bindrcpp   * 0.2     2017-06-17 CRAN (R 3.4.0)
+    ##  colorspace   1.3-2   2016-12-14 CRAN (R 3.4.0)
+    ##  compiler     3.4.2   2017-10-04 local         
+    ##  datasets   * 3.4.2   2017-10-04 local         
+    ##  devtools     1.13.3  2017-08-02 CRAN (R 3.4.1)
+    ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
+    ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
+    ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
+    ##  ggplot2    * 2.2.1   2016-12-30 CRAN (R 3.4.0)
+    ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
+    ##  graphics   * 3.4.2   2017-10-04 local         
+    ##  grDevices  * 3.4.2   2017-10-04 local         
+    ##  grid       * 3.4.2   2017-10-04 local         
+    ##  gtable       0.2.0   2016-02-26 CRAN (R 3.4.0)
+    ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
+    ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
+    ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)
+    ##  labeling     0.3     2014-08-23 CRAN (R 3.4.0)
+    ##  lattice      0.20-35 2017-03-25 CRAN (R 3.4.2)
+    ##  lazyeval     0.2.0   2016-06-12 CRAN (R 3.4.0)
+    ##  magrittr     1.5     2014-11-22 CRAN (R 3.4.0)
+    ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
+    ##  methods    * 3.4.2   2017-10-04 local         
+    ##  munsell      0.4.3   2016-02-13 CRAN (R 3.4.0)
+    ##  nlme         3.1-131 2017-02-06 CRAN (R 3.4.2)
+    ##  parallel     3.4.2   2017-10-04 local         
+    ##  phylolm    * 2.5     2016-10-17 CRAN (R 3.4.0)
+    ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
+    ##  plyr         1.8.4   2016-06-08 CRAN (R 3.4.0)
+    ##  purrr      * 0.2.4   2017-10-18 CRAN (R 3.4.2)
+    ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
+    ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
+    ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
+    ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
+    ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
+    ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
+    ##  scales       0.5.0   2017-08-24 CRAN (R 3.4.1)
+    ##  stats      * 3.4.2   2017-10-04 local         
+    ##  stringi      1.1.5   2017-04-07 CRAN (R 3.4.0)
+    ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
+    ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
+    ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
+    ##  tidyselect   0.2.2   2017-10-10 CRAN (R 3.4.2)
+    ##  tools        3.4.2   2017-10-04 local         
+    ##  utils      * 3.4.2   2017-10-04 local         
+    ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
+    ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
