@@ -417,7 +417,7 @@ This outlines the package versions I used for this script.
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
-    ##  tz       <NA>                        
+    ##  tz       America/Chicago             
     ##  date     2017-10-23
 
     ## Packages -----------------------------------------------------------------
