@@ -300,11 +300,14 @@ fig1c <- {pos_plots$log_intestinal_diameter +
                            labels = seq(0.6, 1.2, 0.2)) +
         coord_trans(y = 'exp')} %>% 
     add_title('C')
+# Mention that bars represent model predictions at mean log(body mass) among all species
+
 
 # Figure 2a
 fig2a <- {pos_plots$villus_height +
     theme(legend.position = 'top')} %>% 
     add_title('A')
+# Mention that bars represent model predictions at mean log(body mass) among all species
 
 # Figure 2b
 fig2b <- pos_plots$villus_width %>% 
@@ -348,7 +351,6 @@ fig7a <- data$clear %>%
                              `Protein.Rodent` = "Rodent, protein")) %>% 
     ggplot(aes(sef, clear, shape = spp_type)) +
     geom_point(color = 'black', size = 2, fill = 'gray60') +
-    # geom_point(color = 'black', size = 2) +
     guides(shape = guide_legend('Taxon, diet:', nrow = 4)) +
     theme(legend.position = c(0.01, 0.875),
           legend.title = element_text(size = 10, face = 'italic'),
