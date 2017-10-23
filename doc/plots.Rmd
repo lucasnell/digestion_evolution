@@ -149,7 +149,6 @@ taxon_only_no_mass <- function(.model, y_axis_title, title = NULL) {
                                                           b = 0, l = 0))) +
         ylab(y_axis_title)
     if (!is.null(title)) {
-        # .p <- .p + ggtitle(title)
         min_x <- min(ggplot_build(.p)$layout$panel_ranges[[1]]$x.range) + 
             0.01 * diff(ggplot_build(.p)$layout$panel_ranges[[1]]$x.range)
         max_y <- max(ggplot_build(.p)$layout$panel_ranges[[1]]$y.range) +
@@ -347,10 +346,6 @@ fig7a <- data$clear %>%
                              `Protein.Bat` =    "Bat, protein",
                              `Carb.Rodent` =    "Rodent, carb", 
                              `Protein.Rodent` = "Rodent, protein")) %>% 
-               # recode_factor(`Carb.Bat` = "Carb eater bat", 
-               #               `Protein.Bat` = "Protein eater bat",
-               #               `Carb.Rodent` = "Carb eater rodent", 
-               #               `Protein.Rodent` = "Protein eater rodent")) %>% 
     ggplot(aes(sef, clear, shape = spp_type)) +
     geom_point(color = 'black', size = 2, fill = 'gray60') +
     # geom_point(color = 'black', size = 2) +
@@ -358,7 +353,6 @@ fig7a <- data$clear %>%
     theme(legend.position = c(0.01, 0.875),
           legend.title = element_text(size = 10, face = 'italic'),
           legend.title.align = 0,
-          # legend.title = element_blank(),
           legend.justification = c(0, 1),
           legend.margin = margin(0,0,0,0),
           legend.key.size = unit(0.75, 'lines')) +
@@ -408,7 +402,6 @@ save_fig <- function(fig_num, which_size = 'first', .seed = NULL, ...) {
 
 
 ```{r final_plots_creating}
-# originally 3.875" wide, 9.4375 " tall
 save_fig(1, width = 3.875, height = 3.125 * 3, .seed = 1)
 save_fig(2, 'last', width = 3.875, height = 3.125 * 3, .seed = 2)
 save_fig(3, width = 3.875, height = 3.125, .seed = 3)
