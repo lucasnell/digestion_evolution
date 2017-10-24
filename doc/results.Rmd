@@ -81,7 +81,7 @@ knitr::kable(filter(summ_df, pos == 'dist')$data[[1]])
 This is to determine whether there's an effect of body mass on SEF. It appears there 
 is not.
 
-```{r sef_taxon_mass}
+```{r sef_taxon_mass, echo = TRUE}
 suppressPackageStartupMessages(library(phylolm))
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 tr <- get_tr('spp')

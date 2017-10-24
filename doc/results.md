@@ -76,5 +76,17 @@ SEF on Taxon and log(Mass)
 
 This is to determine whether there's an effect of body mass on SEF. It appears there is not.
 
+``` r
+suppressPackageStartupMessages(library(phylolm))
+invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
+tr <- get_tr('spp')
+spp_df <- get_df('spp')
+set.seed(940318092)
+mod <- suppressWarnings(
+    phylolm(sef ~ taxon + log_mass, data = spp_df, phy = tr, model = "lambda", 
+            boot = 2000))
+ci(mod, 'log_mass')
+```
+
     ##       2.5%      97.5% 
     ## -0.2788004  3.2372969
