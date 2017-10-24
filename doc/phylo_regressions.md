@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-29 Sep 2017
+24 Oct 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
 -   [`SEF` on `Diet`](#sef-on-diet)
@@ -269,10 +269,18 @@ pos_fits <- lapply(
                 f <- paste(y, ' ~ taxon',
                            ifelse(grepl('intestinal_diameter|villus_height', y),
                                   '+ log_mass', ''))
+                # These models do not fit properly using Pagel's lambda: estimates of
+                # phylogenetic signal range from 1e-7 to 1 (the full range of possible
+                # values)
+                # I'm converting them to "the Ornstein-Uhlenbeck model with an ancestral
+                # state to be estimated at the root" (phylolm documentation)
+                mod <- ifelse((grepl('crypt_width', y) & pos == 'prox') | 
+                                  (grepl('enterocyte_density', y) & pos == 'med'), 
+                              'OUfixed', 'lambda')
                 arg_list <- list(
                     as.formula(f),
                     data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = 'lambda',
+                    phy = as.name("tr"), model = mod,
                     boot = 2000)
                 # This model doesn't find the peak likelihood unless specifying a
                 # starting value of 0.1.
@@ -310,16 +318,16 @@ sapply(pos_fits$med, ci)
     ## 2.5%               -0.1984294    0.05459952  -0.02886595 -0.013205706
     ## 97.5%               0.2049461    0.25264785  -0.00524069 -0.001736775
     ##            sef enterocyte_diameter log_enterocyte_density
-    ## 2.5%  2.589389       -2.339798e-03             -0.9042551
-    ## 97.5% 7.925245       -1.515785e-05              2.2500809
+    ## 2.5%  2.589389       -2.339798e-03           -0.001362154
+    ## 97.5% 7.925245       -1.515785e-05            1.374329099
 
 ``` r
 sapply(pos_fits$prox, ci)
 ```
 
-    ##       log_intestinal_diameter villus_height villus_width crypt_width
-    ## 2.5%               -0.1338032   -0.02618653  -0.04749609 -0.03151140
-    ## 97.5%               0.2469784    0.20931842  -0.01601584  0.01036664
+    ##       log_intestinal_diameter villus_height villus_width   crypt_width
+    ## 2.5%               -0.1338032   -0.02618653  -0.04749609 -0.0220677520
+    ## 97.5%               0.2469784    0.20931842  -0.01601584  0.0008643734
     ##            sef enterocyte_diameter log_enterocyte_density
     ## 2.5%  1.552915       -0.0017673248              0.1512608
     ## 97.5% 7.471908        0.0005472164              1.0464692
@@ -417,7 +425,7 @@ knitr::kable(mod_summaries, format = 'markdown')
 | villus\_height            | taxonBat       | prox |   0.0887347|  -0.0261865|   0.2093184|
 | villus\_height            | log\_mass      | prox |   0.1560026|   0.0771714|   0.2339517|
 | villus\_width             | taxonBat       | prox |  -0.0316416|  -0.0474961|  -0.0160158|
-| crypt\_width              | taxonBat       | prox |  -0.0104877|  -0.0315114|   0.0103666|
+| crypt\_width              | taxonBat       | prox |  -0.0107739|  -0.0220678|   0.0008644|
 | sef                       | taxonBat       | prox |   4.4720094|   1.5529154|   7.4719083|
 | enterocyte\_diameter      | taxonBat       | prox |  -0.0006223|  -0.0017673|   0.0005472|
 | log\_enterocyte\_density  | taxonBat       | prox |   0.5985526|   0.1512608|   1.0464692|
@@ -429,7 +437,7 @@ knitr::kable(mod_summaries, format = 'markdown')
 | crypt\_width              | taxonBat       | med  |  -0.0073315|  -0.0132057|  -0.0017368|
 | sef                       | taxonBat       | med  |   5.2512236|   2.5893885|   7.9252450|
 | enterocyte\_diameter      | taxonBat       | med  |  -0.0011836|  -0.0023398|  -0.0000152|
-| log\_enterocyte\_density  | taxonBat       | med  |   0.6254613|  -0.9042551|   2.2500809|
+| log\_enterocyte\_density  | taxonBat       | med  |   0.6805308|  -0.0013622|   1.3743291|
 | log\_intestinal\_diameter | taxonBat       | dist |   0.0109267|  -0.1690558|   0.1936576|
 | log\_intestinal\_diameter | log\_mass      | dist |   0.2637575|   0.1336546|   0.4005606|
 | villus\_height            | taxonBat       | dist |   0.2094520|   0.1292392|   0.2965390|
@@ -455,58 +463,58 @@ This outlines the package versions I used for these analyses.
     ## Session info -------------------------------------------------------------
 
     ##  setting  value                       
-    ##  version  R version 3.4.1 (2017-06-30)
+    ##  version  R version 3.4.2 (2017-09-28)
     ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       <NA>                        
-    ##  date     2017-09-29
+    ##  date     2017-10-24
 
     ## Packages -----------------------------------------------------------------
 
     ##  package    * version date       source        
     ##  ape        * 4.1     2017-02-14 CRAN (R 3.4.0)
     ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports    1.1.0   2017-05-22 CRAN (R 3.4.0)
-    ##  base       * 3.4.1   2017-07-07 local         
+    ##  backports    1.1.1   2017-09-25 CRAN (R 3.4.2)
+    ##  base       * 3.4.2   2017-10-04 local         
     ##  bindr        0.1     2016-11-13 CRAN (R 3.4.0)
     ##  bindrcpp   * 0.2     2017-06-17 CRAN (R 3.4.0)
-    ##  compiler     3.4.1   2017-07-07 local         
-    ##  datasets   * 3.4.1   2017-07-07 local         
+    ##  compiler     3.4.2   2017-10-04 local         
+    ##  datasets   * 3.4.2   2017-10-04 local         
     ##  devtools     1.13.3  2017-08-02 CRAN (R 3.4.1)
     ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
-    ##  dplyr      * 0.7.3   2017-09-09 CRAN (R 3.4.1)
+    ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
     ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
     ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
-    ##  graphics   * 3.4.1   2017-07-07 local         
-    ##  grDevices  * 3.4.1   2017-07-07 local         
-    ##  grid         3.4.1   2017-07-07 local         
+    ##  graphics   * 3.4.2   2017-10-04 local         
+    ##  grDevices  * 3.4.2   2017-10-04 local         
+    ##  grid         3.4.2   2017-10-04 local         
     ##  highr        0.6     2016-05-09 cran (@0.6)   
     ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
     ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
     ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)
-    ##  lattice      0.20-35 2017-03-25 CRAN (R 3.4.1)
+    ##  lattice      0.20-35 2017-03-25 CRAN (R 3.4.2)
     ##  magrittr     1.5     2014-11-22 CRAN (R 3.4.0)
     ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods    * 3.4.1   2017-07-07 local         
-    ##  nlme         3.1-131 2017-02-06 CRAN (R 3.4.1)
-    ##  parallel     3.4.1   2017-07-07 local         
+    ##  methods    * 3.4.2   2017-10-04 local         
+    ##  nlme         3.1-131 2017-02-06 CRAN (R 3.4.2)
+    ##  parallel     3.4.2   2017-10-04 local         
     ##  phylolm    * 2.5     2016-10-17 CRAN (R 3.4.0)
     ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  purrr        0.2.3   2017-08-02 CRAN (R 3.4.1)
+    ##  purrr        0.2.4   2017-10-18 CRAN (R 3.4.2)
     ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp         0.12.12 2017-07-15 CRAN (R 3.4.1)
+    ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
     ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
     ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
     ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
     ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
-    ##  stats      * 3.4.1   2017-07-07 local         
+    ##  stats      * 3.4.2   2017-10-04 local         
     ##  stringi      1.1.5   2017-04-07 CRAN (R 3.4.0)
     ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
     ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
-    ##  tidyr      * 0.7.1   2017-09-01 CRAN (R 3.4.1)
-    ##  tools        3.4.1   2017-07-07 local         
-    ##  utils      * 3.4.1   2017-07-07 local         
+    ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
+    ##  tools        3.4.2   2017-10-04 local         
+    ##  utils      * 3.4.2   2017-10-04 local         
     ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
     ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)

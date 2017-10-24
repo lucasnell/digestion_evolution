@@ -1,7 +1,7 @@
 phylolm results
 ================
 Lucas Nell
-20 Oct 2017
+24 Oct 2017
 
 -   [Positions combined](#positions-combined)
 -   [Proximal](#proximal)
@@ -30,7 +30,7 @@ Proximal
 
 | Y                         | X         |    estimate|       lower|       upper|
 |:--------------------------|:----------|-----------:|-----------:|-----------:|
-| crypt\_width              | taxon     |  -0.0104877|  -0.0315114|   0.0103666|
+| crypt\_width              | taxon     |  -0.0107739|  -0.0220678|   0.0008644|
 | enterocyte\_diameter      | taxon     |  -0.0006223|  -0.0017673|   0.0005472|
 | log\_enterocyte\_density  | taxon     |   0.5985526|   0.1512608|   1.0464692|
 | log\_intestinal\_diameter | log\_mass |   0.2919863|   0.1625201|   0.4200719|
@@ -47,7 +47,7 @@ Medial
 |:--------------------------|:----------|-----------:|-----------:|-----------:|
 | crypt\_width              | taxon     |  -0.0073315|  -0.0132057|  -0.0017368|
 | enterocyte\_diameter      | taxon     |  -0.0011836|  -0.0023398|  -0.0000152|
-| log\_enterocyte\_density  | taxon     |   0.6254613|  -0.9042551|   2.2500809|
+| log\_enterocyte\_density  | taxon     |   0.6805308|  -0.0013622|   1.3743291|
 | log\_intestinal\_diameter | log\_mass |   0.1927109|   0.0516247|   0.3261071|
 | log\_intestinal\_diameter | taxon     |   0.0079669|  -0.1984294|   0.2049461|
 | sef                       | taxon     |   5.2512236|   2.5893885|   7.9252450|
