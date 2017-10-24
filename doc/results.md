@@ -7,6 +7,7 @@ Lucas Nell
 -   [Proximal](#proximal)
 -   [Medial](#medial)
 -   [Distal](#distal)
+-   [SEF on Taxon and log(Mass)](#sef-on-taxon-and-logmass)
 
 This script displays results from [`phylolm`](https://doi.org/10.1093/sysbio/syu005). Column `estimate` is the coefficient estimate for the specified `X`, while `lower` and `upper` are lower and upper bounds of the 95% confidence interval for the coefficient estimate obtained by parametric bootstrapping. Multiple `X` parameters for a given `Y` indicate that both `X`s were included in the regression with `Y`, *not* that separate regressions were performed for each `X`.
 
@@ -69,3 +70,11 @@ Distal
 | villus\_height            | log\_mass |   0.0737162|   0.0175383|   0.1285322|
 | villus\_height            | taxon     |   0.2094520|   0.1292392|   0.2965390|
 | villus\_width             | taxon     |  -0.0095327|  -0.0230823|   0.0029339|
+
+SEF on Taxon and log(Mass)
+==========================
+
+This is to determine
+
+    ##       2.5%      97.5% 
+    ## -0.2788004  3.2372969

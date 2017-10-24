@@ -30,7 +30,6 @@ suppressPackageStartupMessages({
     library(ape)
     library(ggplot2)
     library(grid)
-    # library(gridExtra)
 })
 # The `R/get_data.R` file provides functions to retrieve morphometric, clearance, and
 # absorption data.
