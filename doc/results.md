@@ -31,9 +31,9 @@ Proximal
 
 | Y                         | X         |    estimate|       lower|       upper|
 |:--------------------------|:----------|-----------:|-----------:|-----------:|
-| crypt\_width              | taxon     |  -0.0107739|  -0.0220678|   0.0008644|
+| crypt\_width              | taxon     |  -0.0109879|  -0.0163081|  -0.0056231|
 | enterocyte\_diameter      | taxon     |  -0.0006223|  -0.0017673|   0.0005472|
-| log\_enterocyte\_density  | taxon     |   0.5985526|   0.1512608|   1.0464692|
+| log\_enterocyte\_density  | taxon     |   0.5985526|   0.1512608|   1.0477713|
 | log\_intestinal\_diameter | log\_mass |   0.2919863|   0.1625201|   0.4200719|
 | log\_intestinal\_diameter | taxon     |   0.0612330|  -0.1338032|   0.2469784|
 | sef                       | taxon     |   4.4720094|   1.5529154|   7.4719083|
@@ -48,7 +48,7 @@ Medial
 |:--------------------------|:----------|-----------:|-----------:|-----------:|
 | crypt\_width              | taxon     |  -0.0073315|  -0.0132057|  -0.0017368|
 | enterocyte\_diameter      | taxon     |  -0.0011836|  -0.0023398|  -0.0000152|
-| log\_enterocyte\_density  | taxon     |   0.6805308|  -0.0013622|   1.3743291|
+| log\_enterocyte\_density  | taxon     |   0.7738868|   0.3659795|   1.1710685|
 | log\_intestinal\_diameter | log\_mass |   0.1927109|   0.0516247|   0.3261071|
 | log\_intestinal\_diameter | taxon     |   0.0079669|  -0.1984294|   0.2049461|
 | sef                       | taxon     |   5.2512236|   2.5893885|   7.9252450|
@@ -74,7 +74,7 @@ Distal
 SEF on Taxon and log(Mass)
 ==========================
 
-This is to determine
+This is to determine whether there's an effect of body mass on SEF. It appears there is not.
 
     ##       2.5%      97.5% 
     ## -0.2788004  3.2372969

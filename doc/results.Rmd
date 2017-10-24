@@ -78,7 +78,8 @@ knitr::kable(filter(summ_df, pos == 'dist')$data[[1]])
 
 # SEF on Taxon and log(Mass)
 
-This is to determine 
+This is to determine whether there's an effect of body mass on SEF. It appears there 
+is not.
 
 ```{r sef_taxon_mass}
 suppressPackageStartupMessages(library(phylolm))

@@ -75,9 +75,9 @@ mod_ci <- function(.model){
     
     stopifnot(is(.model, 'phylolm'))
     
-    y_measure <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
+    y_measure <- {paste(.model$formula) %>% purrr::discard(~ grepl('~', .x))}[1]
     pos_name <- paste(.model$call) %>% 
-        keep(~ grepl('_df', .x)) %>% 
+        purrr::keep(~ grepl('_df', .x)) %>% 
         gsub(pattern = '_df', replacement = '')
     if (pos_name == 'spp') pos_name <- NA
     
@@ -386,14 +386,12 @@ one_fig <- function(fig_num, which_size = 'first') {
                                                        ls(envir = .GlobalEnv))], 
                         function(n) ggplotGrob(eval(parse(text = n)))),
                    size = which_size)
-    # grid.newpage()
     grid.draw(do.call(rbind, grob_list))
 }
 # Employs the above function, plus saves the output
 save_fig <- function(fig_num, which_size = 'first', .seed = NULL, ...) {
     file_name <- sprintf('figs/fig%02d.pdf', fig_num)
     if (!is.null(.seed)) set.seed(.seed)
-    # pdf(file_name, ...)
     quartz(type = 'pdf', file = file_name, family = 'Helvetica', ...)
     one_fig(fig_num, which_size)
     invisible(dev.off())

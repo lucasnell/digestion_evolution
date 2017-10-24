@@ -269,22 +269,15 @@ pos_fits <- lapply(
                 f <- paste(y, ' ~ taxon',
                            ifelse(grepl('intestinal_diameter|villus_height', y),
                                   '+ log_mass', ''))
-                # These models do not fit properly using Pagel's lambda: estimates of
-                # phylogenetic signal range from 1e-7 to 1 (the full range of possible
-                # values)
-                # I'm converting them to "the Ornstein-Uhlenbeck model with an ancestral
-                # state to be estimated at the root" (phylolm documentation)
-                mod <- ifelse((grepl('crypt_width', y) & pos == 'prox') | 
-                                  (grepl('enterocyte_density', y) & pos == 'med'), 
-                              'OUfixed', 'lambda')
                 arg_list <- list(
                     as.formula(f),
                     data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = mod,
+                    phy = as.name("tr"), model = 'lambda',
                     boot = 2000)
-                # This model doesn't find the peak likelihood unless specifying a
+                # These models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
-                if (y == "log_enterocyte_density" & pos == "prox") {
+                if ((y == "log_enterocyte_density" & pos == "med") |
+                    (y == "crypt_width" & pos == "prox")) {
                     arg_list <- c(arg_list, starting.value = 0.1)
                 }
                 # Now call phylolm
@@ -318,19 +311,19 @@ sapply(pos_fits$med, ci)
     ## 2.5%               -0.1984294    0.05459952  -0.02886595 -0.013205706
     ## 97.5%               0.2049461    0.25264785  -0.00524069 -0.001736775
     ##            sef enterocyte_diameter log_enterocyte_density
-    ## 2.5%  2.589389       -2.339798e-03           -0.001362154
-    ## 97.5% 7.925245       -1.515785e-05            1.374329099
+    ## 2.5%  2.589389       -2.339798e-03              0.3659795
+    ## 97.5% 7.925245       -1.515785e-05              1.1710685
 
 ``` r
 sapply(pos_fits$prox, ci)
 ```
 
-    ##       log_intestinal_diameter villus_height villus_width   crypt_width
-    ## 2.5%               -0.1338032   -0.02618653  -0.04749609 -0.0220677520
-    ## 97.5%               0.2469784    0.20931842  -0.01601584  0.0008643734
+    ##       log_intestinal_diameter villus_height villus_width  crypt_width
+    ## 2.5%               -0.1338032   -0.02618653  -0.04749609 -0.016308120
+    ## 97.5%               0.2469784    0.20931842  -0.01601584 -0.005623053
     ##            sef enterocyte_diameter log_enterocyte_density
     ## 2.5%  1.552915       -0.0017673248              0.1512608
-    ## 97.5% 7.471908        0.0005472164              1.0464692
+    ## 97.5% 7.471908        0.0005472164              1.0477713
 
 ``` r
 sapply(pos_fits$dist[c('log_intestinal_diameter', 'villus_height')], 
@@ -425,10 +418,10 @@ knitr::kable(mod_summaries, format = 'markdown')
 | villus\_height            | taxonBat       | prox |   0.0887347|  -0.0261865|   0.2093184|
 | villus\_height            | log\_mass      | prox |   0.1560026|   0.0771714|   0.2339517|
 | villus\_width             | taxonBat       | prox |  -0.0316416|  -0.0474961|  -0.0160158|
-| crypt\_width              | taxonBat       | prox |  -0.0107739|  -0.0220678|   0.0008644|
+| crypt\_width              | taxonBat       | prox |  -0.0109879|  -0.0163081|  -0.0056231|
 | sef                       | taxonBat       | prox |   4.4720094|   1.5529154|   7.4719083|
 | enterocyte\_diameter      | taxonBat       | prox |  -0.0006223|  -0.0017673|   0.0005472|
-| log\_enterocyte\_density  | taxonBat       | prox |   0.5985526|   0.1512608|   1.0464692|
+| log\_enterocyte\_density  | taxonBat       | prox |   0.5985526|   0.1512608|   1.0477713|
 | log\_intestinal\_diameter | taxonBat       | med  |   0.0079669|  -0.1984294|   0.2049461|
 | log\_intestinal\_diameter | log\_mass      | med  |   0.1927109|   0.0516247|   0.3261071|
 | villus\_height            | taxonBat       | med  |   0.1526178|   0.0545995|   0.2526478|
@@ -437,7 +430,7 @@ knitr::kable(mod_summaries, format = 'markdown')
 | crypt\_width              | taxonBat       | med  |  -0.0073315|  -0.0132057|  -0.0017368|
 | sef                       | taxonBat       | med  |   5.2512236|   2.5893885|   7.9252450|
 | enterocyte\_diameter      | taxonBat       | med  |  -0.0011836|  -0.0023398|  -0.0000152|
-| log\_enterocyte\_density  | taxonBat       | med  |   0.6805308|  -0.0013622|   1.3743291|
+| log\_enterocyte\_density  | taxonBat       | med  |   0.7738868|   0.3659795|   1.1710685|
 | log\_intestinal\_diameter | taxonBat       | dist |   0.0109267|  -0.1690558|   0.1936576|
 | log\_intestinal\_diameter | log\_mass      | dist |   0.2637575|   0.1336546|   0.4005606|
 | villus\_height            | taxonBat       | dist |   0.2094520|   0.1292392|   0.2965390|

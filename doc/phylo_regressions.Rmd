@@ -212,22 +212,15 @@ pos_fits <- lapply(
                 f <- paste(y, ' ~ taxon',
                            ifelse(grepl('intestinal_diameter|villus_height', y),
                                   '+ log_mass', ''))
-                # These models do not fit properly using Pagel's lambda: estimates of
-                # phylogenetic signal range from 1e-7 to 1 (the full range of possible
-                # values)
-                # I'm converting them to "the Ornstein-Uhlenbeck model with an ancestral
-                # state to be estimated at the root" (phylolm documentation)
-                mod <- ifelse((grepl('crypt_width', y) & pos == 'prox') | 
-                                  (grepl('enterocyte_density', y) & pos == 'med'), 
-                              'OUfixed', 'lambda')
                 arg_list <- list(
                     as.formula(f),
                     data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = mod,
+                    phy = as.name("tr"), model = 'lambda',
                     boot = 2000)
-                # This model doesn't find the peak likelihood unless specifying a
+                # These models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
-                if (y == "log_enterocyte_density" & pos == "prox") {
+                if ((y == "log_enterocyte_density" & pos == "med") |
+                    (y == "crypt_width" & pos == "prox")) {
                     arg_list <- c(arg_list, starting.value = 0.1)
                 }
                 # Now call phylolm
