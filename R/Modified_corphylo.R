@@ -10,7 +10,7 @@
 
 corp <-function(X, phy, SeM, U = NULL){
 
-  #####Main program#####
+  ##### Main program #####
   if (!inherits(phy, "phylo"))
     stop("Object \"phy\" is not of class \"phylo\".")
   if (is.null(phy$edge.length))

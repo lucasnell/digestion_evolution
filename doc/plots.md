@@ -1,7 +1,7 @@
 Regression plots
 ================
 Lucas Nell
-23 Oct 2017
+24 Oct 2017
 
 -   [Loading model data](#loading-model-data)
 -   [Function to calculate confidence intervals](#function-to-calculate-confidence-intervals)
@@ -122,7 +122,7 @@ Function to create base plots
 -----------------------------
 
 ``` r
-taxon_only_no_mass <- function(.model, y_axis_title, title = NULL) {
+taxon_only_plot <- function(.model, y_axis_title, title = NULL) {
     y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
     .p <- mod_ci(.model) %>%
         ggplot(aes(taxon, estimate)) +
@@ -164,22 +164,22 @@ Creating plot objects
 
 ``` r
 # Figure 1A
-fig1a <- taxon_only_no_mass(models$spp$int_length_mass, 
-                            expression(atop("Intestinal length / body" ~ mass^{0.4},
-                                            "(" * cm / g^{0.4} * ")")),
-                            'A')
+fig1a <- taxon_only_plot(models$spp$int_length_mass, 
+                         expression(atop("Intestinal length / body" ~ mass^{0.4},
+                                         "(" * cm / g^{0.4} * ")")),
+                         'A')
 # Figure 1B
-fig1b <- taxon_only_no_mass(models$spp$nsa_mass,
-                            expression(atop("NSA / body" ~ mass^{0.75},
-                                            "(" * cm^2 / g^{0.75} * ")")),
-                            'B')
+fig1b <- taxon_only_plot(models$spp$nsa_mass,
+                         expression(atop("NSA / body" ~ mass^{0.75},
+                                         "(" * cm^2 / g^{0.75} * ")")),
+                         'B')
 # Figure 4
-fig4 <- taxon_only_no_mass(models$spp$vill_area_mass, 
-                           expression(atop("Villous surface area / body" ~ mass^{0.75},
-                                           "(" * cm^2 / g^{0.75} * ")")))
+fig4 <- taxon_only_plot(models$spp$vill_area_mass, 
+                        expression(atop("Villous surface area / body" ~ mass^{0.75},
+                                        "(" * cm^2 / g^{0.75} * ")")))
 # Figure 6
-fig6 <- taxon_only_no_mass(models$spp$log_total_enterocytes,
-                   expression("Total enterocytes (" %*% 10^9 * ")")) +
+fig6 <- taxon_only_plot(models$spp$log_total_enterocytes,
+                        expression("Total enterocytes (" %*% 10^9 * ")")) +
     theme(axis.title.y = element_text(margin = margin(0, 5.5, 0, 0))) +
     scale_y_continuous(breaks = log(c(5e8, 1e9, 1.5e9)), labels = seq(0.5, 1.5, 0.5),
                        limits = log(c(1, 1.55e9))) +
@@ -360,11 +360,11 @@ fig7a <- data$clear %>%
 fig7a <- fig7a %>% 
     add_title('A')
 
-fig7b <- taxon_only_no_mass(models$absorp, 
-                   expression(atop(
-                       "Fractional absorption /",
-                       "total intestinal surface (cm"^2 ~ g^{0.75} * ")")),
-                   "B")
+fig7b <- taxon_only_plot(models$absorp, 
+                         expression(atop(
+                             "Fractional absorption /",
+                             "total intestinal surface (cm"^{-2} ~ g^{0.75} * ")")),
+                         "B")
 ```
 
 Creating and saving final plots
@@ -420,7 +420,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-10-23
+    ##  date     2017-10-24
 
     ## Packages -----------------------------------------------------------------
 
