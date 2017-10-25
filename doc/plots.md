@@ -1,7 +1,7 @@
 Regression plots
 ================
 Lucas Nell
-24 Oct 2017
+25 Oct 2017
 
 -   [Loading model data](#loading-model-data)
 -   [Function to calculate confidence intervals](#function-to-calculate-confidence-intervals)
@@ -176,14 +176,14 @@ fig1b <- taxon_only_plot(models$spp$nsa_mass,
 fig4 <- taxon_only_plot(models$spp$vill_area_mass, 
                         expression(atop("Villous surface area / body" ~ mass^{0.75},
                                         "(" * cm^2 / g^{0.75} * ")")))
+
 # Figure 6
 fig6 <- taxon_only_plot(models$spp$log_total_enterocytes,
                         expression("Total enterocytes (" %*% 10^9 * ")")) +
     theme(axis.title.y = element_text(margin = margin(0, 5.5, 0, 0))) +
-    scale_y_continuous(breaks = log(c(5e8, 1e9, 1.5e9)), labels = seq(0.5, 1.5, 0.5),
-                       limits = log(c(1, 1.55e9))) +
-    coord_trans(y = 'exp')
+    scale_y_continuous(breaks = log(200e6 * 2^(0:3)), labels = 0.2 * 2^(0:3))
 # Mention that bars represent model predictions at mean log(body mass) among all species
+# Mention that y is on the log scale
 ```
 
 Individual plots for models by species and intestinal segment
@@ -289,12 +289,11 @@ fig1c <- {pos_plots$log_intestinal_diameter +
         theme(legend.position = 'bottom', 
               axis.text.x = element_text(color = 'black', size = 10, 
                                          margin = margin(6))) +
-        scale_y_continuous(breaks = log(seq(0.6, 1.2, 0.2)), 
-                           labels = seq(0.6, 1.2, 0.2)) +
-        coord_trans(y = 'exp')} %>% 
+        scale_y_continuous(breaks = log({0.4*1.5^(0:3)}), 
+                           labels = {0.4*1.5^(0:3)})} %>% 
     add_title('C')
 # Mention that bars represent model predictions at mean log(body mass) among all species
-
+# Mention that y is on the log scale
 
 # Figure 2a
 fig2a <- {pos_plots$villus_height +
@@ -326,9 +325,11 @@ fig5a <- {pos_plots$enterocyte_diameter +
 
 # Figure 5b
 fig5b <- {pos_plots$log_enterocyte_density +
+        scale_y_continuous(breaks = log(8e6 * 3^(0:2)), labels = 8 * 3^(0:2)) +
         theme(axis.text.x = element_text(color = 'black', size = 10, 
                                          margin = margin(6)))} %>% 
     add_title('B')
+# Mention that y is on the log scale
 ```
 
 Individual plots for clearance and absorption
@@ -359,6 +360,7 @@ fig7a <- data$clear %>%
                        trans = 'log', breaks = c(1, 3, 9))
 fig7a <- fig7a %>% 
     add_title('A')
+# Mention that both axes are on the log scale
 
 fig7b <- taxon_only_plot(models$absorp, 
                          expression(atop(
@@ -418,7 +420,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-10-24
+    ##  date     2017-10-25
 
     ## Packages -----------------------------------------------------------------
 
