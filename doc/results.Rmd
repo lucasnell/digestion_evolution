@@ -40,7 +40,7 @@ suppressPackageStartupMessages({
  
 ```{r parse_output} 
 summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccddd') %>%  
-    mutate(X = ifelse(X == 'taxonBat', 'taxon', X),
+    mutate(X = ifelse(X == 'taxonBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
     rename(estimate = value) %>%
     select(pos, Y, X, estimate, lower, upper) %>% 
@@ -85,10 +85,10 @@ is not.
 suppressPackageStartupMessages(library(phylolm))
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 tr <- get_tr('spp')
-spp_df <- get_df('spp')
+spp_df <- get_df('spp') %>% rename(clade = taxon)
 set.seed(940318092)
 mod <- suppressWarnings(
-    phylolm(sef ~ taxon + log_mass, data = spp_df, phy = tr, model = "lambda", 
+    phylolm(sef ~ clade + log_mass, data = spp_df, phy = tr, model = "lambda", 
             boot = 2000))
 ci(mod, 'log_mass')
 ```
