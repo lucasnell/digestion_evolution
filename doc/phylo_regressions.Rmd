@@ -69,10 +69,24 @@ tr <- get_tr('spp')
 
 `phylolm` call and output:
 
-```{r sef_diet}
+```{r sef_diet, eval = FALSE}
 set.seed(581120)
 diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr, 
                     model = 'lambda', boot = 2000)
+```
+
+I'm saving output for this fit because I'll be using that for summarizing.
+
+```{r save_diet, eval = FALSE, purl = FALSE}
+readr::write_rds(diet_fit, 'output/models_diet.rds')
+```
+```{r sef_diet_load, echo = FALSE, purl = FALSE}
+diet_fit <- readr::read_rds('output/models_diet.rds')
+```
+
+Summary:
+
+```{r diet_fit_summ}
 summary(diet_fit)
 ```
 
@@ -93,20 +107,29 @@ absorp_tr <- get_tr('absorp')
 
 `phylolm` call and output:
 
-```{r absorp_taxon}
+```{r absorp_taxon, eval = FALSE}
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
-summary(absorp_fit)
 ```
 
 
 I'm saving output for this fit because I'll be using that for plotting.
 
-```{r save_absorp, purl = FALSE}
+```{r save_absorp, eval = FALSE, purl = FALSE}
 readr::write_rds(absorp_fit, 'output/models_absorp.rds')
+```
+
+```{r absorp_load, echo = FALSE, purl = FALSE}
+absorp_fit <- readr::read_rds('output/models_absorp.rds')
+```
+
+Summary:
+
+```{r absorp_fit_summ}
+summary(absorp_fit)
 ```
 
 
@@ -316,7 +339,6 @@ mod_summaries <- bind_rows(
             })),
         bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
         ))
-knitr::kable(mod_summaries, format = 'markdown')
 ```
 
 
