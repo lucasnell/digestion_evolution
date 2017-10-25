@@ -8,6 +8,7 @@ Lucas Nell
 -   [Medial](#medial)
 -   [Distal](#distal)
 -   [SEF on Taxon and log(Mass)](#sef-on-taxon-and-logmass)
+-   [Percent differences](#percent-differences)
 
 This script displays results from [`phylolm`](https://doi.org/10.1093/sysbio/syu005). Column `estimate` is the coefficient estimate for the specified `X`, while `lower` and `upper` are lower and upper bounds of the 95% confidence interval for the coefficient estimate obtained by parametric bootstrapping. Multiple `X` parameters for a given `Y` indicate that both `X`s were included in the regression with `Y`, *not* that separate regressions were performed for each `X`.
 
@@ -90,3 +91,41 @@ ci(mod, 'log_mass')
 
     ##       2.5%      97.5% 
     ## -0.2788004  3.2372969
+
+Percent differences
+===================
+
+This is for the abstract.
+
+``` r
+models <- list(absorp = read_rds('output/models_absorp.rds'),
+               pos = read_rds('output/models_pos.rds'),
+               spp = read_rds('output/models_spp.rds'))
+perc_diff <- function(.m, log_trans = FALSE) {
+    .c <- as.numeric({.m %>% summary %>% coef}[,'Estimate'])
+    if (!log_trans) return(.c[2] / .c[1])
+    {exp(.c[2] + .c[1]) - exp(.c[1])} / exp(.c[1])
+}
+
+# NSA corrected for mass
+perc_diff(models$spp$nsa_mass)
+```
+
+    ## [1] -0.3236813
+
+``` r
+# SEF
+mean(c(perc_diff(models$pos$prox$sef), perc_diff(models$pos$med$sef),
+       perc_diff(models$pos$dist$sef)))
+```
+
+    ## [1] 0.5739153
+
+``` r
+# Enterocyte density
+mean(c(perc_diff(models$pos$prox$log_enterocyte_density, TRUE), 
+       perc_diff(models$pos$med$log_enterocyte_density, TRUE), 
+       perc_diff(models$pos$dist$log_enterocyte_density, TRUE)))
+```
+
+    ## [1] 1.028059
