@@ -2,6 +2,11 @@
 # Functions for summarizing phylolm models
 # 
 
+pval <- function(model, parameter = 'taxonBat') {
+    2 * min(c(mean(model$bootstrap[,parameter] > 0), 
+              mean(model$bootstrap[,parameter] < 0)))
+}
+
 ci <- function(model, parameter = 'taxonBat') model$bootconfint95[,parameter]
 
 ci_df <- function(.model, .pos = NA) {

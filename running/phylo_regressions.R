@@ -14,22 +14,26 @@ invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 spp_df <- get_df('spp')
 tr <- get_tr('spp')
 
-## ----sef_diet------------------------------------------------------------
-set.seed(581120)
-diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr, 
-                    model = 'lambda', boot = 2000)
+## ----sef_diet, eval = FALSE----------------------------------------------
+## set.seed(581120)
+## diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr,
+##                     model = 'lambda', boot = 2000)
+
+## ----diet_fit_summ-------------------------------------------------------
 summary(diet_fit)
 
 ## ----absorp_data---------------------------------------------------------
 absorp_df <- get_df('absorp')
 absorp_tr <- get_tr('absorp')
 
-## ----absorp_taxon--------------------------------------------------------
-set.seed(454094511)
-absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
-            model = 'lambda', boot = 2000)
-)
+## ----absorp_taxon, eval = FALSE------------------------------------------
+## set.seed(454094511)
+## absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
+##     phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr,
+##             model = 'lambda', boot = 2000)
+## )
+
+## ----absorp_fit_summ-----------------------------------------------------
 summary(absorp_fit)
 
 ## ----sp_analyses_cols----------------------------------------------------
@@ -74,9 +78,10 @@ seg_types <- c('prox', 'med', 'dist')
 ##                     data = as.name(paste0(pos, "_df")),
 ##                     phy = as.name("tr"), model = 'lambda',
 ##                     boot = 2000)
-##                 # This model doesn't find the peak likelihood unless specifying a
+##                 # These models don't find the peak likelihood unless specifying a
 ##                 # starting value of 0.1.
-##                 if (y == "log_enterocyte_density" & pos == "prox") {
+##                 if ((y == "log_enterocyte_density" & pos == "med") |
+##                     (y == "crypt_width" & pos == "prox")) {
 ##                     arg_list <- c(arg_list, starting.value = 0.1)
 ##                 }
 ##                 # Now call phylolm
