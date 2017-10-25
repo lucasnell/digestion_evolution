@@ -6,17 +6,15 @@ output:
   github_document: 
     toc: true 
     toc_depth: 1 
-editor_options: 
-  chunk_output_type: console
 --- 
  
 ```{r setup, include = FALSE, cache = FALSE} 
 knitr::opts_chunk$set(echo = FALSE) 
-knitr::opts_knit$set(root.dir = normalizePath("..")) 
+knitr::opts_knit$set(root.dir = normalizePath(".."))
 ``` 
  
  
-This script displays results from 
+This script displays results from analyses using
 [`phylolm`](https://doi.org/10.1093/sysbio/syu005). 
 Column `estimate` is the coefficient estimate for the specified `X`, while 
 `lower` and `upper` are lower and upper bounds of the 95% confidence interval
@@ -24,6 +22,10 @@ for the coefficient estimate obtained by parametric bootstrapping.
 Multiple `X` parameters for a given `Y` indicate that both `X`s were included
 in the regression with `Y`, *not* that separate regressions were performed for 
 each `X`.
+
+> This page uses the variable name `clade` for the dummy variable indicating whether
+> a species is a bat, but in the rest of the scripts in this repo, this variable 
+> is referred to as `taxon`.
  
  
 ```{r libraries} 
@@ -34,47 +36,117 @@ suppressPackageStartupMessages({
     library(tidyr)
     library(stringr)
     library(purrr)
+    library(phylolm)
 }) 
 ``` 
  
  
 ```{r parse_output} 
-summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccddd') %>%  
+summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccddd') %>%
     mutate(X = ifelse(X == 'taxonBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
     rename(estimate = value) %>%
     select(pos, Y, X, estimate, lower, upper) %>% 
     arrange(pos, Y, X) %>%
+    mutate_if(is.numeric, function(s) sprintf('%.4g', s)) %>% 
     nest(-pos)
+models <- list(absorp = read_rds('output/models_absorp.rds'),
+               diet = read_rds('output/models_diet.rds'),
+               pos = read_rds('output/models_pos.rds'),
+               spp = read_rds('output/models_spp.rds'))
 ``` 
  
- 
-# Positions combined 
+
+# Coefficient estimates
+
+## Positions combined 
  
 ```{r spp_summs} 
 knitr::kable(filter(summ_df, pos == 'all')$data[[1]]) 
 ``` 
  
  
-# Proximal 
+## Proximal 
  
 ```{r prox_summs} 
 knitr::kable(filter(summ_df, pos == 'prox')$data[[1]])
 ``` 
  
  
-# Medial 
+## Medial 
  
 ```{r med_summs} 
 knitr::kable(filter(summ_df, pos == 'med')$data[[1]])
 ``` 
  
  
-# Distal 
+## Distal 
  
 ```{r dist_summs} 
 knitr::kable(filter(summ_df, pos == 'dist')$data[[1]])
 ``` 
+
+
+# Phylogenetic signal
+
+```{r phy_signal_fxn}
+phylo_summ <- function(.model, .pos = NA) {
+    .pars <- paste(.model$formula)[c(2, 3)]
+    data_frame(Y = .pars[1], X = .pars[2], pos = .pos,
+               lambda = sprintf('%.4g [%.4g, %.4g]', .model$optpar,
+                                .model$bootconfint95[1,'lambda'],
+                                .model$bootconfint95[2,'lambda']),
+               sigma2 = sprintf('%.4g [%.4g, %.4g]', .model$sigma2,
+                                .model$bootconfint95[1,'sigma2'],
+                                .model$bootconfint95[2,'sigma2']))
+}
+
+mod_phylo_summs <- bind_rows(
+    list(
+        phylo_summ(models$absorp),
+        phylo_summ(models$diet),
+        bind_rows(lapply(models$spp, phylo_summ)),
+        bind_rows(
+            lapply(names(models$pos), function(p) {
+                bind_rows(lapply(models$pos[[p]], phylo_summ, .pos = p))
+            }))
+        )) %>%
+    mutate(X = gsub('taxon', 'clade', X),
+           pos = ifelse(is.na(pos), 'all', pos)) %>% 
+    select(pos, Y, X, lambda, sigma2) %>%
+    arrange(pos, Y, X) %>% 
+    nest(-pos)
+```
+
+## Positions combined 
+ 
+```{r phylo_spp_summs} 
+knitr::kable(filter(mod_phylo_summs, pos == 'all')$data[[1]])
+``` 
+ 
+ 
+## Proximal 
+ 
+```{r phylo_prox_summs} 
+knitr::kable(filter(mod_phylo_summs, pos == 'prox')$data[[1]])
+``` 
+ 
+ 
+## Medial 
+ 
+```{r phylo_med_summs} 
+knitr::kable(filter(mod_phylo_summs, pos == 'med')$data[[1]])
+``` 
+ 
+ 
+## Distal 
+ 
+```{r phylo_dist_summs} 
+knitr::kable(filter(mod_phylo_summs, pos == 'dist')$data[[1]])
+``` 
+
+
+
 
 # SEF on Taxon and log(Mass)
 
@@ -82,7 +154,6 @@ This is to determine whether there's an effect of body mass on SEF. It appears t
 is not.
 
 ```{r sef_taxon_mass, echo = TRUE}
-suppressPackageStartupMessages(library(phylolm))
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 tr <- get_tr('spp')
 spp_df <- get_df('spp') %>% rename(clade = taxon)
@@ -90,35 +161,48 @@ set.seed(940318092)
 mod <- suppressWarnings(
     phylolm(sef ~ clade + log_mass, data = spp_df, phy = tr, model = "lambda", 
             boot = 2000))
-ci(mod, 'log_mass')
+# Confidence intervals for coefficient estimates using parametric bootstrapping:
+t(ci(mod, c('log_mass', 'cladeBat')))
 ```
 
 
 
 # Percent differences
 
-This is for the abstract.
+This is for the percent differences in the discussion and abstract.
 
 ```{r percent_diff, echo = TRUE}
-models <- list(absorp = read_rds('output/models_absorp.rds'),
-               pos = read_rds('output/models_pos.rds'),
-               spp = read_rds('output/models_spp.rds'))
 perc_diff <- function(.m, log_trans = FALSE) {
     .c <- as.numeric({.m %>% summary %>% coef}[,'Estimate'])
-    if (!log_trans) return(.c[2] / .c[1])
-    {exp(.c[2] + .c[1]) - exp(.c[1])} / exp(.c[1])
+    if (log_trans) {
+        prop_diff <- {exp(.c[2] + .c[1]) - exp(.c[1])} / exp(.c[1])
+    } else {
+        prop_diff <- .c[2] / .c[1]
+    }
+    return(prop_diff * 100)
 }
+```
 
-# NSA corrected for mass
-perc_diff(models$spp$nsa_mass)
+## NSA corrected for mass
+```{r percent_diff_nsa, echo = TRUE}
+cat(sprintf('%.4g %%\n', perc_diff(models$spp$nsa_mass)))
+```
 
-# SEF
-mean(c(perc_diff(models$pos$prox$sef), perc_diff(models$pos$med$sef),
-       perc_diff(models$pos$dist$sef)))
+## SEF
+```{r percent_diff_sef, echo = TRUE}
+cat(sprintf('%.4g %%\n', mean(c(
+    perc_diff(models$pos$prox$sef),
+    perc_diff(models$pos$med$sef),
+    perc_diff(models$pos$dist$sef)
+))))
+```
 
-# Enterocyte density
-mean(c(perc_diff(models$pos$prox$log_enterocyte_density, TRUE), 
-       perc_diff(models$pos$med$log_enterocyte_density, TRUE), 
-       perc_diff(models$pos$dist$log_enterocyte_density, TRUE)))
+## Enterocyte density
+```{r percent_diff_ent_dens, echo = TRUE}
+cat(sprintf('%.4g %%\n', mean(c(
+    perc_diff(models$pos$prox$log_enterocyte_density, TRUE), 
+    perc_diff(models$pos$med$log_enterocyte_density, TRUE), 
+    perc_diff(models$pos$dist$log_enterocyte_density, TRUE)
+))))
 ```
 

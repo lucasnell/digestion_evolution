@@ -87,9 +87,8 @@ mod_ci <- function(.model){
         new_data_df <- data.frame(taxon = c(1.0, 0.0))
     }
     
-    # Column names coinciding with phylogenetic parameters from models lambda, BM, and
-    # OUfixed:
-    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2', 'alpha'))
+    # Column names coinciding with phylogenetic parameters from models lambda:
+    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2'))
     
     ci_matrix <- .model$bootstrap %>% 
         apply(1, 
