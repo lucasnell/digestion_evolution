@@ -1,7 +1,7 @@
 ---
 title: "Phylogenetic linear regression"
 author: "Lucas Nell"
-date: "`r format(Sys.Date(), '%d %b %Y')`"
+date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
 tz: "CST6CDT"
 output:
   github_document:

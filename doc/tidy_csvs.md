@@ -1,7 +1,7 @@
 Clean CSVs into simpler data frames
 ================
 Lucas Nell
-25 Sep 2017
+25 Oct 2017
 
 -   [Summary of output](#summary-of-output)
 -   [Getting started](#getting-started)
@@ -380,52 +380,52 @@ This outlines the package versions I used for this script.
     ## Session info -------------------------------------------------------------
 
     ##  setting  value                       
-    ##  version  R version 3.4.1 (2017-06-30)
+    ##  version  R version 3.4.2 (2017-09-28)
     ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-09-25
+    ##  date     2017-10-25
 
     ## Packages -----------------------------------------------------------------
 
     ##  package    * version date       source        
     ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports    1.1.0   2017-05-22 CRAN (R 3.4.0)
-    ##  base       * 3.4.1   2017-07-07 local         
+    ##  backports    1.1.1   2017-09-25 CRAN (R 3.4.2)
+    ##  base       * 3.4.2   2017-10-04 local         
     ##  bindr        0.1     2016-11-13 CRAN (R 3.4.0)
     ##  bindrcpp   * 0.2     2017-06-17 CRAN (R 3.4.0)
-    ##  compiler     3.4.1   2017-07-07 local         
-    ##  datasets   * 3.4.1   2017-07-07 local         
+    ##  compiler     3.4.2   2017-10-04 local         
+    ##  datasets   * 3.4.2   2017-10-04 local         
     ##  devtools     1.13.3  2017-08-02 CRAN (R 3.4.1)
     ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
-    ##  dplyr      * 0.7.3   2017-09-09 CRAN (R 3.4.1)
+    ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
     ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
     ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
-    ##  graphics   * 3.4.1   2017-07-07 local         
-    ##  grDevices  * 3.4.1   2017-07-07 local         
+    ##  graphics   * 3.4.2   2017-10-04 local         
+    ##  grDevices  * 3.4.2   2017-10-04 local         
     ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
     ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
     ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)
     ##  magrittr   * 1.5     2014-11-22 CRAN (R 3.4.0)
     ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods    * 3.4.1   2017-07-07 local         
+    ##  methods    * 3.4.2   2017-10-04 local         
     ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  purrr        0.2.3   2017-08-02 CRAN (R 3.4.1)
+    ##  purrr        0.2.4   2017-10-18 CRAN (R 3.4.2)
     ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp         0.12.12 2017-07-15 CRAN (R 3.4.1)
+    ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
     ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
     ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
     ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
     ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
-    ##  stats      * 3.4.1   2017-07-07 local         
+    ##  stats      * 3.4.2   2017-10-04 local         
     ##  stringi      1.1.5   2017-04-07 CRAN (R 3.4.0)
     ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
     ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
-    ##  tidyr      * 0.7.1   2017-09-01 CRAN (R 3.4.1)
-    ##  tidyselect   0.2.0   2017-08-30 CRAN (R 3.4.1)
-    ##  tools        3.4.1   2017-07-07 local         
-    ##  utils      * 3.4.1   2017-07-07 local         
+    ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
+    ##  tidyselect   0.2.2   2017-10-10 CRAN (R 3.4.2)
+    ##  tools        3.4.2   2017-10-04 local         
+    ##  utils      * 3.4.2   2017-10-04 local         
     ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
     ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
