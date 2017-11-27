@@ -3,28 +3,24 @@
 # 
 
 
-get_df <- function(.df, .stat = c('mean', 'se'), 
-                   .pos = c('none', 'prox', 'med', 'dist')) {
+get_df <- function(.df, .pos = NA) {
     
     .df <- match.arg(.df, c('spp', 'clear', 'absorp', 'pos'))
-    .stat  <- match.arg(.stat)
-    .pos  <- match.arg(.pos)
+    if (!is.na(.pos)) .pos  <- match.arg(.pos, c('prox', 'med', 'dist'))
     
-    if (.df == 'pos' & .pos == 'none') stop('provide non-"none" .pos when .df == "pos"')
-    if (.df != 'pos' & .pos != 'none') warning('.df != "pos" so .pos argument ignored')
+    if (.df == 'pos' & is.na(.pos)) stop('provide a position when .df == "pos"')
+    if (.df != 'pos' & !is.na(.pos)) warning('.df != "pos" so position is ignored')
     
     fn <- paste0('output/tidy_', .df, '.csv')
     
     out_df <- suppressMessages(readr::read_csv(fn))
-    out_df <- as.data.frame(out_df)
     
     
-    if (.pos != 'none' & .df == 'pos') {
-        out_df <- out_df[out_df$pos == .pos,]
+    if (!is.na(.pos) & .df == 'pos') {
+        out_df <- dplyr::filter(out_df, pos == .pos)
+        out_df <- dplyr::select(out_df, -pos)
     }
     
-    out_df <- out_df[out_df$stat == .stat,]
-    out_df <- out_df[,!(colnames(out_df) %in% c('stat', 'pos'))]
     # Making sure they're all sorted the same
     out_df <- dplyr::arrange(out_df, taxon, species)
     
@@ -32,7 +28,7 @@ get_df <- function(.df, .stat = c('mean', 'se'),
     out_df$taxon <-  factor(out_df$taxon, levels = c('Rodent', 'Bat'))
     
     # Converting diet to factor, if present
-    if (.df %in% c('spp', 'diet', 'pos')) {
+    if (.df %in% c('spp', 'pos')) {
         out_df$diet <-  factor(out_df$diet, levels = c('Herbivorous', 'Omnivorous', 
                                                        'Protein'))
     } else if (.df == 'clear') {
@@ -40,6 +36,8 @@ get_df <- function(.df, .stat = c('mean', 'se'),
     }
     
     # phylolm requires that the rownames match the species names
+    # (tibbles cannot have row names)
+    out_df <- as.data.frame(out_df)
     rownames(out_df) <- out_df$species
     
     return(out_df)
@@ -49,7 +47,7 @@ get_df <- function(.df, .stat = c('mean', 'se'),
 get_tr <- function(.df) {
     
     # Just choosing parameters for get_df. These won't affect anything.
-    .pos <- ifelse(.df == 'pos', 'med', 'none')
+    .pos <- ifelse(.df == 'pos', 'med', NA)
 
     focal_df <- get_df(.df, .pos = .pos)
 
@@ -60,3 +58,4 @@ get_tr <- function(.df) {
     
     return(out_tr)
 }
+
