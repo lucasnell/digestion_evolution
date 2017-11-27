@@ -98,7 +98,7 @@ sef,AM,2
 "intestinal diameter",AU,2
 "intestinal length",BB,0
 mass,BH,0
-"villa surface area",BV,0
+"vill surface area",BV,0
 "enterocyte width",CF,2
 nsa,BE,0')
 
