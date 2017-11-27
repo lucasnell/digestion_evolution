@@ -171,7 +171,7 @@ morph_df <- morph_df %>%
 
 Writing to CSV file.
 
-```{r write_morph, eval = FALSE}
+```{r write_morph, eval = TRUE}
 write_csv(morph_df, 'output/clean_morph.csv')
 ```
 
@@ -183,7 +183,7 @@ write_csv(morph_df, 'output/clean_morph.csv')
 # Clearance data
 
 
-For "L-arabinose clearance (μl min^-1 cm^-2)" vs SEF (Figure 7A)
+For "L-arabinose clearance (μl min^-1)" vs SEF (Figure 7A)
 
 Necessary functions:
 
@@ -287,7 +287,7 @@ clear_df <- xl_clear %>%
     select(diet, taxon, species, id, clear)
 
 
-# Combine and write csv
+# Combine
 clear_df <- bind_rows(sef_df, clear_df) %>% 
     arrange(taxon, diet, species, id)
 ```
@@ -295,8 +295,8 @@ clear_df <- bind_rows(sef_df, clear_df) %>%
 
 Writing to CSV file.
 
-```{r write_clear, eval = FALSE}
-write_csv(clear_df, 'data/clean_clearance.csv')
+```{r write_clear, eval = TRUE}
+write_csv(clear_df, 'output/clean_clearance.csv')
 ```
 
 
@@ -310,7 +310,7 @@ write_csv(clear_df, 'data/clean_clearance.csv')
 # Absorption data
 
 
-For "Fractional absorption / total intestinal surface (cm^2 g^0.75)" vs taxon (Figure 7B)
+For "Fractional absorption / total intestinal surface (cm^-2)" vs taxon (Figure 7B)
 
 This uses many of the same functions that the clearance data did.
 
@@ -378,8 +378,8 @@ absorp_df <- bind_rows(abs_df, abs_df2) %>%
 Writing to CSV file.
 
 
-```{r write_absorp, eval = FALSE}
-write_csv(absorp_df, 'data/clean_absorption.csv')
+```{r write_absorp, eval = TRUE}
+write_csv(absorp_df, 'output/clean_absorption.csv')
 ```
 
 

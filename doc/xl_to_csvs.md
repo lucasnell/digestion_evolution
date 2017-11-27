@@ -1,7 +1,7 @@
 Convert raw Excel file into CSVs
 ================
 Lucas Nell
-25 Oct 2017
+27 Nov 2017
 
 -   [Morphometric data](#morphometric-data)
 -   [Clearance data](#clearance-data)
@@ -159,7 +159,7 @@ write_csv(morph_df, 'output/clean_morph.csv')
 Clearance data
 ==============
 
-For "L-arabinose clearance (μl min^-1 cm^-2)" vs SEF (Figure 7A)
+For "L-arabinose clearance (μl min^-1)" vs SEF (Figure 7A)
 
 Necessary functions:
 
@@ -260,7 +260,7 @@ clear_df <- xl_clear %>%
     select(diet, taxon, species, id, clear)
 
 
-# Combine and write csv
+# Combine
 clear_df <- bind_rows(sef_df, clear_df) %>% 
     arrange(taxon, diet, species, id)
 ```
@@ -268,13 +268,13 @@ clear_df <- bind_rows(sef_df, clear_df) %>%
 Writing to CSV file.
 
 ``` r
-write_csv(clear_df, 'data/clean_clearance.csv')
+write_csv(clear_df, 'output/clean_clearance.csv')
 ```
 
 Absorption data
 ===============
 
-For "Fractional absorption / total intestinal surface (cm^2 g^0.75)" vs taxon (Figure 7B)
+For "Fractional absorption / total intestinal surface (cm^-2)" vs taxon (Figure 7B)
 
 This uses many of the same functions that the clearance data did.
 
@@ -338,7 +338,7 @@ absorp_df <- bind_rows(abs_df, abs_df2) %>%
 Writing to CSV file.
 
 ``` r
-write_csv(absorp_df, 'data/clean_absorption.csv')
+write_csv(absorp_df, 'output/clean_absorption.csv')
 ```
 
 Session info
@@ -355,7 +355,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-10-25
+    ##  date     2017-11-27
 
     ## Packages -----------------------------------------------------------------
 
@@ -372,7 +372,7 @@ This outlines the package versions I used for this script.
     ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
     ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
     ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
+    ##  glue         1.2.0   2017-10-29 CRAN (R 3.4.2)
     ##  graphics   * 3.4.2   2017-10-04 local         
     ##  grDevices  * 3.4.2   2017-10-04 local         
     ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
@@ -388,7 +388,7 @@ This outlines the package versions I used for this script.
     ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
     ##  readxl     * 1.0.0   2017-04-18 CRAN (R 3.4.0)
     ##  rematch      1.0.1   2016-04-21 CRAN (R 3.4.0)
-    ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
+    ##  rlang        0.1.4   2017-11-05 CRAN (R 3.4.2)
     ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
     ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
     ##  stats      * 3.4.2   2017-10-04 local         
@@ -398,5 +398,5 @@ This outlines the package versions I used for this script.
     ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
     ##  tools        3.4.2   2017-10-04 local         
     ##  utils      * 3.4.2   2017-10-04 local         
-    ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
+    ##  withr        2.1.0   2017-11-01 CRAN (R 3.4.2)
     ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
