@@ -1,7 +1,7 @@
 Clean CSVs into simpler data frames
 ================
 Lucas Nell
-25 Oct 2017
+27 Nov 2017
 
 -   [Summary of output](#summary-of-output)
 -   [Getting started](#getting-started)
@@ -13,7 +13,7 @@ Lucas Nell
 -   [Saving these data frames](#saving-these-data-frames)
 -   [Session info](#session-info)
 
-This reads the cleaned CSV files with data for individual animals and simplifies them into CSV files with summary statistics by species and/or intestinal segment. It needs to be run only once, and not at all if you have the csv files already.
+This reads the cleaned CSV files with data for individual animals and simplifies them into CSV files with means by species and/or intestinal segment. It needs to be run only once, and not at all if you have the csv files already.
 
 Summary of output
 =================
@@ -34,7 +34,7 @@ The csv files are used in the function `get_df` in the `R/get_data.R` file to re
 3.  `'clear'`: Clearance data by species. (Uses a different set of individuals entirely from the 1–2.)
 4.  `'absorp'`: Absorption data by species. (Uses a different set of individuals entirely from the 1–3.)
 
-For the second analysis set, I need to do the analyses separately for each position because modelling within-species and within-individual variance due to position rather than measurement error or process error would be difficult and not likely possible with this small dataset.
+For the second analysis set, I need to do the analyses separately for each position because modelling within-species and within-individual variance due to position rather than process error would be difficult and not likely possible with this small dataset.
 
 Getting started
 ===============
@@ -47,25 +47,8 @@ suppressPackageStartupMessages({
     library(dplyr)
     library(tidyr)
     library(magrittr)
+    library(purrr)
 })
-```
-
-Functions for standard error calculations
-
-``` r
-# Calculating standard error
-# (The ... is added for compatibility with using alongside mean.)
-se <- function(.x, ...) {
-    .z <- .x[!is.na(.x)]
-    return(sd(.z) / sqrt(length(.z)))
-}
-# Replacing NAs in a vector of standard errors with the average standard error in 
-# that vector.
-na_se <- function(.x) {
-    .z <- mean(.x, na.rm = TRUE)
-    .x[is.na(.x)] <- .z
-    return(.x)
-}
 ```
 
 Full morphometric data frame
@@ -118,11 +101,11 @@ For the following measures, we need a single morphometric value per species:
 We need the following columns from `morph_df` to compute these values:
 
 ``` r
-spp_measures <- c('mass', 'intestinal_length', 'nsa', 'villa_surface_area',
+spp_measures <- c('mass', 'intestinal_length', 'nsa', 'vill_surface_area',
                   'enterocyte_density', 'sef')
 ```
 
-Next I manipulated `morph_df` as such to get means and standard errors for each parameter that I will be analyzing.
+Next I manipulated `morph_df` as such to get means for each parameter that I will be using for my analyses.
 
 ``` r
 spp_df <- morph_df %>%
@@ -133,44 +116,26 @@ spp_df <- morph_df %>%
                            spp_measures)) %>% 
     # Removing all rows with all NAs in measures columns
     filter(Reduce(`+`, lapply(.[,spp_measures], is.na)) < length(spp_measures)) %>% 
-    # Add nsa to all positions' estimates (for total_enterocytes and total_surface below)
+    # Add nsa to all positions' estimates (for total_enterocytes below)
     group_by(taxon, diet, species, id) %>% 
     mutate(nsa = ifelse(is.na(nsa), nsa[!is.na(nsa)], nsa)) %>% 
     ungroup %>% 
-    # Doing the calculations now, before taking any means
-    mutate(int_length_mass = intestinal_length / mass^0.4,
-           nsa_mass = nsa / mass^0.75,
-           vill_area_mass = villa_surface_area / mass^0.75,
-           log_total_enterocytes = log(enterocyte_density * nsa),
+    # Doing the calculations / transformations now, before taking any means
+    mutate(log_total_enterocytes = log(enterocyte_density * nsa),
            log_mass = log(mass)) %>% 
     select(taxon, diet, species, id,
-           sef, int_length_mass, nsa_mass, vill_area_mass, 
+           sef, intestinal_length, nsa, vill_surface_area, 
            log_total_enterocytes, log_mass) %>% 
     # Taking mean by individual (i.e., across segments)
     group_by(taxon, diet, species, id) %>% 
     summarize_all(mean, na.rm = TRUE) %>% 
     ungroup %>% 
-    # Now taking mean and SE by species
+    # Now taking mean by species
     select(-id) %>% 
     group_by(taxon, diet, species) %>% 
-    summarize_all(funs(mean, se), na.rm = TRUE) %>% 
-    ungroup %>% 
-    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
-    mutate_at(vars(ends_with('_se')), na_se) %>%
+    summarize_all(mean, na.rm = TRUE) %>% 
+    ungroup %>%
     arrange(taxon, diet, species)
-```
-
-Lastly I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
-
-``` r
-spp_df <- spp_df %>% 
-    gather('measure', 'value', -taxon, -diet, -species) %>% 
-    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
-           measure = sapply(measure,
-                            function(s) {
-                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
-                            })) %>% 
-    spread(measure, value)
 ```
 
 Morphometric data by species AND position
@@ -210,36 +175,17 @@ pos_df <- morph_df %>%
     # Taking the log now, before taking any means
     mutate_(.dots = setNames(as.list(sprintf('%s(%s)', 'log', pos_measures)), 
                              paste0('log_', pos_measures))) %>% 
-    # Grouping by, then taking mean and SE of all measurement columns and transformed-
+    # Grouping by, then taking mean of all measurement columns and transformed-
     # measurement columns
     group_by(taxon, diet, species, pos) %>% 
-    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), funs(mean, se), 
+    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), mean, 
                  na.rm = TRUE) %>% 
     ungroup %>% 
-    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
-    mutate_at(vars(ends_with('_se')), na_se) %>%
     # Now only outputting columns that are necessary
-    select_(
-        .dots = as.list(c('taxon', 'diet', 'species', 'pos', 
-          paste0(rep(c('log_intestinal_diameter', 'villus_height', 'villus_width',
-                       'crypt_width', 'sef', 'enterocyte_diameter',
-                       'log_enterocyte_density', 'log_mass'), each = 2), 
-                 c('_mean', '_se'))))
-    ) %>% 
+    select(taxon, diet, species, pos, 
+           log_intestinal_diameter, villus_height, villus_width, crypt_width, sef,
+           enterocyte_diameter, log_enterocyte_density, log_mass) %>% 
     arrange(taxon, diet, species, pos)
-```
-
-Lastly I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
-
-``` r
-pos_df <- pos_df %>% 
-    gather('measure', 'value', -taxon, -diet, -species, -pos) %>% 
-    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
-           measure = sapply(measure, 
-                            function(s) {
-                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
-                            })) %>% 
-    spread(measure, value)
 ```
 
 Clearance data
@@ -261,21 +207,24 @@ clear_df <- read_csv('output/clean_clearance.csv', col_types = 'ccccdddd') %>%
     # These are no longer necessary
     select(-prox, -med, -dist, -clear) %>% 
     group_by(diet, taxon, species) %>% 
-    summarize_at(vars(log_sef, log_clear), funs(mean, se), na.rm = TRUE) %>% 
+    summarize_at(vars(log_sef, log_clear), mean, na.rm = TRUE) %>% 
     ungroup
 ```
 
-As above, I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
+I'm going to add in columns `log_enterocyte_density` and `log_mass` from the morphometric data frame.
 
 ``` r
-clear_df <- clear_df %>% 
-    gather('measure', 'value', -taxon, -diet, -species) %>% 
-    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
-           measure = sapply(measure, 
-                            function(s) {
-                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
-                            })) %>% 
-    spread(measure, value)
+tmp_df <- pos_df %>% 
+    group_by(species) %>% 
+    summarize(log_mass = mean(log_mass), 
+              log_enterocyte_density = mean(log_enterocyte_density))
+
+for (cn in c('log_mass', 'log_enterocyte_density')) {
+    clear_df[[cn]] <- map_dbl(clear_df$species, 
+                              function(s) tmp_df[[cn]][tmp_df$species == s][1])
+}; rm(cn)
+
+rm(tmp_df)
 ```
 
 Absorption data
@@ -285,13 +234,13 @@ The absorption data is a little weird in that different individuals were used fo
 
 The final parameter, `absorp`, equals the following:
 
-`(gavage / injection) / { (nsa * sef) / (mass^0.75) }`
+`(gavage / injection) / (nsa * sef)`
 
 This can be manipulated to the following:
 
-`gavage * (1 / injection) * { (mass^0.75) / (nsa * sef) }`
+`gavage * (1 / injection) * { 1 / (nsa * sef) }`
 
-For three species, the individuals used for measurements for this calculation are split into three groups, corresponding to the three portions of the equation above. One set of individuals were used for `gavage`, another for `injection`, and a third for `nsa`, `sef`, and `mass`.
+For three species, the individuals used for measurements for this calculation are split into three groups, corresponding to the three portions of the equation above. One set of individuals were used for `gavage`, another for `injection`, and a third for `nsa` and `sef`.
 
 These are the above-mentioned three species:
 
@@ -299,65 +248,56 @@ These are the above-mentioned three species:
 sep_absorps <- c('Myotis lucifugus', 'Tadarida brasiliensis', 'Akodon montensis')
 ```
 
-For the rest of the species, `gavage` and `injection` were measured together, but `nsa`, `sef`, and `mass` were measured in a different set of individuals.
+For the rest of the species, `gavage` and `injection` were measured together, but `nsa` and `sef` were measured in a different set of individuals.
 
-This is important because `mean(X/Y) != mean(X) / mean(Y)` and `var(X/Y) != var(X) / var(Y)`. But because `mean(X*Y) = mean(X) * mean(Y)` and `var(XY) = mean(X)^2 * var(Y) + mean(Y)^2 * var(X) + var(X) * var(Y)`, I can inverse things before taking means or variances to allow me to combine these values.
+This is important because `mean(X/Y) != mean(X) / mean(Y)`. But because `mean(X*Y) = mean(X) * mean(Y)`, I can inverse things before taking means to allow me to combine these values.
 
-So before taking means or variances, I have inversed `gavage` and `(nsa * sef) / (mass^0.75)`, thus allowing me to use the equations above. For the three species with `gavage` and `injection` measured separately, I had to combine variances for `gavage` and `injection` first, then combine the variance of `gavage * injection` with `(mass^0.75) / (nsa * sef)`.
+So before taking means, I have inversed `gavage` and `(nsa * sef)`, thereby allowing me to use the equations above. For the three species with `gavage` and `injection` measured separately, I had to combine variances for `gavage` and `injection` first, then combine the variance of `gavage * injection` with `1 / (nsa * sef)`.
 
-The term `(mass^0.75) / (nsa * sef)` is called `mns` below.
+The term `1 / (nsa * sef)` is called `ns` below.
 
 ``` r
 absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') %>%
     mutate(
         # Averaging SEF by individual (i.e., across segments)
         sef = (prox + med + dist) / 3,
-        mns = (mass^0.75) / (nsa * sef)
+        ns = 1 / (nsa * sef),
+        log_mass = log(mass)
     ) %>% 
     group_by(diet, taxon, species) %>% 
     summarize(
-        gavage_v = var(gavage, na.rm = TRUE),
         gavage = mean(gavage, na.rm = TRUE),
         
-        # For non-sep_absorps species, I'm setting injection mean to 1 and variance to 0
+        # For non-sep_absorps species, I'm setting injection mean to 1 
         # bc the final value is already in the gavage column, and doing this makes the
-        # equation for combined varianced above simplify to = V(X), where X is gavage.
-        # It also makes the mean end up equalling just the gavage mean.
-        inv_injection_v = ifelse(species[1] %in% sep_absorps,
-                                 var(1 / injection, na.rm = TRUE), 0),
+        # mean end up equalling just the gavage mean.
         inv_injection = ifelse(species[1] %in% sep_absorps,
                                mean(1 / injection, na.rm = TRUE), 1),
         
         # "gi_" stands for gavage and injection
-        gi_v = gavage^2 * inv_injection_v + inv_injection^2 * gavage_v +
-            gavage_v * inv_injection_v,
         gi = gavage * inv_injection,
         
-        mns_v = var(mns, na.rm = TRUE),
-        mns = mean(mns, na.rm = TRUE),
+        ns = mean(ns, na.rm = TRUE),
         
-        # I added the sqrt bc I want the output to be the standard deviation (the closest
-        # to standard error I've figure out to get)
-        absorp_se = sqrt(mns^2 * gi_v + gi^2 * mns_v + mns_v * gi_v),
-        absorp_mean = gavage * inv_injection * mns
+        absorp = gavage * inv_injection * ns,
+        
+        log_mass = mean(log_mass, na.rm = TRUE)
     ) %>% 
     ungroup %>% 
-    select(taxon, species, absorp_mean, absorp_se)
+    select(taxon, species, absorp, log_mass)
 
 rm(sep_absorps)
 ```
 
-As above, I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
+I'm going to add in the column `log_total_enterocytes` from the morphometric data frame.
 
 ``` r
 absorp_df <- absorp_df %>% 
-    gather('measure', 'value', -taxon, -species) %>% 
-    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
-           measure = sapply(measure, 
-                            function(s) {
-                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
-                            })) %>% 
-    spread(measure, value)
+    mutate(
+        log_total_enterocytes = 
+            map_dbl(species, function(s) {
+                spp_df$log_total_enterocytes[spp_df$species == s][1]
+            }))
 ```
 
 Saving these data frames
@@ -386,7 +326,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-10-25
+    ##  date     2017-11-27
 
     ## Packages -----------------------------------------------------------------
 
@@ -402,7 +342,7 @@ This outlines the package versions I used for this script.
     ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
     ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
     ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
+    ##  glue         1.2.0   2017-10-29 CRAN (R 3.4.2)
     ##  graphics   * 3.4.2   2017-10-04 local         
     ##  grDevices  * 3.4.2   2017-10-04 local         
     ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
@@ -412,11 +352,11 @@ This outlines the package versions I used for this script.
     ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
     ##  methods    * 3.4.2   2017-10-04 local         
     ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  purrr        0.2.4   2017-10-18 CRAN (R 3.4.2)
+    ##  purrr      * 0.2.4   2017-10-18 CRAN (R 3.4.2)
     ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
     ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
     ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
-    ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
+    ##  rlang        0.1.4   2017-11-05 CRAN (R 3.4.2)
     ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
     ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
     ##  stats      * 3.4.2   2017-10-04 local         
@@ -424,8 +364,8 @@ This outlines the package versions I used for this script.
     ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
     ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
     ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
-    ##  tidyselect   0.2.2   2017-10-10 CRAN (R 3.4.2)
+    ##  tidyselect   0.2.3   2017-11-06 CRAN (R 3.4.2)
     ##  tools        3.4.2   2017-10-04 local         
     ##  utils      * 3.4.2   2017-10-04 local         
-    ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
+    ##  withr        2.1.0   2017-11-01 CRAN (R 3.4.2)
     ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
