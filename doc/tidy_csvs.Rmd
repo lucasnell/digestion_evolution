@@ -67,6 +67,29 @@ suppressPackageStartupMessages({
 })
 ```
 
+# Standard error
+
+The datasets for absorption and clearance need standard error as well as means.
+
+Functions for standard error calculations:
+
+```{r se_funs}
+# Calculating standard error
+# (The ... is added for compatibility with using alongside mean.)
+se <- function(.x, ...) {
+    .z <- .x[!is.na(.x)]
+    return(sd(.z) / sqrt(length(.z)))
+}
+# Replacing NAs in a vector of standard errors with the average standard error in 
+# that vector.
+na_se <- function(.x) {
+    .z <- mean(.x, na.rm = TRUE)
+    .x[is.na(.x)] <- .z
+    return(.x)
+}
+```
+
+
 
 # Full morphometric data frame
 
@@ -150,15 +173,31 @@ spp_df <- morph_df %>%
     group_by(taxon, diet, species, id) %>% 
     summarize_all(mean, na.rm = TRUE) %>% 
     ungroup %>% 
-    # Now taking mean by species
+    # Now taking mean and SE by species
     select(-id) %>% 
     group_by(taxon, diet, species) %>% 
-    summarize_all(mean, na.rm = TRUE) %>% 
+    summarize_all(funs(mean, se), na.rm = TRUE) %>% 
+    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
+    mutate_at(vars(ends_with('_se')), na_se) %>%
     ungroup %>%
     arrange(taxon, diet, species)
 ```
 
 
+
+Lastly I add a column named `stat` to distinguish between mean and SE values, making
+filtering for a given statistic easier.
+
+```{r spp_stat}
+spp_df <- spp_df %>%
+    gather('measure', 'value', -taxon, -diet, -species) %>%
+    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
+           measure = sapply(measure,
+                            function(s) {
+                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
+                            })) %>%
+    spread(measure, value)
+```
 
 
 
@@ -202,17 +241,39 @@ pos_df <- morph_df %>%
     # Taking the log now, before taking any means
     mutate_(.dots = setNames(as.list(sprintf('%s(%s)', 'log', pos_measures)), 
                              paste0('log_', pos_measures))) %>% 
-    # Grouping by, then taking mean of all measurement columns and transformed-
+    # Grouping by, then taking mean and SE of all measurement columns and transformed-
     # measurement columns
     group_by(taxon, diet, species, pos) %>% 
-    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), mean, 
+    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), funs(mean, se), 
                  na.rm = TRUE) %>% 
     ungroup %>% 
+    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
+    mutate_at(vars(ends_with('_se')), na_se) %>%
     # Now only outputting columns that are necessary
-    select(taxon, diet, species, pos, 
-           log_intestinal_diameter, villus_height, villus_width, crypt_width, sef,
-           enterocyte_diameter, log_enterocyte_density, log_mass) %>% 
+    select_(
+        .dots = as.list(c('taxon', 'diet', 'species', 'pos',
+          paste0(rep(c('log_intestinal_diameter', 'villus_height', 'villus_width',
+                       'crypt_width', 'sef', 'enterocyte_diameter',
+                       'log_enterocyte_density', 'log_mass'), each = 2),
+                 c('_mean', '_se'))))
+    ) %>%
     arrange(taxon, diet, species, pos)
+```
+
+
+
+Lastly I add a column named `stat` to distinguish between mean and SE values, making
+filtering for a given statistic easier.
+
+```{r gather_pos}
+pos_df <- pos_df %>%
+    gather('measure', 'value', -taxon, -diet, -species, -pos) %>%
+    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
+           measure = sapply(measure,
+                            function(s) {
+                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
+                            })) %>%
+    spread(measure, value)
 ```
 
 
@@ -238,7 +299,7 @@ clear_df <- read_csv('output/clean_clearance.csv', col_types = 'ccccdddd') %>%
     # These are no longer necessary
     select(-prox, -med, -dist, -clear) %>% 
     group_by(diet, taxon, species) %>% 
-    summarize_at(vars(log_sef, log_clear), mean, na.rm = TRUE) %>% 
+    summarize_at(vars(log_sef, log_clear), funs(mean, se), na.rm = TRUE) %>% 
     ungroup
 ```
 
@@ -248,21 +309,54 @@ I'm going to add in columns `log_enterocyte_density` and `log_mass` from the mor
 data frame.
 
 ```{r gather_clear}
-tmp_df <- pos_df %>% 
+tmp_df <- morph_df %>%
+    # Changing from tall to wide format
+    spread(measure, value) %>% 
+    select(taxon, diet, species, pos, id, mass, enterocyte_density) %>% 
+    # Taking the log now, before taking any means
+    mutate(log_mass = log(mass), log_enterocyte_density = log(enterocyte_density)) %>% 
+    # Grouping by, then taking mean by individual (i.e., among segments)
+    group_by(species, id) %>% 
+    summarize_at(vars(log_mass, log_enterocyte_density), mean, na.rm = TRUE) %>% 
+    ungroup %>% 
+    # Now getting mean and SE by species
     group_by(species) %>% 
-    summarize(log_mass = mean(log_mass), 
-              log_enterocyte_density = mean(log_enterocyte_density))
+    summarize_at(vars(log_mass, log_enterocyte_density), funs(mean, se), na.rm = TRUE) %>% 
+    ungroup %>% 
+    # We don't need SE for log_mass
+    rename(log_mass = log_mass_mean) %>% 
+    select(-log_mass_se) %>% 
+    # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
+    mutate_at(vars(ends_with('_se')), na_se)
 
-for (cn in c('log_mass', 'log_enterocyte_density')) {
-    clear_df[[cn]] <- map_dbl(clear_df$species, 
-                              function(s) tmp_df[[cn]][tmp_df$species == s][1])
-}; rm(cn)
+# Function to retrieve an X from tmp_df
+get_X <- function(X) {
+    map_dbl(clear_df$species, function(s) tmp_df[[X]][tmp_df$species == s][1])
+}
+
+clear_df <- clear_df %>% 
+    mutate(log_mass = get_X('log_mass'),
+           log_enterocyte_density_mean = get_X('log_enterocyte_density_mean'),
+           log_enterocyte_density_se = get_X('log_enterocyte_density_se'))
 
 rm(tmp_df)
 ```
 
 
 
+I now add a column named `stat` to distinguish between mean and SE values, making
+filtering for a given statistic easier. 
+
+```{r clear_stat}
+clear_df <- clear_df %>%
+    gather('measure', 'value', -diet, -taxon, -species, -log_mass) %>%
+    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
+           measure = sapply(measure,
+                            function(s) {
+                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
+                            })) %>%
+    spread(measure, value)
+```
 
 
 
@@ -296,11 +390,14 @@ sep_absorps <- c('Myotis lucifugus', 'Tadarida brasiliensis', 'Akodon montensis'
 For the rest of the species, `gavage` and `injection` were measured together, but
 `nsa` and `sef` were measured in a different set of individuals.
 
-This is important because `mean(X/Y) != mean(X) / mean(Y)`.
-But because `mean(X*Y) = mean(X) * mean(Y)`,
-I can inverse things before taking means to allow me to combine these values.
+This is important because `mean(X/Y) != mean(X) / mean(Y)` and
+`var(X/Y) != var(X) / var(Y)`.
+But because `mean(X*Y) = mean(X) * mean(Y)` and
+`var(XY) = mean(X)^2 * var(Y) + mean(Y)^2 * var(X) + var(X) * var(Y)`,
+I can inverse things before taking means or variances to allow me to combine
+these values.
 
-So before taking means, I have inversed `gavage` and `(nsa * sef)`, 
+So before taking means and variances, I have inversed `gavage` and `(nsa * sef)`, 
 thereby allowing me to use the equations above.
 For the three species with `gavage` and `injection` measured separately, I had to 
 combine variances for `gavage` and `injection` first, then combine the variance of
@@ -320,25 +417,36 @@ absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') 
     ) %>% 
     group_by(diet, taxon, species) %>% 
     summarize(
+        gavage_v = var(gavage, na.rm = TRUE),
         gavage = mean(gavage, na.rm = TRUE),
         
-        # For non-sep_absorps species, I'm setting injection mean to 1 
+        # For non-sep_absorps species, I'm setting injection mean to 1 and variance to 0
         # bc the final value is already in the gavage column, and doing this makes the
-        # mean end up equalling just the gavage mean.
+        # equation for combined varianced above simplify to = V(X), where X is gavage.
+        # It also makes the mean end up equalling just the gavage mean.
+        inv_injection_v = ifelse(species[1] %in% sep_absorps,
+                                 var(1 / injection, na.rm = TRUE), 0),
         inv_injection = ifelse(species[1] %in% sep_absorps,
                                mean(1 / injection, na.rm = TRUE), 1),
         
         # "gi_" stands for gavage and injection
+        gi_v = gavage^2 * inv_injection_v + inv_injection^2 * gavage_v +
+            gavage_v * inv_injection_v,
         gi = gavage * inv_injection,
         
+        ns_v = var(ns, na.rm = TRUE),
         ns = mean(ns, na.rm = TRUE),
         
-        absorp = gavage * inv_injection * ns,
+        # I added the sqrt bc I want the output to be the standard deviation (the closest 
+        # to standard error I've figure out to get)
+        absorp_se = sqrt(ns^2 * gi_v + gi^2 * ns_v + ns_v * gi_v),
+        absorp_mean = gavage * inv_injection * ns,
         
+        # I don't need SE for log_mass because I'm assuming it's without error
         log_mass = mean(log_mass, na.rm = TRUE)
     ) %>% 
     ungroup %>% 
-    select(taxon, species, absorp, log_mass)
+    select(taxon, species, absorp_mean, absorp_se, log_mass)
 
 rm(sep_absorps)
 ```
@@ -348,15 +456,34 @@ rm(sep_absorps)
 I'm going to add in the column `log_total_enterocytes` from the morphometric data frame.
 
 ```{r gather_absorp}
+# Function to get log_total_enterocytes from spp_df
+get_lte <- function(.stat) {
+    map_dbl(absorp_df$species, function(s) {
+        .df <- spp_df %>% filter(species == s, stat == .stat)
+        return(.df$log_total_enterocytes[1])
+    })
+}
 absorp_df <- absorp_df %>% 
-    mutate(
-        log_total_enterocytes = 
-            map_dbl(species, function(s) {
-                spp_df$log_total_enterocytes[spp_df$species == s][1]
-            }))
+    mutate(log_total_enterocytes_mean = get_lte('mean'),
+           log_total_enterocytes_se = get_lte('se'))
+
+rm(get_lte)
 ```
 
 
+As above, I add a column named `stat` to distinguish between mean and SE values, making
+filtering for a given statistic easier.
+
+```{r absorp_stat}
+absorp_df <- absorp_df %>%
+    gather('measure', 'value', -taxon, -species, -log_mass) %>%
+    mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
+           measure = sapply(measure,
+                            function(s) {
+                                paste0(head(strsplit(s, '_')[[1]], -1), collapse = "_")
+                            })) %>%
+    spread(measure, value)
+```
 
 
 

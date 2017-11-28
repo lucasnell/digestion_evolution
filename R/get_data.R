@@ -2,23 +2,35 @@
 # Functions for retrieving data of mean, standard errors, or phylogenies among species
 # 
 
+# Checking that packages are installed
+for (x in c('readr', 'dplyr', 'ape')) {
+    if (!require(x, character.only = TRUE)) {
+        install.packages(x, dependencies = TRUE)
+        suppressPackageStartupMessages(library(x, character.only = TRUE))
+    }
+}; rm(x)
 
-get_df <- function(.df, .pos = NA) {
+get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
     
     .df <- match.arg(.df, c('spp', 'clear', 'absorp', 'pos'))
     if (!is.na(.pos)) .pos  <- match.arg(.pos, c('prox', 'med', 'dist'))
+    .stat <- match.arg(.stat)
     
     if (.df == 'pos' & is.na(.pos)) stop('provide a position when .df == "pos"')
     if (.df != 'pos' & !is.na(.pos)) warning('.df != "pos" so position is ignored')
+    if (!.df %in% c('clear', 'absorp') & .stat == 'se') {
+        message("You shouldn't need SE for this analysis set. Returning anyway...")
+    }
     
-    fn <- paste0('output/tidy_', .df, '.csv')
+    fn <- sprintf('output/tidy_%s.csv', .df)
     
-    out_df <- suppressMessages(readr::read_csv(fn))
-    
+    out_df <- suppressMessages(readr::read_csv(fn)) %>% 
+        dplyr::filter(stat == .stat) %>% 
+        dplyr::select(-stat)
     
     if (!is.na(.pos) & .df == 'pos') {
-        out_df <- dplyr::filter(out_df, pos == .pos)
-        out_df <- dplyr::select(out_df, -pos)
+        out_df <- dplyr::filter(out_df, pos == .pos) %>% 
+            dplyr::select(-pos)
     }
     
     # Making sure they're all sorted the same
@@ -46,7 +58,8 @@ get_df <- function(.df, .pos = NA) {
 
 get_tr <- function(.df) {
     
-    # Just choosing parameters for get_df. These won't affect anything.
+    # Just choosing parameters for get_df. These won't affect anything bc this is just
+    # to retrieve species names.
     .pos <- ifelse(.df == 'pos', 'med', NA)
 
     focal_df <- get_df(.df, .pos = .pos)
