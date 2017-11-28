@@ -417,6 +417,20 @@ absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') 
     ) %>% 
     group_by(diet, taxon, species) %>% 
     summarize(
+        
+        # I'm being conservative and taking the minimum sample size among
+        # any measurements.
+        # The ifelse statement is to include injection in the sample size vector
+        # to choose the minimum from for species that had injection measured separately.
+        # I don't want to include injection for other species, because its sample size 
+        # is zero.
+        n = ifelse(species[1] %in% sep_absorps,
+                   min(length(gavage[!is.na(gavage)]), 
+                       length(injection[!is.na(injection)]),
+                       length(ns[!is.na(ns)])),
+                   min(length(gavage[!is.na(gavage)]), 
+                       length(ns[!is.na(ns)]))),
+        
         gavage_v = var(gavage, na.rm = TRUE),
         gavage = mean(gavage, na.rm = TRUE),
         
@@ -437,9 +451,9 @@ absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') 
         ns_v = var(ns, na.rm = TRUE),
         ns = mean(ns, na.rm = TRUE),
         
-        # I added the sqrt bc I want the output to be the standard deviation (the closest 
-        # to standard error I've figure out to get)
-        absorp_se = sqrt(ns^2 * gi_v + gi^2 * ns_v + ns_v * gi_v),
+        # I added the sqrt and sqrt(n) bc I want the output to be the standard error
+        # instead of variance
+        absorp_se = sqrt(ns^2 * gi_v + gi^2 * ns_v + ns_v * gi_v) / sqrt(n),
         absorp_mean = gavage * inv_injection * ns,
         
         # I don't need SE for log_mass because I'm assuming it's without error
