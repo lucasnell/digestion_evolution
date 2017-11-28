@@ -253,7 +253,15 @@ corp <-function(X, phy, SeM, U = NULL){
   prop_sigma<-sqrt(diag(fisher_info))
   upper<-opt$par + 1.96 * prop_sigma
   lower<-opt$par - 1.96 * prop_sigma
-  df <-data.frame(value=opt$par, upper=upper, lower=lower)
+  # df <-data.frame(value=opt$par, upper=upper, lower=lower)
+  # One sample t-test:
+  t_ <- opt$par / prop_sigma
+  df_ <- nrow(X) - 2
+  pvals_t <- 2 * pt(abs(t_), df_, lower.tail = FALSE)
+  pvals_Z <- 2 * pnorm(abs(t_), lower.tail = FALSE)
   # df[4:5, ] <-1/(1 + exp(-df[4:5, ]))
+  df <- data.frame(value=opt$par, 
+                   pval_t = pvals_t, pval_Z = pvals_Z,
+                   upper=upper, lower=lower)
   df
 }

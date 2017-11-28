@@ -353,16 +353,64 @@ clear_tr <- get_tr('clear')
 
 Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
 rownames(Xmat) <- rownames(clear_df)
+Xmat <- Xmat[clear_tr$tip.label,]
+
 
 MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
 rownames(MEmat) <- clear_se_df$species
+MEmat <- MEmat[clear_tr$tip.label,]
 
-clear_cor <- corp(Xmat, phy = clear_tr, SeM = MEmat)
+Umat <- list(NULL, cbind(clear_df$log_mass))
+rownames(Umat[[2]]) <- rownames(Xmat)
+Umat[[2]] <- as.matrix(Umat[[2]][clear_tr$tip.label,])
+
+# clear_sef_cor <- corp(Xmat, phy = clear_tr, SeM = MEmat) #, U = Umat)
+
+corphylo(Xmat, phy = clear_tr, SeM = MEmat)
+
+
+corp(Xmat, phy = clear_tr, SeM = MEmat)
+corphylo(Xmat, phy = clear_tr, SeM = MEmat)
+
+
 
 # Correlation with 95% CI
 clear_cor['r',]
 ```
 
+
+# `Clearance` on `log_enterocyte_density`
+
+
+```{r clear_ed}
+
+Xmat <- cbind(clear_df$log_enterocyte_density, clear_df$log_clear)
+rownames(Xmat) <- rownames(clear_df)
+Xmat <- Xmat[!is.na(rowSums(Xmat)),]
+
+MEmat <- cbind(clear_se_df$log_enterocyte_density, clear_se_df$log_clear)
+rownames(MEmat) <- clear_se_df$species
+MEmat <- MEmat[!is.na(rowSums(MEmat)),]
+
+Umat <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
+rownames(Umat[[2]]) <- rownames(Xmat)
+
+clear_ed_tr <- ape::drop.tip(
+    clear_tr, 
+    tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)]
+)
+
+clear_ed_cor <- corp(Xmat, phy = clear_ed_tr, SeM = MEmat, U = Umat)
+
+corp(Xmat, phy = clear_ed_tr, SeM = MEmat, U = Umat)
+corphylo(Xmat, phy = clear_ed_tr, SeM = MEmat, U = Umat)
+
+# Correlation with 95% CI
+clear_ed_cor['r',]
+```
+
+
+# `Absorption` on `log_total_enterocytes`
 
 
 
