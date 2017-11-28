@@ -23,3 +23,10 @@ ci_df <- function(.model, .pos = NA) {
     
     return(.df)
 }
+
+# Return AICc for a phylolm model
+aicc <- function(m) {
+    n = m$n
+    k = m$p
+    return(m$aic + { 2*k*(k+1) } / {n - k - 1})
+}

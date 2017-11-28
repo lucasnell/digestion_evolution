@@ -25,6 +25,7 @@ suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
     library(tidyr)
+    library(purrr)
     library(phylolm)
     library(ape)
 })
@@ -71,7 +72,7 @@ tr <- get_tr('spp')
 
 ```{r sef_diet, eval = FALSE}
 set.seed(581120)
-diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr, 
+diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 ```
 
@@ -94,7 +95,7 @@ summary(diet_fit)
 
 # `Absorption` on `Taxon`
 
-"Absorption" here means `Fractional absorption / (total intestinal surface / mass^0.75)`,
+"Absorption" here means `Fractional absorption / (total intestinal surface)`,
 where `total intestinal surface = NSA * SEF`
 
 
@@ -110,7 +111,7 @@ absorp_tr <- get_tr('absorp')
 ```{r absorp_taxon, eval = FALSE}
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
+    phylolm(absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 ```
@@ -138,16 +139,17 @@ summary(absorp_fit)
 
 List of `Morphometrics`:
 
-- Intestinal length / body mass^0.4
-- NSA / body mass^0.75
-- Villus surface area / body mass^0.75
-- Total number of enterocytes (log-transformed; log body mass as covariate)
+- Intestinal length
+- NSA
+- Villus surface area
+- Total number of enterocytes (log-transformed)
     * Calculated as such: `log(NSA * enterocyte_density)`
 
+> log(body mass) as covariate for all
 
 These are the column names for the above parameters:
 ```{r sp_analyses_cols}
-spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
+spp_ys <- c("intestinal_length", "nsa", "vill_surface_area", "log_total_enterocytes")
 ```
 
 
@@ -157,15 +159,14 @@ Necessary data:
 
 `phylolm` call:
 
-> The actual analyses (takes ~6.5 min, which is why I saved the output):
+> The actual analyses (takes ~7.5 min, which is why I saved the output):
 
 ```{r sp_analyses, eval = FALSE}
 set.seed(88754829)
 spp_fits <- lapply(
     spp_ys,
     function(y) {
-        f <- paste(y, ' ~ taxon',
-                   ifelse(grepl('total_enterocytes', y), '+ log_mass', ''))
+        f <- paste(y, '~ taxon + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -181,9 +182,8 @@ Loading the output and summarizing:
 ```{r sp_analyses_load, purl = FALSE}
 spp_fits <- readr::read_rds('output/models_spp.rds')
 sapply(spp_fits, ci)
-ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
+sapply(spp_fits, ci, 'log_mass')
 ```
-
 
 
 
@@ -223,36 +223,86 @@ seg_types <- c('prox', 'med', 'dist')
 The actual analyses (takes ~21.7 min, which is why I saved the output):
 
 ```{r pos_analyses, eval = FALSE}
-set.seed(25413535)
-pos_fits <- lapply(
+
+for (pos in seg_types) assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+
+mm <- map_df(
     seg_types,
     function(pos) {
-        # Assigning to obj named <pos>_df so that the call identifies the position
-        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
-        lapply(
+        map_df(
             pos_ys,
             function(y) {
-                f <- paste(y, ' ~ taxon',
-                           ifelse(grepl('intestinal_diameter|villus_height', y),
-                                  '+ log_mass', ''))
-                arg_list <- list(
-                    as.formula(f),
+                arg_list1 <- list(
+                    as.formula(paste(y, ' ~ taxon')),
                     data = as.name(paste0(pos, "_df")),
                     phy = as.name("tr"), model = 'lambda',
-                    boot = 2000)
+                    boot = 0)
+                arg_list2 <- list(
+                    as.formula(paste(y, ' ~ taxon + log_mass')),
+                    data = as.name(paste0(pos, "_df")),
+                    phy = as.name("tr"), model = 'lambda',
+                    boot = 0)
                 # These models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
                 if ((y == "log_enterocyte_density" & pos == "med") |
                     (y == "crypt_width" & pos == "prox")) {
-                    arg_list <- c(arg_list, starting.value = 0.1)
+                    arg_list1 <- c(arg_list1, starting.value = 0.1)
+                    arg_list2 <- c(arg_list2, starting.value = 0.1)
                 }
                 # Now call phylolm
-                suppressWarnings(do.call("phylolm", arg_list))
+                suppressWarnings(
+                    z1 <- do.call("phylolm", arg_list1))
+                suppressWarnings(
+                    z2 <- do.call("phylolm", arg_list2))
+                aiccs <- map_dbl(list(z1, z2), aicc)
+                data_frame(y, pos, daic = z1$aic - z2$aic, daicc = aicc(z1) - aicc(z2))
             })
-    })
-names(pos_fits) <- seg_types
-for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
-readr::write_rds(pos_fits, 'output/models_pos.rds')
+})
+
+
+
+
+# Negative means log_mass raises AIC --> don't use log_mass
+mm %>% 
+    arrange(y, pos) %>% 
+    filter(y %in% c('sef', 'villus_width')) %>%
+    as.data.frame
+
+m = phylolm(villus_width ~ taxon + log_mass, med_df, phy = tr, 
+            model = 'lambda', boot = 2000)
+summary(m)
+pval(m, 'log_mass')
+
+# set.seed(25413535)
+# pos_fits <- lapply(
+#     seg_types,
+#     function(pos) {
+#         # Assigning to obj named <pos>_df so that the call identifies the position
+#         assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+#         lapply(
+#             pos_ys,
+#             function(y) {
+#                 f <- paste(y, ' ~ taxon',
+#                            ifelse(grepl('intestinal_diameter|villus_height', y),
+#                                   '+ log_mass', ''))
+#                 arg_list <- list(
+#                     as.formula(f),
+#                     data = as.name(paste0(pos, "_df")),
+#                     phy = as.name("tr"), model = 'lambda',
+#                     boot = 2000)
+#                 # These models don't find the peak likelihood unless specifying a
+#                 # starting value of 0.1.
+#                 if ((y == "log_enterocyte_density" & pos == "med") |
+#                     (y == "crypt_width" & pos == "prox")) {
+#                     arg_list <- c(arg_list, starting.value = 0.1)
+#                 }
+#                 # Now call phylolm
+#                 suppressWarnings(do.call("phylolm", arg_list))
+#             })
+#     })
+# names(pos_fits) <- seg_types
+# for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
+# readr::write_rds(pos_fits, 'output/models_pos.rds')
 ```
 
 Loading the output and summarizing:
