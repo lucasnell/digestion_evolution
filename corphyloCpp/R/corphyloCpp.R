@@ -20,6 +20,8 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
           maxit.NM = 1000, maxit.SA = 1000, temp.SA = 1, tmax.SA = 1, 
           verbose = FALSE) {
     
+    method <- match.arg(method)
+    
     if (!inherits(phy, "phylo")) 
         stop("Object \"phy\" is not of class \"phylo\".")
     if (is.null(phy$edge.length)) 
@@ -280,40 +282,65 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
 
 
 
+# ================================================================================
+# ================================================================================
+
+#               Bootstrapping
+
+# ================================================================================
+# ================================================================================
 
 
+# One bootstrap replicate for a single corphylo object, returning a new fit
+
+one_boot_fit <- function(cp_obj, n, p, iD, U_add, SeM, U, phy) {
+    rnd <- cbind(rnorm(n * p))
+    X <- iD %*% rnd + U_add
+    X <- matrix(X, n, p)
+    rownames(X) <- rownames(cp_obj$Vphy)
+    z <- corphylo_cpp(X = X, SeM = SeM, U = U, phy = phy, method = "Nelder-Mead")
+    return(z)
+}
 
 
+# From r-bloggers.com/fixing-non-positive-definite-correlation-matrices-using-r-2
+# To make sure Cholesky decomposition works for V matrix
 
-
-
-
-#' Bootstrap Pearson r from \code{corphylo} object with two input X variables.
-#'
-#' @param cp_obj \code{corphylo} object
-#' @param B Number of bootstrap replicates
-#' @param n_cores Number of cores to use. Defaults to 1.
-#'
-#' @return A vector of length \code{B} of correlation estimates
-#' 
-#' @export
-#' 
-#' @seealso \code{\link[ape]{corphylo}} \code{\link{corphylo_cpp}}
-#'
-boot_r <- function(cp_obj, B, n_cores = 1) {
+chol_fix <- function(V, max_iter = 100) {
     
-    # This allows output to be reproducible if someone uses set.seed outside this 
-    # function, even when doing this in parallel
-    seed <- sample.int(2^31-1, 1)
+    new_V <- V
     
-    if (!is(cp_obj, 'corphylo')) {
-        stop("cp_obj argument must be a 'corphylo' object")
+    cholStatus <- try(u <- chol(V), silent = TRUE)
+    cholError <- ifelse(class(cholStatus) == "try-error", TRUE, FALSE)
+    iter <- 0
+    while (cholError & iter < max_iter) {
+        
+        # replace -ve eigen values with small +ve number
+        new_Eig <- eigen(new_V)
+        new_Eig2 <- ifelse(new_Eig$values < 0, 0, new_Eig$values)
+        
+        # create modified matrix eqn 5 from Brissette et al 2007, inv = transp for
+        # eig vectors
+        new_V <- new_Eig$vectors %*% diag(new_Eig2) %*% t(new_Eig$vectors)
+        
+        # normalize modified matrix eqn 6 from Brissette et al 2007
+        new_V <- new_V / sqrt(diag(new_V) %*% t(diag(new_V)))
+        
+        # try chol again
+        cholStatus <- try(u <- chol(new_V), silent = TRUE)
+        cholError <- ifelse(class(cholStatus) == "try-error", TRUE, FALSE)
+        
+        iter <- iter + 1
     }
-    if (nrow(cp_obj$cor.matrix) != 2) {
-        stop("This function only works for 2-parameter corphylo objects")
-    }
-    if (n_cores < 1 | n_cores %% 1 != 0) stop("n_cores must be an integer >= 1")
+    if (cholError) stop("max iteration reached...")
+    
+    return(new_V)
+}
 
+
+# Prepping info for input corphylo
+
+prep_info <- function(cp_obj) {
     
     # Set up parameter values for simulating data
     p <- length(cp_obj$d)
@@ -321,7 +348,6 @@ boot_r <- function(cp_obj, B, n_cores = 1) {
     
     phy <- vcv2phylo(cp_obj$Vphy)
     
-    # Prepping info if there's in input U matrix(ces)
     if (ncol(cp_obj$UU) > 2) {
         U_inds <- strsplit(gsub('B', '', rownames(cp_obj$B)), "\\.") %>% 
             lapply(as.numeric) %>% 
@@ -345,6 +371,7 @@ boot_r <- function(cp_obj, B, n_cores = 1) {
         U_add <- t(t(cp_obj$B) %*% t(U_add))
     } else {
         U <- NULL
+        U_inds <- NULL
         U_add <- matrix(0, n*p)
     }
     
@@ -356,32 +383,78 @@ boot_r <- function(cp_obj, B, n_cores = 1) {
     ## phylogenetic signal: a vector of independent normal random variables,
     ## when multiplied by the transpose of the Cholesky deposition of Vphy will
     ## have covariance matrix equal to Vphy.
-    iD <- t(chol(cp_obj$V))
+    V <- chol_fix(cp_obj$V)
     
-    # Perform B simulations and collect the results
-    corrs <- numeric(B)
+    iD <- t(chol(V))
     
-    one_boot <- function(i) {
-        rnd <- cbind(rnorm(n * p))
-        X <- iD %*% rnd + U_add
-        X <- matrix(X, n, p)
-        rownames(X) <- rownames(cp_obj$Vphy)
-        z <- corphylo_cpp(X = X, SeM = SeM, U = U, phy = phy, method = "Nelder-Mead")
-        return(z$cor.matrix[1, 2])
+    return(list(p = p, n = n, phy = phy, U = U, U_inds = U_inds, U_add = U_add, 
+                SeM = SeM, iD = iD))
+}
+
+
+
+
+
+#' Bootstrap Pearson r from \code{corphylo} object with two input X variables.
+#'
+#' @param cp_obj \code{corphylo} object
+#' @param B Number of bootstrap replicates
+#' @param boot_out Function to retrieve necessary info from corphylo object for each
+#'        bootstrap replicate. Defaults to \code{NULL}, which retrieves the correlation.
+#' @param n_cores Number of cores to use. Defaults to 1.
+#'
+#' @return A vector of length \code{B} of correlation estimates
+#' 
+#' @export
+#' 
+#' @seealso \code{\link[ape]{corphylo}} \code{\link{corphylo_cpp}}
+#'
+boot_r <- function(cp_obj, B, boot_out = NULL, n_cores = 1) {
+    
+    # This allows output to be reproducible if someone uses set.seed outside this 
+    # function, even when doing this in parallel
+    seed <- sample.int(2^31-1, 1)
+    
+    if (is.null(boot_out)) {
+        boot_out <- function(z) z$cor.matrix[1,2]
+    }
+    one_boot <- function(i, cp_obj, n, p, iD, U_add, SeM, U, phy) {
+        z <- one_boot_fit(cp_obj, n, p, iD, U_add, SeM, U, phy)
+        return(boot_out(z))
     }
     
+    if (!is(cp_obj, 'corphylo')) {
+        stop("cp_obj argument must be a 'corphylo' object")
+    }
+    if (nrow(cp_obj$cor.matrix) != 2) {
+        stop("This function only works for 2-parameter corphylo objects")
+    }
+    if (n_cores < 1 | n_cores %% 1 != 0) stop("n_cores must be an integer >= 1")
+
+    # Creating objects from the corphylo object and assign to local environment
+    info_list <- prep_info(cp_obj)
+    for (n_ in names(info_list)) assign(n_, info_list[[n_]])
     
+    # Perform B simulations and collect the results
     if (requireNamespace("parallel", quietly = TRUE) & .Platform$OS.type == 'unix' &
         n_cores > 1) {
         rng_orig <- RNGkind()
         RNGkind("L'Ecuyer-CMRG")
         set.seed(seed)
-        corrs <- parallel::mclapply(1:B, one_boot, mc.cores = n_cores)
+        corrs <- parallel::mclapply(1:B, one_boot, 
+                                    cp_obj = cp_obj, n = n, p = p, iD = iD, 
+                                    U_add = U_add, SeM = SeM, U = U, phy = phy,
+                                    mc.cores = n_cores)
         RNGkind(rng_orig[1])
     } else {
         set.seed(seed)
-        corrs <- lapply(1:B, one_boot)
+        corrs <- lapply(1:B, one_boot, 
+                        cp_obj = cp_obj, n = n, p = p, iD = iD, 
+                        U_add = U_add, SeM = SeM, U = U, phy = phy)
     }
     
-    return(as.numeric(corrs))
+    return(do.call(rbind, corrs))
 }
+
+
+
