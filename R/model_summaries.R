@@ -3,8 +3,15 @@
 # 
 
 pval <- function(model, parameter = 'taxonBat') {
-    2 * min(c(mean(model$bootstrap[,parameter] > 0), 
-              mean(model$bootstrap[,parameter] < 0)))
+    if (is(model, 'phylolm')) {
+        2 * min(c(mean(model$bootstrap[,parameter] > 0), 
+                  mean(model$bootstrap[,parameter] < 0)))
+    } else if (is(model, 'corphylo')) {
+        2 * min(c(mean(model$bootstrap[,parameter] > 0), 
+                  mean(model$bootstrap[,parameter] < 0)))
+    } else {
+        stop("only for phylolm or corphylo objects")
+    }
 }
 
 ci <- function(model, parameter = 'taxonBat') model$bootconfint95[,parameter]

@@ -7,7 +7,7 @@
 corphylo_cpp(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
   method = c("Nelder-Mead", "SANN"), constrain.d = FALSE, reltol = 10^-6,
   maxit.NM = 1000, maxit.SA = 1000, temp.SA = 1, tmax.SA = 1,
-  verbose = FALSE)
+  verbose = FALSE, boot = 0, boot_out = NULL, n_cores = 1)
 }
 \arguments{
 \item{X}{a n x p matrix with p columns containing the values for the n taxa. Rows of X should have rownames matching the taxon names in phy.}
@@ -37,6 +37,15 @@ corphylo_cpp(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
 \item{verbose}{if TRUE, the model logLik and running estimates of the
     correlation coefficients and values of d are printed each iteration
     during optimization.}
+
+\item{boot}{Number of bootstrap replicates. Defaults to 0.}
+
+\item{boot_out}{Function to retrieve necessary info from corphylo object for each
+bootstrap replicate. Defaults to \code{NULL}, which retrieves, for each 
+replicate, a 1-row matrix containing the correlation and its squared 
+standard error.}
+
+\item{n_cores}{Number of cores to use. Defaults to 1.}
 }
 \value{
 

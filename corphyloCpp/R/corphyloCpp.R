@@ -1,11 +1,22 @@
 
 
 
+
+# Below, `# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+# delimit areas that are edited from the original corphylo function
+
+
 #' C++ version of ape::corphylo
 #' 
 #' For people in a hurry
 #'
 #' @inheritParams ape::corphylo
+#' @param boot Number of bootstrap replicates. Defaults to 0.
+#' @param boot_out Function to retrieve necessary info from corphylo object for each
+#'        bootstrap replicate. Defaults to \code{NULL}, which retrieves, for each 
+#'        replicate, a 1-row matrix containing the correlation and its squared 
+#'        standard error.
+#' @param n_cores Number of cores to use. Defaults to 1.
 #'
 #' @return
 #' 
@@ -15,12 +26,18 @@
 #' 
 #' @export
 #'
-corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE, 
+corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE, 
           method = c("Nelder-Mead", "SANN"), constrain.d = FALSE, reltol = 10^-6, 
           maxit.NM = 1000, maxit.SA = 1000, temp.SA = 1, tmax.SA = 1, 
-          verbose = FALSE) {
+          verbose = FALSE, 
+          boot = 0, boot_out = NULL, n_cores = 1) {
     
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Added this bc it returns warning if method if left as default
     method <- match.arg(method)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     if (!inherits(phy, "phylo")) 
         stop("Object \"phy\" is not of class \"phylo\".")
@@ -158,6 +175,11 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
     L.elements <- L[lower.tri(L, diag = T)]
     par <- c(L.elements, array(0.5, dim = c(1, p)))
     tau <- matrix(1, nrow = n, ncol = 1) %*% diag(Vphy) - Vphy
+    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Below has corphylo.LL changed to corphylo_LL, verbose argument commented out, 
+    # and constrain.d changed to constrain_d = constrain.d
     if (method == "Nelder-Mead") 
         opt <- optim(fn = corphylo_LL, par = par, XX = XX, UU = UU, 
                      MM = MM, tau = tau, Vphy = Vphy, REML = REML, # verbose = verbose, 
@@ -175,6 +197,9 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
                      constrain_d = constrain.d, method = "Nelder-Mead", 
                      control = list(maxit = maxit.NM, reltol = reltol))
     }
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
     par <- Re(opt$par)
     LL <- opt$value
     L.elements <- par[1:(p + p * (p - 1)/2)]
@@ -273,6 +298,19 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
                     XX = XX, UU = UU, MM = MM, Vphy = Vphy, R = R, V = V, 
                     C = C, convcode = opt$convergence, niter = opt$counts)
     class(results) <- "corphylo"
+    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Added bootstrapping to output
+    if (boot > 0) {
+        results$bootstrap <- boot_corphylo(results, boot, boot_out, n_cores)
+    } else {
+        results$bootstrap <- numeric(0)
+    }
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    
     return(results)
 }
 
@@ -300,6 +338,16 @@ one_boot_fit <- function(cp_obj, n, p, iD, U_add, SeM, U, phy) {
     rownames(X) <- rownames(cp_obj$Vphy)
     z <- corphylo_cpp(X = X, SeM = SeM, U = U, phy = phy, method = "Nelder-Mead")
     return(z)
+}
+
+
+# Function to get r and squared SE for r, from a corphylo object
+
+r_sqse <- function(cp_obj) {
+    r <- cp_obj$cor.matrix[1,2]
+    n <- nrow(cp_obj$Vphy)
+    se <- (1 - r^2) / (n - 2)
+    return(cbind(r, se))
 }
 
 
@@ -395,28 +443,30 @@ prep_info <- function(cp_obj) {
 
 
 
-#' Bootstrap Pearson r from \code{corphylo} object with two input X variables.
+#' Internal function to do parametric bootstrapping from \code{corphylo} object
+#' 
+#' Note: only works with \code{corphylo} with two input X variables.
 #'
 #' @param cp_obj \code{corphylo} object
-#' @param B Number of bootstrap replicates
+#' @param boot Number of bootstrap replicates
 #' @param boot_out Function to retrieve necessary info from corphylo object for each
 #'        bootstrap replicate. Defaults to \code{NULL}, which retrieves the correlation.
 #' @param n_cores Number of cores to use. Defaults to 1.
 #'
-#' @return A vector of length \code{B} of correlation estimates
+#' @return A vector/matrix with \code{B} items/rows of correlation estimates
 #' 
-#' @export
+#' @name boot_corphylo
 #' 
 #' @seealso \code{\link[ape]{corphylo}} \code{\link{corphylo_cpp}}
 #'
-boot_r <- function(cp_obj, B, boot_out = NULL, n_cores = 1) {
+boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
     
     # This allows output to be reproducible if someone uses set.seed outside this 
     # function, even when doing this in parallel
     seed <- sample.int(2^31-1, 1)
     
     if (is.null(boot_out)) {
-        boot_out <- function(z) z$cor.matrix[1,2]
+        boot_out <- r_sqse
     }
     one_boot <- function(i, cp_obj, n, p, iD, U_add, SeM, U, phy) {
         z <- one_boot_fit(cp_obj, n, p, iD, U_add, SeM, U, phy)
@@ -435,20 +485,20 @@ boot_r <- function(cp_obj, B, boot_out = NULL, n_cores = 1) {
     info_list <- prep_info(cp_obj)
     for (n_ in names(info_list)) assign(n_, info_list[[n_]])
     
-    # Perform B simulations and collect the results
+    # Perform boot simulations and collect the results
     if (requireNamespace("parallel", quietly = TRUE) & .Platform$OS.type == 'unix' &
         n_cores > 1) {
         rng_orig <- RNGkind()
         RNGkind("L'Ecuyer-CMRG")
         set.seed(seed)
-        corrs <- parallel::mclapply(1:B, one_boot, 
+        corrs <- parallel::mclapply(1:boot, one_boot, 
                                     cp_obj = cp_obj, n = n, p = p, iD = iD, 
                                     U_add = U_add, SeM = SeM, U = U, phy = phy,
                                     mc.cores = n_cores)
         RNGkind(rng_orig[1])
     } else {
         set.seed(seed)
-        corrs <- lapply(1:B, one_boot, 
+        corrs <- lapply(1:boot, one_boot, 
                         cp_obj = cp_obj, n = n, p = p, iD = iD, 
                         U_add = U_add, SeM = SeM, U = U, phy = phy)
     }
