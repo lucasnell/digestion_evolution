@@ -1,0 +1,202 @@
+---
+title: "Include log_mass in phylogenetic linear regression"
+author: "Lucas Nell"
+date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
+tz: "CST6CDT"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+
+This file determines whether to use `log_mass` in regressions or not.
+These analyses take about half an hour to run.
+
+#### Loading packages:
+
+
+```{r load_packages}
+suppressPackageStartupMessages({
+    library(readr)
+    library(dplyr)
+    library(tidyr)
+    library(purrr)
+    library(phylolm)
+    library(ape)
+})
+```
+
+
+```{r source_R}
+invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
+```
+
+
+# `SEF` on `Diet`
+
+
+```{r diet_data}
+spp_df <- get_df('spp')
+tr <- get_tr('spp')
+```
+
+
+`phylolm` call and output:
+
+```{r sef_diet, eval = TRUE}
+set.seed(29851644)
+diet_fit <- phylolm(sef ~ diet + log_mass, data = spp_df, phy = tr,
+                    model = 'lambda', boot = 2000)
+pval(diet_fit, 'log_mass')
+```
+
+
+
+# `Absorption` on `Taxon`
+
+"Absorption" here means `Fractional absorption / (total intestinal surface)`,
+where `total intestinal surface = NSA * SEF`
+
+
+Necessary data:
+
+```{r absorp_data}
+absorp_df <- get_df('absorp')
+absorp_tr <- get_tr('absorp')
+```
+
+`phylolm` call and output:
+
+```{r absorp_taxon, eval = TRUE}
+set.seed(1092141389)
+absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
+    phylolm(absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
+            model = 'lambda', boot = 2000)
+)
+pval(absorp_fit, 'log_mass')
+```
+
+
+
+
+# `Morphometrics` on `Taxon`
+
+```{r sp_analyses_cols}
+spp_ys <- c("intestinal_length", "nsa", "vill_surface_area", "log_total_enterocytes")
+```
+
+
+```{r sp_analyses, eval = TRUE}
+set.seed(357885189)
+spp_fits <- lapply(
+    spp_ys,
+    function(y) {
+        f <- paste(y, '~ taxon + log_mass')
+        suppressWarnings(
+            do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
+                                    phy = as.name("tr"), model = 'lambda',
+                                    boot = 2000))
+        )
+    })
+names(spp_fits) <- spp_ys
+
+sapply(spp_fits, pval, 'log_mass')
+```
+
+
+
+
+
+# `Morphometrics` on `Taxon`, separately by segment
+
+
+```{r pos_ys}
+pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width', 
+            'crypt_width', 'sef', 'enterocyte_diameter', 'log_enterocyte_density')
+seg_types <- c('prox', 'med', 'dist')
+```
+
+
+`phylolm` call:
+
+
+```{r pos_analyses, eval = TRUE}
+set.seed(632929430)
+pos_fits <- lapply(
+    seg_types,
+    function(pos) {
+        # Assigning to obj named <pos>_df so that the call identifies the position
+        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+        lapply(
+            pos_ys,
+            function(y) {
+                f <- paste(y, ' ~ taxon + log_mass')
+                arg_list <- list(
+                    as.formula(f),
+                    data = as.name(paste0(pos, "_df")),
+                    phy = as.name("tr"), model = 'lambda',
+                    boot = 2000)
+                # These models don't find the peak likelihood unless specifying a
+                # starting value of 0.1.
+                if ((y == "log_enterocyte_density" & pos == "med") |
+                    (y == "crypt_width" & pos == "prox")) {
+                    arg_list <- c(arg_list, starting.value = 0.1)
+                }
+                # Now call phylolm
+                suppressWarnings(do.call("phylolm", arg_list))
+            })
+    })
+names(pos_fits) <- seg_types
+for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
+sapply(pos_fits$dist, pval, parameter = 'log_mass')
+sapply(pos_fits$med, pval, parameter = 'log_mass')
+sapply(pos_fits$prox, pval, parameter = 'log_mass')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+<!---
+
+# `Clearance` on `SEF`
+
+
+```{r clear_sef}
+
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
+clear_tr <- get_tr('clear')
+
+Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
+rownames(Xmat) <- rownames(clear_df)
+
+MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
+rownames(MEmat) <- clear_se_df$species
+
+clear_cor <- corp(Xmat, phy = clear_tr, SeM = MEmat)
+
+# Correlation with 95% CI
+clear_cor['r',]
+```
+
+
+# `Clearance` on `log_enterocyte_density`
+
+
+# `Absorption` on `log_total_enterocytes`
+
+-->
