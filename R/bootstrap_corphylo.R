@@ -46,8 +46,6 @@ clear_ed_tr <- ape::drop.tip(
 
 
 
-
-
 cp <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, U = Umat, method = "Nelder-Mead")
 
 

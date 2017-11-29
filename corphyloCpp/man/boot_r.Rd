@@ -4,12 +4,14 @@
 \alias{boot_r}
 \title{Bootstrap Pearson r from \code{corphylo} object with two input X variables.}
 \usage{
-boot_r(cp_obj, B)
+boot_r(cp_obj, B, n_cores = 1)
 }
 \arguments{
 \item{cp_obj}{\code{corphylo} object}
 
 \item{B}{Number of bootstrap replicates}
+
+\item{n_cores}{Number of cores to use. Defaults to 1.}
 }
 \value{
 A vector of length \code{B} of correlation estimates

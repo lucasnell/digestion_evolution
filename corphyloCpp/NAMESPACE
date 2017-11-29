@@ -2,3 +2,4 @@
 
 export(boot_r)
 export(corphylo_cpp)
+useDynLib(corphyloCpp)

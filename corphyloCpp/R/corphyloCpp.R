@@ -11,6 +11,8 @@
 #' 
 #' @seealso \code{\link[ape]{corphylo}} \code{\link{boot_r}}
 #' 
+#' @useDynLib corphyloCpp
+#' 
 #' @export
 #'
 corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE, 
@@ -290,7 +292,6 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
 #'
 #' @param cp_obj \code{corphylo} object
 #' @param B Number of bootstrap replicates
-#' @param seed Seed to set (used this way for )
 #' @param n_cores Number of cores to use. Defaults to 1.
 #'
 #' @return A vector of length \code{B} of correlation estimates
@@ -299,9 +300,11 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
 #' 
 #' @seealso \code{\link[ape]{corphylo}} \code{\link{corphylo_cpp}}
 #'
-boot_r <- function(cp_obj, B, seed = NULL, n_cores = 1) {
+boot_r <- function(cp_obj, B, n_cores = 1) {
     
-    if(is.null(seed)) seed <- sample.int(2^31-1, 1)
+    # This allows output to be reproducible if someone uses set.seed outside this 
+    # function, even when doing this in parallel
+    seed <- sample.int(2^31-1, 1)
     
     if (!is(cp_obj, 'corphylo')) {
         stop("cp_obj argument must be a 'corphylo' object")
@@ -368,7 +371,8 @@ boot_r <- function(cp_obj, B, seed = NULL, n_cores = 1) {
     }
     
     
-    if (requireNamespace("parallel", quietly = TRUE) & .Platform$OS.type == 'unix') {
+    if (requireNamespace("parallel", quietly = TRUE) & .Platform$OS.type == 'unix' &
+        n_cores > 1) {
         rng_orig <- RNGkind()
         RNGkind("L'Ecuyer-CMRG")
         set.seed(seed)
