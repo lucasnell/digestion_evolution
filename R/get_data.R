@@ -72,3 +72,20 @@ get_tr <- function(.df) {
     return(out_tr)
 }
 
+
+
+cp_mat <- function(.df, .pars) {
+    out <- as.matrix(.df[,.pars])
+    colnames(out) <- NULL
+    rownames(out) <- .df$species
+    return(out)
+}
+
+filter_tr <- function(tr, keep_spp) {
+    cleared_tr <- ape::drop.tip(
+        tr, 
+        tip = tr$tip.label[!tr$tip.label %in% keep_spp]
+    )
+    return(cleared_tr)
+    
+}
