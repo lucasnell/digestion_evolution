@@ -1,57 +1,18 @@
-# corphylo.LL <- function(par, XX, UU, MM, tau, Vphy, REML, 
-#                         constrain.d, verbose) {
-#     n <- nrow(X)
-#     p <- ncol(X)
-#     L.elements <- par[1:(p + p * (p - 1)/2)]
-#     L <- matrix(0, nrow = p, ncol = p)
-#     L[lower.tri(L, diag = T)] <- L.elements
-#     R <- t(L) %*% L
-#     if (constrain.d == TRUE) {
-#         logit.d <- par[(p + p * (p - 1)/2 + 1):length(par)]
-#         if (max(abs(logit.d)) > 10) 
-#             return(10^10)
-#         d <- 1/(1 + exp(-logit.d))
-#     } else {
-#         d <- par[(p + p * (p - 1)/2 + 1):length(par)]
-#         if (max(d) > 10) 
-#             return(10^10)
-#     }
-#     C <- matrix(0, nrow = p * n, ncol = p * n)
-#     for (i in 1:p) for (j in 1:p) {
-#         Cd <- (d[i]^tau * (d[j]^t(tau)) * (1 - (d[i] * d[j])^Vphy))/(1 - 
-#                                                                          d[i] * d[j])
-#         C[(n * (i - 1) + 1):(i * n), (n * (j - 1) + 1):(j * 
-#                                                             n)] <- R[i, j] * Cd
-#     }
-#     V <- C + diag(as.numeric(MM))
-#     if (is.nan(rcond(V)) || rcond(V) < 10^-10) 
-#         return(10^10)
-#     iV <- solve(V)
-#     denom <- t(UU) %*% iV %*% UU
-#     if (is.nan(rcond(denom)) || rcond(denom) < 10^-10) 
-#         return(10^10)
-#     num <- t(UU) %*% iV %*% XX
-#     B <- solve(denom, num)
-#     B <- as.matrix(B)
-#     H <- XX - UU %*% B
-#     logdetV <- -determinant(iV)$modulus[1]
-#     if (is.infinite(logdetV)) 
-#         return(10^10)
-#     if (REML == TRUE) {
-#         LL <- 0.5 * (logdetV + determinant(t(UU) %*% iV %*% 
-#                                                UU)$modulus[1] + t(H) %*% iV %*% H)
-#     }
-#     else {
-#         LL <- 0.5 * (logdetV + t(H) %*% iV %*% H)
-#     }
-#     if (verbose == T) 
-#         show(c(as.numeric(LL), par))
-#     return(as.numeric(LL))
-# }
 
 
-Rcpp::sourceCpp('corphylo.cpp')
 
+#' C++ version of ape::corphylo
+#' 
+#' For people in a hurry
+#'
+#' @inheritParams ape::corphylo
+#'
+#' @return
+#' 
+#' @seealso \code{\link[ape]{corphylo}} \code{\link{boot_r}}
+#' 
+#' @export
+#'
 corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE, 
           method = c("Nelder-Mead", "SANN"), constrain.d = FALSE, reltol = 10^-6, 
           maxit.NM = 1000, maxit.SA = 1000, temp.SA = 1, tmax.SA = 1, 
@@ -309,4 +270,114 @@ corphylo_cpp <- function (X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
                     C = C, convcode = opt$convergence, niter = opt$counts)
     class(results) <- "corphylo"
     return(results)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#' Bootstrap Pearson r from \code{corphylo} object with two input X variables.
+#'
+#' @param cp_obj \code{corphylo} object
+#' @param B Number of bootstrap replicates
+#' @param seed Seed to set (used this way for )
+#' @param n_cores Number of cores to use. Defaults to 1.
+#'
+#' @return A vector of length \code{B} of correlation estimates
+#' 
+#' @export
+#' 
+#' @seealso \code{\link[ape]{corphylo}} \code{\link{corphylo_cpp}}
+#'
+boot_r <- function(cp_obj, B, seed = NULL, n_cores = 1) {
+    
+    if(is.null(seed)) seed <- sample.int(2^31-1, 1)
+    
+    if (!is(cp_obj, 'corphylo')) {
+        stop("cp_obj argument must be a 'corphylo' object")
+    }
+    if (nrow(cp_obj$cor.matrix) != 2) {
+        stop("This function only works for 2-parameter corphylo objects")
+    }
+    if (n_cores < 1 | n_cores %% 1 != 0) stop("n_cores must be an integer >= 1")
+
+    
+    # Set up parameter values for simulating data
+    p <- length(cp_obj$d)
+    n <- nrow(cp_obj$XX) / p
+    
+    phy <- vcv2phylo(cp_obj$Vphy)
+    
+    # Prepping info if there's in input U matrix(ces)
+    if (ncol(cp_obj$UU) > 2) {
+        U_inds <- strsplit(gsub('B', '', rownames(cp_obj$B)), "\\.") %>% 
+            lapply(as.numeric) %>% 
+            do.call(what = rbind)
+        U_inds <- U_inds[U_inds[,2] > 0,]
+        if (is.null(attributes(U_inds)$dim)) attributes(U_inds)$dim <- c(1, 2)
+        # Setting up U itself
+        U <- as.list(rep(list(NULL), p))
+        UUcol <- 3
+        for (i in U_inds[,1]) {
+            U_i <- cp_obj$UU[,UUcol]
+            U_i <- U_i[U_i != 0]
+            U[[i]] = cbind(U_i)
+            colnames(U[[i]]) <- NULL
+            rownames(U[[i]]) <- rownames(cp_obj$Vphy)
+            UUcol <- UUcol + 1
+        }
+        # For adding to X values
+        U_add <- cp_obj$UU
+        U_add[,1:2] <- 0 # <-- Keeps means at zero
+        U_add <- t(t(cp_obj$B) %*% t(U_add))
+    } else {
+        U <- NULL
+        U_add <- matrix(0, n*p)
+    }
+    
+    # Measurement error matrix
+    SeM <- matrix(cp_obj$MM, n)
+    rownames(SeM) <- rownames(cp_obj$Vphy)
+    
+    ## Perform a Cholesky decomposition of Vphy. This is used to generate
+    ## phylogenetic signal: a vector of independent normal random variables,
+    ## when multiplied by the transpose of the Cholesky deposition of Vphy will
+    ## have covariance matrix equal to Vphy.
+    iD <- t(chol(cp_obj$V))
+    
+    # Perform B simulations and collect the results
+    corrs <- numeric(B)
+    
+    one_boot <- function(i) {
+        rnd <- cbind(rnorm(n * p))
+        X <- iD %*% rnd + U_add
+        X <- matrix(X, n, p)
+        rownames(X) <- rownames(cp_obj$Vphy)
+        z <- corphylo_cpp(X = X, SeM = SeM, U = U, phy = phy, method = "Nelder-Mead")
+        return(z$cor.matrix[1, 2])
+    }
+    
+    
+    if (requireNamespace("parallel", quietly = TRUE) & .Platform$OS.type == 'unix') {
+        rng_orig <- RNGkind()
+        RNGkind("L'Ecuyer-CMRG")
+        set.seed(seed)
+        corrs <- parallel::mclapply(1:B, one_boot, mc.cores = n_cores)
+        RNGkind(rng_orig[1])
+    } else {
+        set.seed(seed)
+        corrs <- lapply(1:B, one_boot)
+    }
+    
+    return(as.numeric(corrs))
 }

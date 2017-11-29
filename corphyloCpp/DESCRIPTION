@@ -1,0 +1,13 @@
+Package: corphyloCpp
+Type: Package
+Title: Run corphylo Using C++
+Version: 1.0
+Date: 2017-11-28
+Author: Lucas A Nell
+Maintainer: Lucas A. Nell <lucas@lucasnell.com>
+Description: Runs ape::corphylo using a C++ log-likelihood function.
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.12.13)
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 6.0.1
+Suggests: parallel

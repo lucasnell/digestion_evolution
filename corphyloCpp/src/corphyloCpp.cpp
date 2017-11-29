@@ -4,8 +4,6 @@
 
 using namespace Rcpp;
 
-//[[Rcpp::depends(RcppArmadillo)]]
-//[[Rcpp::plugins(cpp11)]]
 
 typedef arma::uword uint;
 typedef arma::sword sint;
