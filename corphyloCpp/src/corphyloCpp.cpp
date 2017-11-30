@@ -62,7 +62,7 @@ inline arma::vec tp(const arma::rowvec& V){
 //[[Rcpp::export]]
 double corphylo_LL(const arma::vec& par, const arma::mat& XX, const arma::mat& UU, 
                    const arma::mat& MM, const arma::mat& tau, const arma::mat& Vphy, 
-                   bool REML = true, bool constrain_d = false) {
+                   bool REML = true, bool constrain_d = false, bool verbose = false) {
     
     uint n = Vphy.n_rows;
     uint p = XX.n_rows / n;
@@ -84,8 +84,8 @@ double corphylo_LL(const arma::vec& par, const arma::mat& XX, const arma::mat& U
         if (max(d) > 10) return MAX_RETURN;
     }
     
+    // OU transform
     arma::mat C(p * n, p * n, arma::fill::zeros);
-    
     for (uint i = 0; i < p; i++) {
         arma::mat Cd;
         for (uint j = 0; j < p; j++) {

@@ -2,13 +2,13 @@
 # Functions for retrieving data of mean, standard errors, or phylogenies among species
 # 
 
-# Checking that packages are installed
-for (x in c('readr', 'dplyr', 'ape')) {
-    if (!require(x, character.only = TRUE)) {
-        install.packages(x, dependencies = TRUE)
-        suppressPackageStartupMessages(library(x, character.only = TRUE))
-    }
-}; rm(x)
+# # Checking that packages are installed
+# for (x in c('readr', 'dplyr', 'ape')) {
+#     if (!require(x, character.only = TRUE)) {
+#         install.packages(x, dependencies = TRUE)
+#         suppressPackageStartupMessages(library(x, character.only = TRUE))
+#     }
+# }; rm(x)
 
 get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
     

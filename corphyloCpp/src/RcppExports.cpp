@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // corphylo_LL
-double corphylo_LL(const arma::vec& par, const arma::mat& XX, const arma::mat& UU, const arma::mat& MM, const arma::mat& tau, const arma::mat& Vphy, bool REML, bool constrain_d);
-RcppExport SEXP _corphyloCpp_corphylo_LL(SEXP parSEXP, SEXP XXSEXP, SEXP UUSEXP, SEXP MMSEXP, SEXP tauSEXP, SEXP VphySEXP, SEXP REMLSEXP, SEXP constrain_dSEXP) {
+double corphylo_LL(const arma::vec& par, const arma::mat& XX, const arma::mat& UU, const arma::mat& MM, const arma::mat& tau, const arma::mat& Vphy, bool REML, bool constrain_d, bool verbose);
+RcppExport SEXP _corphyloCpp_corphylo_LL(SEXP parSEXP, SEXP XXSEXP, SEXP UUSEXP, SEXP MMSEXP, SEXP tauSEXP, SEXP VphySEXP, SEXP REMLSEXP, SEXP constrain_dSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,13 +20,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type Vphy(VphySEXP);
     Rcpp::traits::input_parameter< bool >::type REML(REMLSEXP);
     Rcpp::traits::input_parameter< bool >::type constrain_d(constrain_dSEXP);
-    rcpp_result_gen = Rcpp::wrap(corphylo_LL(par, XX, UU, MM, tau, Vphy, REML, constrain_d));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(corphylo_LL(par, XX, UU, MM, tau, Vphy, REML, constrain_d, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_corphyloCpp_corphylo_LL", (DL_FUNC) &_corphyloCpp_corphylo_LL, 8},
+    {"_corphyloCpp_corphylo_LL", (DL_FUNC) &_corphyloCpp_corphylo_LL, 9},
     {NULL, NULL, 0}
 };
 

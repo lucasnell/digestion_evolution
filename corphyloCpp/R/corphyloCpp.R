@@ -6,6 +6,28 @@
 # delimit areas that are edited from the original corphylo function
 
 
+# Assembling parameter names for SE output
+
+get_par_names <- function(p, grepl_str = NULL) {
+    L <- sum(1:p) + p
+    par_names <- character(L)
+    par_names[(L - p + 1):L] <- sprintf('d%i', 1:p)
+    par_names[c(1, sapply(p:2, function(x) 1 + sum(p:x)))] <- sprintf('sig%i', 1:p)
+    par_names[par_names == ""] <- unlist(lapply(1:(p-1), 
+                                                function(i) {
+                                                    sapply((i+1):p, 
+                                                           function(j) {
+                                                               sprintf('r%i%i', i, j)
+                                                           })
+                                                }))
+    if (!is.null(grepl_str)) {
+        par_names <- par_names[grepl(grepl_str, par_names)]
+    }
+    return(par_names)
+}
+
+
+
 #' C++ version of ape::corphylo
 #' 
 #' For people in a hurry
@@ -13,9 +35,9 @@
 #' @inheritParams ape::corphylo
 #' @param boot Number of bootstrap replicates. Defaults to 0.
 #' @param boot_out Function to retrieve necessary info from corphylo object for each
-#'        bootstrap replicate. Defaults to \code{NULL}, which retrieves, for each 
-#'        replicate, a 1-row matrix containing the correlation and its squared 
-#'        standard error.
+#'     bootstrap replicate. If defining your own function for this, make sure that 
+#'     the output is either a single number or a matrix row.
+#'     Defaults to \code{NULL}, which retrieves the correlation(s).
 #' @param n_cores Number of cores to use. Defaults to 1.
 #'
 #' @return
@@ -29,7 +51,7 @@
 corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE, 
           method = c("Nelder-Mead", "SANN"), constrain.d = FALSE, reltol = 10^-6, 
           maxit.NM = 1000, maxit.SA = 1000, temp.SA = 1, tmax.SA = 1, 
-          verbose = FALSE, 
+          verbose = FALSE,
           boot = 0, boot_out = NULL, n_cores = 1) {
     
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,60 +61,57 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
-    if (!inherits(phy, "phylo")) 
-        stop("Object \"phy\" is not of class \"phylo\".")
-    if (is.null(phy$edge.length)) 
-        stop("The tree has no branch lengths.")
-    if (is.null(phy$tip.label)) 
-        stop("The tree has no tip labels.")
+    if (!inherits(phy, "phylo")) stop("Object \"phy\" is not of class \"phylo\".")
+    if (is.null(phy$edge.length)) stop("The tree has no branch lengths.")
+    if (is.null(phy$tip.label)) stop("The tree has no tip labels.")
+    
     phy <- reorder(phy, "postorder")
     n <- length(phy$tip.label)
-    if (dim(X)[1] != n) 
+    
+    if (dim(X)[1] != n) {
         stop("Number of rows of the data matrix does not match the length of the tree.")
+    }
     if (is.null(rownames(X))) {
         warning("No tip labels on X; order assumed to be the same as in the tree.\n")
         data.names = phy$tip.label
-    }
-    else data.names = rownames(X)
+    } else data.names = rownames(X)
     order <- match(data.names, phy$tip.label)
     if (sum(is.na(order)) > 0) {
         warning("Data names do not match with the tip labels.\n")
         rownames(X) <- data.names
-    }
-    else {
+    } else {
         temp <- X
         rownames(X) <- phy$tip.label
         X[order, ] <- temp[1:nrow(temp), ]
     }
     p <- dim(X)[2]
     if (!is.null(SeM)) {
-        if (dim(SeM)[1] != n) 
+        if (dim(SeM)[1] != n) {
             stop(
                 "Number of rows of the SeM matrix does not match the length of the tree.")
+        }
         if (is.null(rownames(SeM))) {
             warning(
                 "No tip labels on SeM; order assumed to be the same as in the tree.\n")
             data.names = phy$tip.label
-        }
-        else data.names = rownames(SeM)
+        } else data.names = rownames(SeM)
         order <- match(data.names, phy$tip.label)
         if (sum(is.na(order)) > 0) {
             warning("SeM names do not match with the tip labels.\n")
             rownames(SeM) <- data.names
-        }
-        else {
+        } else {
             temp <- SeM
             rownames(SeM) <- phy$tip.label
             SeM[order, ] <- temp[1:nrow(temp), ]
         }
-    }
-    else {
+    } else {
         SeM <- matrix(0, nrow = n, ncol = p)
     }
     if (length(U) > 0) {
-        if (length(U) != p) 
+        if (length(U) != p) {
             stop(
                 "Number of elements of list U does not match the number of columns in X.")
+        }
         for (i in 1:p) {
             if (!is.null(U[[i]])) {
                 if (dim(U[[i]])[1] != n) 
@@ -101,41 +120,37 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
                     warning(
                         "No tip labels on U; order assumed to be the same as in the tree.\n")
                     data.names = phy$tip.label
-                }
-                else data.names = rownames(U[[i]])
+                } else data.names = rownames(U[[i]])
                 order <- match(data.names, phy$tip.label)
                 if (sum(is.na(order)) > 0) {
                     warning("U names do not match with the tip labels.\n")
                     rownames(U[[i]]) <- data.names
-                }
-                else {
+                } else {
                     temp <- U[[i]]
                     rownames(U[[i]]) <- phy$tip.label
                     U[[i]][order, ] <- temp[1:nrow(temp), ]
                 }
-            }
-            else {
+            } else {
                 U[[i]] <- matrix(0, nrow = n, ncol = 1)
                 rownames(U[[i]]) <- phy$tip.label
             }
         }
     }
     Xs <- X
-    for (i in 1:p) Xs[, i] <- (X[, i] - mean(X[, i]))/sd(X[, 
-                                                           i])
+    for (i in 1:p) Xs[, i] <- (X[, i] - mean(X[, i]))/sd(X[, i])
     if (!is.null(SeM)) {
         SeMs <- SeM
         for (i in 1:p) SeMs[, i] <- SeM[, i]/sd(X[, i])
     }
     if (length(U) > 0) {
         Us <- U
-        for (i in 1:p) for (j in 1:ncol(U[[i]])) {
-            if (sd(U[[i]][, j]) > 0) {
-                Us[[i]][, j] <- (U[[i]][, j] - mean(U[[i]][, 
-                                                           j]))/sd(U[[i]][, j])
-            }
-            else {
-                Us[[i]][, j] <- U[[i]][, j] - mean(U[[i]][, j])
+        for (i in 1:p) {
+            for (j in 1:ncol(U[[i]])) {
+                if (sd(U[[i]][, j]) > 0) {
+                    Us[[i]][, j] <- (U[[i]][, j] - mean(U[[i]][, j])) / sd(U[[i]][, j])
+                } else {
+                    Us[[i]][, j] <- U[[i]][, j] - mean(U[[i]][, j])
+                }
             }
         }
     }
@@ -162,30 +177,28 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
                 u <- as.matrix(Us[[i]])
                 z <- lm(Xs[, i] ~ u)
                 eps[, i] <- resid(z)
-            }
-            else {
+            } else {
                 eps[, i] <- Xs[, i] - mean(Xs[, i])
             }
         }
         L <- t(chol(cov(eps)))
-    }
-    else {
+    } else {
         L <- t(chol(cov(Xs)))
     }
     L.elements <- L[lower.tri(L, diag = T)]
-    par <- c(L.elements, array(0.5, dim = c(1, p)))
+    par <- c(L.elements, rep(0.5, p))
     tau <- matrix(1, nrow = n, ncol = 1) %*% diag(Vphy) - Vphy
     
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Below has corphylo.LL changed to corphylo_LL, verbose argument commented out, 
     # and constrain.d changed to constrain_d = constrain.d
-    if (method == "Nelder-Mead") 
+    if (method == "Nelder-Mead")  {
         opt <- optim(fn = corphylo_LL, par = par, XX = XX, UU = UU, 
                      MM = MM, tau = tau, Vphy = Vphy, REML = REML, # verbose = verbose, 
                      constrain_d = constrain.d, method = "Nelder-Mead", 
                      control = list(maxit = maxit.NM, reltol = reltol))
-    if (method == "SANN") {
+    } else if (method == "SANN") {
         opt <- optim(fn = corphylo_LL, par = par, XX = XX, UU = UU, 
                      MM = MM, tau = tau, Vphy = Vphy, REML = REML, # verbose = verbose, 
                      constrain_d = constrain.d, method = "SANN", 
@@ -211,16 +224,13 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
     if (constrain.d == TRUE) {
         logit.d <- par[(p + p * (p - 1)/2 + 1):length(par)]
         d <- 1/(1 + exp(-logit.d))
-    }
-    else {
+    } else {
         d <- par[(p + p * (p - 1)/2 + 1):length(par)]
     }
     C <- matrix(0, nrow = p * n, ncol = p * n)
     for (i in 1:p) for (j in 1:p) {
-        Cd <- (d[i]^tau * (d[j]^t(tau)) * (1 - (d[i] * d[j])^Vphy))/(1 - 
-                                                                         d[i] * d[j])
-        C[(n * (i - 1) + 1):(i * n), (n * (j - 1) + 1):(j * n)] <- R[i, 
-                                                                     j] * Cd
+        Cd <- (d[i]^tau * (d[j]^t(tau)) * (1 - (d[i] * d[j])^Vphy))/(1 - d[i] * d[j])
+        C[(n * (i - 1) + 1):(i * n), (n * (j - 1) + 1):(j * n)] <- R[i, j] * Cd
     }
     V <- C + diag(MM)
     iV <- solve(V)
@@ -240,10 +250,8 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
             for (j in 1:ncol(U[[i]])) {
                 if (sd(U[[i]][, j]) > 0) {
                     counter <- counter + 1
-                    B[counter] <- B[counter] * sd(X[, i])/sd(U[[i]][, 
-                                                                    j])
-                    sd.list[counter] <- sd(X[, i])/sd(U[[i]][, 
-                                                             j])
+                    B[counter] <- B[counter] * sd(X[, i])/sd(U[[i]][, j])
+                    sd.list[counter] <- sd(X[, i])/sd(U[[i]][, j])
                 }
             }
         }
@@ -259,17 +267,17 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
             if (ncol(U[[i]]) > 0) 
                 for (j in 1:ncol(U[[i]])) if (sd(U[[i]][, j]) > 
                                               0) {
-                    if (is.null(colnames(U[[i]])[j])) 
+                    if (is.null(colnames(U[[i]])[j])) {
                         B.rownames <- c(B.rownames, paste("B", i, 
                                                           ".", j, sep = ""))
-                    if (!is.null(colnames(U[[i]])[j])) 
+                    } else {
                         B.rownames <- c(B.rownames, paste("B", i, 
                                                           ".", colnames(U[[i]])[j], 
                                                           sep = ""))
+                    }
                 }
         }
-    }
-    else {
+    } else {
         B.rownames <- NULL
         for (i in 1:p) {
             B.rownames <- c(B.rownames, paste("B", i, ".0", sep = ""))
@@ -284,8 +292,7 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
     if (REML == TRUE) {
         logLik <- -0.5 * ((n * p) - ncol(UU)) * log(2 * pi) + 
             0.5 * determinant(t(XX) %*% XX)$modulus[1] - LL
-    }
-    else {
+    } else {
         logLik <- -0.5 * (n * p) * log(2 * pi) - LL
     }
     k <- length(par) + ncol(UU)
@@ -341,14 +348,6 @@ one_boot_fit <- function(cp_obj, n, p, iD, U_add, SeM, U, phy) {
 }
 
 
-# Function to get r and squared SE for r, from a corphylo object
-
-r_sqse <- function(cp_obj) {
-    r <- cp_obj$cor.matrix[1,2]
-    n <- nrow(cp_obj$Vphy)
-    se <- (1 - r^2) / (n - 2)
-    return(cbind(r, se))
-}
 
 
 # From r-bloggers.com/fixing-non-positive-definite-correlation-matrices-using-r-2
@@ -435,30 +434,15 @@ prep_info <- function(cp_obj) {
     
     iD <- t(chol(V))
     
-    return(list(p = p, n = n, phy = phy, U = U, U_inds = U_inds, U_add = U_add, 
-                SeM = SeM, iD = iD))
+    return(list(n = n, p = p, iD = iD, U_add = U_add, SeM = SeM, U = U, phy = phy))
+    
 }
 
 
 
 
+# Internal function to do parametric bootstrapping from a corphylo object
 
-#' Internal function to do parametric bootstrapping from \code{corphylo} object
-#' 
-#' Note: only works with \code{corphylo} with two input X variables.
-#'
-#' @param cp_obj \code{corphylo} object
-#' @param boot Number of bootstrap replicates
-#' @param boot_out Function to retrieve necessary info from corphylo object for each
-#'        bootstrap replicate. Defaults to \code{NULL}, which retrieves the correlation.
-#' @param n_cores Number of cores to use. Defaults to 1.
-#'
-#' @return A vector/matrix with \code{B} items/rows of correlation estimates
-#' 
-#' @name boot_corphylo
-#' 
-#' @seealso \code{\link[ape]{corphylo}} \code{\link{corphylo_cpp}}
-#'
 boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
     
     # This allows output to be reproducible if someone uses set.seed outside this 
@@ -466,7 +450,12 @@ boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
     seed <- sample.int(2^31-1, 1)
     
     if (is.null(boot_out)) {
-        boot_out <- r_sqse
+        boot_out <- function(cp_obj) {
+            x <- cp_obj$cor.matrix
+            out <- rbind(x[lower.tri(x, FALSE)])
+            colnames(out) <- get_par_names(nrow(x), 'r')
+            return(out)
+        }
     }
     one_boot <- function(i, cp_obj, n, p, iD, U_add, SeM, U, phy) {
         z <- one_boot_fit(cp_obj, n, p, iD, U_add, SeM, U, phy)
@@ -476,35 +465,68 @@ boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
     if (!is(cp_obj, 'corphylo')) {
         stop("cp_obj argument must be a 'corphylo' object")
     }
-    if (nrow(cp_obj$cor.matrix) != 2) {
-        stop("This function only works for 2-parameter corphylo objects")
-    }
     if (n_cores < 1 | n_cores %% 1 != 0) stop("n_cores must be an integer >= 1")
 
-    # Creating objects from the corphylo object and assign to local environment
-    info_list <- prep_info(cp_obj)
-    for (n_ in names(info_list)) assign(n_, info_list[[n_]])
+    # Adding objects from the corphylo object to a list for later using `do.call`
+    arg_list <- prep_info(cp_obj)
+    arg_list <- c(list(X = 1:boot, FUN = one_boot, cp_obj = cp_obj), arg_list)
     
     # Perform boot simulations and collect the results
     if (requireNamespace("parallel", quietly = TRUE) & .Platform$OS.type == 'unix' &
         n_cores > 1) {
+        arg_list <- c(arg_list, list(mc.cores = n_cores))
         rng_orig <- RNGkind()
         RNGkind("L'Ecuyer-CMRG")
         set.seed(seed)
-        corrs <- parallel::mclapply(1:boot, one_boot, 
-                                    cp_obj = cp_obj, n = n, p = p, iD = iD, 
-                                    U_add = U_add, SeM = SeM, U = U, phy = phy,
-                                    mc.cores = n_cores)
+        corrs <- do.call(parallel::mclapply, arg_list)
         RNGkind(rng_orig[1])
     } else {
         set.seed(seed)
-        corrs <- lapply(1:boot, one_boot, 
-                        cp_obj = cp_obj, n = n, p = p, iD = iD, 
-                        U_add = U_add, SeM = SeM, U = U, phy = phy)
+        corrs <- do.call(lapply, arg_list)
     }
     
     return(do.call(rbind, corrs))
 }
 
 
-
+# Redefine print.corphylo to include SE info if present
+#' @S3method
+print.corphylo <- function(x, digits = max(3, getOption("digits") - 3), ...) {
+    cat("Call to corphylo\n\n")
+    logLik = x$logLik
+    AIC = x$AIC
+    BIC = x$BIC
+    names(logLik) = "logLik"
+    names(AIC) = "AIC"
+    names(BIC) = "BIC"
+    print(c(logLik, AIC, BIC), digits = digits)
+    cat("\ncorrelation matrix:\n")
+    rownames(x$cor.matrix) <- 1:dim(x$cor.matrix)[1]
+    colnames(x$cor.matrix) <- 1:dim(x$cor.matrix)[1]
+    print(x$cor.matrix, digits = digits)
+    cat("\nfrom OU process:\n")
+    d <- data.frame(d = x$d)
+    print(d, digits = digits)
+    if (x$constrain.d == TRUE) {
+        cat("\nvalues of d constrained to be in [0, 1]\n")
+    }
+    cat("\ncoefficients:\n")
+    coef <- data.frame(Value = x$B, Std.Error = x$B.se, Zscore = x$B.zscore, 
+                       Pvalue = x$B.pvalue)
+    rownames(coef) <- rownames(x$B)
+    printCoefmat(coef, P.values = TRUE, has.Pvalue = TRUE)
+    if (x$convcode != 0) {
+        cat("\nWarning: convergence in optim() not reached\n")
+    }
+    if (nrow(x$bootstrap) > 0) {
+        cat("\nBootstrapped 95% CI:\n")
+        for (nn in colnames(x$bootstrap)) {
+            cat(sprintf("  %-4s %7.3g [%7.3g %7.3g]\n", 
+                        nn, 
+                        mean(x$bootstrap),
+                        as.numeric(quantile(x$bootstrap, 0.025)),
+                        as.numeric(quantile(x$bootstrap, 0.975))))
+        }
+    }
+    cat("\n")
+}

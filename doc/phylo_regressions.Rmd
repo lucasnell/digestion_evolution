@@ -352,11 +352,10 @@ clear_df <- get_df('clear')
 clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
 clear_tr <- get_tr('clear')
 
-Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
-rownames(Xmat) <- rownames(clear_df)
+Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 
-MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
-rownames(MEmat) <- rownames(clear_se_df)
+MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
+
 
 # # Using AIC, this doesn't need Umat for either parameter
 # Xmat <- Xmat[!is.na(clear_df$log_mass),]
@@ -367,19 +366,24 @@ rownames(MEmat) <- rownames(clear_se_df)
 #     clear_tr, 
 #     tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
 
-clear_sef <- corphylo_cpp(Xmat, phy = clear_tr, SeM = MEmat)
-
-# Bootstrapping r (takes ~1 min)
+# corphylo_cpp run with bootstrapping (takes ~1 min)
 set.seed(1844365955)
-clear_sef_boot <- boot_r(clear_sef, 2000, n_cores = 4)
+clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, boot = 2000, n_cores = 4)
+clear_sef
+# hist(clear_sef$bootstrap)
+
+
 # p-value
-2 * min(mean(clear_sef_boot > 0), mean(clear_sef_boot < 0))
+2 * min(mean(clear_sef$bootstrap > 0), mean(clear_sef$bootstrap < 0))
 # # Correcting for bias (not really necessary here)
-# bias <- clear_sef$cor.matrix[1,2] - mean(clear_sef_boot)
-# 2 * min(mean(clear_sef_boot + bias > 0), mean(clear_sef_boot + bias < 0))
+bias <- clear_sef$cor.matrix[1,2] - mean(clear_sef$bootstrap)
+2 * min(mean(clear_sef$bootstrap + bias > 0), mean(clear_sef$bootstrap + bias < 0))
+
+z <- clear_sef$bootstrap[,1] / sqrt(clear_sef$bootstrap[,2])
+2 * min(mean(z > 0), mean(z < 0))
 
 
-hist(clear_sef_boot); abline(v = clear_sef$cor.matrix[1,2], lty = 2)
+hist(clear_sef$bootstrap[,1] / sqrt(clear_sef$bootstrap[,2])); abline(v = clear_sef$cor.matrix[1,2], lty = 2)
 ```
 
 
@@ -405,18 +409,16 @@ clear_ed_tr <- ape::drop.tip(
     tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)]
 )
 
-clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat)
-
-# Bootstrapping r (takes ~1 min)
+# Fit and bootstrap r (takes ~1 min)
 set.seed(1442148819)
-clear_ed_boot <- boot_r(clear_ed, 2000, n_cores = 4)
+clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, boot = 2000, n_cores = 4)
 # p-value
-2 * min(mean(clear_ed_boot > 0), mean(clear_ed_boot < 0))
+2 * min(mean(clear_ed$bootstrap > 0), mean(clear_ed$bootstrap < 0))
 # # Correcting for bias (not really necessary here)
-# bias <- clear_ed$cor.matrix[1,2] - mean(clear_ed_boot)
-# 2 * min(mean(clear_ed_boot + bias > 0), mean(clear_ed_boot + bias < 0))
+# bias <- clear_ed$cor.matrix[1,2] - mean(clear_ed$bootstrap)
+# 2 * min(mean(clear_ed$bootstrap + bias > 0), mean(clear_ed$bootstrap + bias < 0))
 
-hist(clear_ed_boot); abline(v = clear_ed$cor.matrix[1,2], lty = 2)
+hist(clear_ed$bootstrap); abline(v = clear_ed$cor.matrix[1,2], lty = 2)
 ```
 
 
@@ -435,17 +437,16 @@ MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
 # # AIC indicates no Umat should be used (for either parameter)
 # Umat <- list(NULL, cp_mat(absorp_df, 'log_mass'))
 
-absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat)
-
-# Bootstrapping r
+# Fit and bootstrap
 set.seed(2016097648)
-absorp_te_boot <- boot_r(absorp_te, 2000, n_cores = 4)
+absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, boot = 2000, n_cores = 4)
+
 # p-value
-2 * min(mean(absorp_te_boot > 0), mean(absorp_te_boot < 0))
+2 * min(mean(absorp_te$bootstrap > 0), mean(absorp_te$bootstrap < 0))
 # # Correcting for bias (not really necessary here)
-# bias <- absorp_te$cor.matrix[1,2] - mean(absorp_te_boot)
-# 2 * min(mean(absorp_te_boot + bias > 0), mean(absorp_te_boot + bias < 0))
-hist(absorp_te_boot); abline(v = absorp_te$cor.matrix[1,2], lty = 2)
+# bias <- absorp_te$cor.matrix[1,2] - mean(absorp_te$bootstrap)
+# 2 * min(mean(absorp_te$bootstrap + bias > 0), mean(absorp_te$bootstrap + bias < 0))
+hist(absorp_te$bootstrap); abline(v = absorp_te$cor.matrix[1,2], lty = 2)
 
 
 # Too few observations to use Umat when separating by taxon
@@ -455,7 +456,8 @@ Xmat <- cp_mat(absorp_df %>% filter(taxon == 'Bat'),
 MEmat <- cp_mat(absorp_se_df %>% filter(taxon == 'Bat'), 
                 c('absorp', 'log_total_enterocytes'))
 nt <- filter_tr(absorp_tr, absorp_df$species[absorp_df$taxon == 'Bat'])
-absorp_te_bat <- corphylo_cpp(Xmat, phy = nt, SeM = MEmat)
+set.seed(1262771039)
+absorp_te_bat <- corphylo_cpp(Xmat, phy = nt, SeM = MEmat, boot = 2000, n_cores = 4)
 
 Xmat <- cp_mat(absorp_df %>% filter(taxon == 'Rodent'), 
                c('absorp', 'log_total_enterocytes'))
@@ -463,30 +465,13 @@ MEmat <- cp_mat(absorp_se_df %>% filter(taxon == 'Rodent'),
                 c('absorp', 'log_total_enterocytes'))
 Umat <- list(cp_mat(absorp_df %>% filter(taxon == 'Rodent'), 'log_mass'), NULL)
 nt <- filter_tr(absorp_tr, absorp_df$species[absorp_df$taxon == 'Rodent'])
-absorp_te_rodent <- corphylo_cpp(Xmat, phy = nt, SeM = MEmat)
-
-
-# Function to get r and r's (non-square-rooted) SE from corphylo object
-r_se <- function(cp_obj) {
-    r <- cp_obj$cor.matrix[1,2]
-    n <- nrow(cp_obj$Vphy)
-    se <- (1 - r^2) / (n - 2)
-    return(cbind(r, se))
-}
-
-
-# Bootstrapping differnce in r
 set.seed(217761492)
-absorp_te_bat_boot <- boot_r(absorp_te_bat, 2000, n_cores = 4, boot_out = r_se)
-absorp_te_rodent_boot <- boot_r(absorp_te_rodent, 2000, n_cores = 4, boot_out = r_se)
-# Z scores
-absorp_te_z <- (absorp_te_bat_boot[,'r'] - absorp_te_rodent_boot[,'r']) /
-    sqrt(absorp_te_bat_boot[,'se'] + absorp_te_rodent_boot[,'se'])
+absorp_te_rodent <- corphylo_cpp(Xmat, phy = nt, SeM = MEmat, boot = 2000, n_cores = 4)
 
 # p-value
-2 * min(mean(absorp_te_z > 0), mean(absorp_te_z < 0))
-
-hist(absorp_te_z)
+boot_diffs <- absorp_te_bat$bootstrap[,1] - absorp_te_rodent$bootstrap[,1]
+2 * min(mean(boot_diffs > 0), mean(boot_diffs < 0))
+hist(boot_diffs)
 ```
 
 
