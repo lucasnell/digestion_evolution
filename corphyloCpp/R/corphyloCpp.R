@@ -312,7 +312,7 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
     if (boot > 0) {
         results$bootstrap <- boot_corphylo(results, boot, boot_out, n_cores)
     } else {
-        results$bootstrap <- numeric(0)
+        results$bootstrap <- matrix(NA, 0, 0)
     }
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

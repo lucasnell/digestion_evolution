@@ -360,10 +360,10 @@ MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 # # Using AIC, this doesn't need Umat for either parameter
 # Xmat <- Xmat[!is.na(clear_df$log_mass),]
 # MEmat <- MEmat[!is.na(clear_df$log_mass),]
-# Umat <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
-# rownames(Umat[[2]]) <- rownames(Xmat)
+# Umat <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
+# rownames(Umat[[1]]) <- rownames(Xmat)
 # clear_tr_ <- ape::drop.tip(
-#     clear_tr, 
+#     clear_tr,
 #     tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
 
 # corphylo_cpp run with bootstrapping (takes ~1 min)
@@ -392,17 +392,16 @@ hist(clear_sef$bootstrap[,1] / sqrt(clear_sef$bootstrap[,2])); abline(v = clear_
 
 ```{r clear_ed}
 
-Xmat <- cbind(clear_df$log_enterocyte_density, clear_df$log_clear)
-rownames(Xmat) <- rownames(clear_df)
+Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
 Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
-MEmat <- cbind(clear_se_df$log_enterocyte_density, clear_se_df$log_clear)
-rownames(MEmat) <- rownames(clear_se_df)
+MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
 MEmat <- MEmat[!is.na(rowSums(MEmat)),]
 
 # # Using AIC, this doesn't need Umat for either parameter
-# Umat <- list(cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
-# rownames(Umat[[1]]) <- rownames(Xmat)
+# Umat <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
+# rownames(Umat[[2]]) <- rownames(Xmat)
+
 
 clear_ed_tr <- ape::drop.tip(
     clear_tr, 
@@ -434,19 +433,22 @@ absorp_tr <- get_tr('absorp')
 
 Xmat <- cp_mat(absorp_df, c('absorp', 'log_total_enterocytes'))
 MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
-# # AIC indicates no Umat should be used (for either parameter)
+# # Using Umat causes numerical issues (optim never converges)
 # Umat <- list(NULL, cp_mat(absorp_df, 'log_mass'))
 
 # Fit and bootstrap
 set.seed(2016097648)
 absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, boot = 2000, n_cores = 4)
 
+hist(absorp_te$bootstrap); abline(v = absorp_te$cor.matrix[1,2], lty = 2)
+
+
 # p-value
 2 * min(mean(absorp_te$bootstrap > 0), mean(absorp_te$bootstrap < 0))
 # # Correcting for bias (not really necessary here)
 # bias <- absorp_te$cor.matrix[1,2] - mean(absorp_te$bootstrap)
 # 2 * min(mean(absorp_te$bootstrap + bias > 0), mean(absorp_te$bootstrap + bias < 0))
-hist(absorp_te$bootstrap); abline(v = absorp_te$cor.matrix[1,2], lty = 2)
+
 
 
 # Too few observations to use Umat when separating by taxon
