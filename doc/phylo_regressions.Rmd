@@ -88,8 +88,12 @@ diet_fit <- readr::read_rds('output/models_diet.rds')
 
 Summary:
 
-```{r diet_fit_summ}
-summary(diet_fit)
+```{r diet_fit_summ, echo = FALSE}
+for (p in c('dietOmnivorous', 'dietProtein')) {
+    cat(sprintf('%s: %.4g (P = %.4g)\n', p,
+                coef(diet_fit)[p], 
+                pval(diet_fit, p)))
+}
 ```
 
 
@@ -130,8 +134,11 @@ absorp_fit <- readr::read_rds('output/models_absorp.rds')
 
 Summary:
 
-```{r absorp_fit_summ}
-summary(absorp_fit)
+```{r absorp_fit_summ, echo = FALSE}
+p <- 'taxonBat'
+cat(sprintf('%s: %.4g (P = %.4g)\n', p,
+                coef(absorp_fit)[p], 
+                pval(absorp_fit, p)))
 ```
 
 
@@ -182,8 +189,13 @@ Loading the output and summarizing:
 
 ```{r sp_analyses_load, purl = FALSE}
 spp_fits <- readr::read_rds('output/models_spp.rds')
-sapply(spp_fits, ci)
-sapply(spp_fits, ci, 'log_mass')
+p <- 'taxonBat'
+for (nn in names(spp_fits)) {
+    cat(sprintf('Y = %s\n'), nn)
+    cat(sprintf('  %s: %.4g (P = %.4g)\n', p,
+                    coef(spp_fits[[nn]])[p], 
+                    pval(spp_fits[[nn]], p)))
+}
 ```
 
 
@@ -218,6 +230,58 @@ pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width',
 seg_types <- c('prox', 'med', 'dist')
 ```
 
+
+Below is a data frame including whether or not to include `log_mass` as a covariate.
+This determination was based on whether `log_mass` had a significant effect when it was
+included in the model, where p-values were based on parametric bootstrapping 
+(see `docs/include_mass.md`).
+
+```{r pos_log_mass_include}
+include_mass <- rbind(
+    # distal
+    c('dist', 'log_intestinal_diameter', 0.000 < 0.05),
+    c('dist', 'villus_height',           0.012 < 0.05),
+    c('dist', 'villus_width',            0.193 < 0.05),
+    c('dist', 'crypt_width',             0.500 < 0.05),
+    c('dist', 'sef',                     0.283 < 0.05),
+    c('dist', 'enterocyte_diameter',     0.782 < 0.05),
+    c('dist', 'log_enterocyte_density',  0.462 < 0.05),
+    
+    # medial
+    c('med', 'log_intestinal_diameter', 0.006 < 0.05),
+    c('med', 'villus_height',           0.013 < 0.05),
+    c('med', 'villus_width',            0.062 < 0.05),
+    c('med', 'crypt_width',             0.379 < 0.05),
+    c('med', 'sef',                     0.349 < 0.05),
+    c('med', 'enterocyte_diameter',     0.621 < 0.05),
+    c('med', 'log_enterocyte_density',  0.477 < 0.05),
+    
+    # proximal
+    c('prox', 'log_intestinal_diameter', 0.000 < 0.05),
+    c('prox', 'villus_height',           0.001 < 0.05),
+    c('prox', 'villus_width',            0.009 < 0.05),
+    c('prox', 'crypt_width',             0.807 < 0.05),
+    c('prox', 'sef',                     0.024 < 0.05),
+    c('prox', 'enterocyte_diameter',     0.823 < 0.05),
+    c('prox', 'log_enterocyte_density',  0.203 < 0.05)) %>% 
+    as_data_frame %>% 
+    rename_(.dots = setNames(colnames(.), c('pos', 'y', 'include'))) %>% 
+    mutate(include = as.logical(include))
+```
+
+
+
+<!---
+
+***************************************************************
+***************************************************************
+
+LEFT OFF HERE
+
+***************************************************************
+***************************************************************
+
+-->
 
 `phylolm` call:
 
