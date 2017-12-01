@@ -1,27 +1,19 @@
----
-title: "Include log_mass in phylogenetic linear regression"
-author: "Lucas Nell"
-date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
-tz: "CST6CDT"
-output:
-  github_document:
-    toc: true
-    toc_depth: 2
----
+Include log\_mass in phylogenetic linear regression
+================
+Lucas Nell
+01 Dec 2017
 
-```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = normalizePath(".."))
-```
+-   [Loading packages:](#loading-packages)
+-   [`SEF` on `Diet`](#sef-on-diet)
+-   [`Absorption` on `Taxon`](#absorption-on-taxon)
+-   [`Morphometrics` on `Taxon`](#morphometrics-on-taxon)
+-   [`Morphometrics` on `Taxon`, separately by segment](#morphometrics-on-taxon-separately-by-segment)
 
-
-This file determines whether to use `log_mass` in `phylolm` regressions or not.
-These analyses take about half an hour to run.
+This file determines whether to use `log_mass` in `phylolm` regressions or not. These analyses take about half an hour to run.
 
 #### Loading packages:
 
-
-```{r load_packages}
+``` r
 suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
@@ -32,48 +24,44 @@ suppressPackageStartupMessages({
 })
 ```
 
-
-```{r source_R}
+``` r
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ```
 
+`SEF` on `Diet`
+===============
 
-# `SEF` on `Diet`
-
-
-```{r diet_data}
+``` r
 spp_df <- get_df('spp')
 tr <- get_tr('spp')
 ```
 
-
 `phylolm` call and output:
 
-```{r sef_diet, eval = TRUE}
+``` r
 set.seed(29851644)
 diet_fit <- phylolm(sef ~ diet + log_mass, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 pval(diet_fit, 'log_mass')
 ```
 
+    ## [1] 0.369
 
+`Absorption` on `Taxon`
+=======================
 
-# `Absorption` on `Taxon`
-
-"Absorption" here means `Fractional absorption / (total intestinal surface)`,
-where `total intestinal surface = NSA * SEF`
-
+"Absorption" here means `Fractional absorption / (total intestinal surface)`, where `total intestinal surface = NSA * SEF`
 
 Necessary data:
 
-```{r absorp_data}
+``` r
 absorp_df <- get_df('absorp')
 absorp_tr <- get_tr('absorp')
 ```
 
 `phylolm` call and output:
 
-```{r absorp_taxon, eval = TRUE}
+``` r
 set.seed(1092141389)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
@@ -82,17 +70,16 @@ absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
 pval(absorp_fit, 'log_mass')
 ```
 
+    ## [1] 0
 
+`Morphometrics` on `Taxon`
+==========================
 
-
-# `Morphometrics` on `Taxon`
-
-```{r sp_analyses_cols}
+``` r
 spp_ys <- c("intestinal_length", "nsa", "vill_surface_area", "log_total_enterocytes")
 ```
 
-
-```{r sp_analyses, eval = TRUE}
+``` r
 set.seed(357885189)
 spp_fits <- lapply(
     spp_ys,
@@ -109,24 +96,24 @@ names(spp_fits) <- spp_ys
 cbind(sapply(spp_fits, pval, 'log_mass'))
 ```
 
+    ##                       [,1]
+    ## intestinal_length     0.04
+    ## nsa                   0.00
+    ## vill_surface_area     0.00
+    ## log_total_enterocytes 0.00
 
+`Morphometrics` on `Taxon`, separately by segment
+=================================================
 
-
-
-# `Morphometrics` on `Taxon`, separately by segment
-
-
-```{r pos_ys}
+``` r
 pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width', 
             'crypt_width', 'sef', 'enterocyte_diameter', 'log_enterocyte_density')
 seg_types <- c('prox', 'med', 'dist')
 ```
 
-
 `phylolm` call:
 
-
-```{r pos_analyses, eval = TRUE}
+``` r
 set.seed(632929430)
 pos_fits <- lapply(
     seg_types,
@@ -155,10 +142,39 @@ pos_fits <- lapply(
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
 cbind(sapply(pos_fits$dist, pval, parameter = 'log_mass'))
+```
+
+    ##                          [,1]
+    ## log_intestinal_diameter 0.000
+    ## villus_height           0.012
+    ## villus_width            0.193
+    ## crypt_width             0.500
+    ## sef                     0.283
+    ## enterocyte_diameter     0.782
+    ## log_enterocyte_density  0.462
+
+``` r
 cbind(sapply(pos_fits$med, pval, parameter = 'log_mass'))
+```
+
+    ##                          [,1]
+    ## log_intestinal_diameter 0.006
+    ## villus_height           0.013
+    ## villus_width            0.062
+    ## crypt_width             0.379
+    ## sef                     0.349
+    ## enterocyte_diameter     0.621
+    ## log_enterocyte_density  0.477
+
+``` r
 cbind(sapply(pos_fits$prox, pval, parameter = 'log_mass'))
 ```
 
-
-
-
+    ##                          [,1]
+    ## log_intestinal_diameter 0.000
+    ## villus_height           0.001
+    ## villus_width            0.009
+    ## crypt_width             0.807
+    ## sef                     0.024
+    ## enterocyte_diameter     0.823
+    ## log_enterocyte_density  0.203

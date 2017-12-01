@@ -357,7 +357,7 @@ Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
 
-# # Using AIC, this doesn't need Umat for either parameter
+# # Using AIC (w REML = FALSE), this doesn't need Umat for either parameter
 # Xmat <- Xmat[!is.na(clear_df$log_mass),]
 # MEmat <- MEmat[!is.na(clear_df$log_mass),]
 # Umat <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
@@ -398,7 +398,7 @@ Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
 MEmat <- MEmat[!is.na(rowSums(MEmat)),]
 
-# # Using AIC, this doesn't need Umat for either parameter
+# # Using AIC (w REML = FALSE), this doesn't need Umat for either parameter
 # Umat <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
 # rownames(Umat[[2]]) <- rownames(Xmat)
 

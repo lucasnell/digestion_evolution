@@ -1,11 +1,6 @@
 
 
 
-
-# Below, `# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
-# delimit areas that are edited from the original corphylo function
-
-
 # Assembling parameter names for SE output
 
 get_par_names <- function(p, grepl_str = NULL) {
@@ -26,6 +21,11 @@ get_par_names <- function(p, grepl_str = NULL) {
     return(par_names)
 }
 
+
+
+
+# Below, `# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+# delimit areas that are edited from the original corphylo function
 
 
 #' C++ version of ape::corphylo
