@@ -191,7 +191,7 @@ Loading the output and summarizing:
 spp_fits <- readr::read_rds('output/models_spp.rds')
 p <- 'taxonBat'
 for (nn in names(spp_fits)) {
-    cat(sprintf('Y = %s\n'), nn)
+    cat(sprintf('Y = %s\n', nn))
     cat(sprintf('  %s: %.4g (P = %.4g)\n', p,
                     coef(spp_fits[[nn]])[p], 
                     pval(spp_fits[[nn]], p)))
@@ -236,7 +236,7 @@ This determination was based on whether `log_mass` had a significant effect when
 included in the model, where p-values were based on parametric bootstrapping 
 (see `docs/include_mass.md`).
 
-```{r pos_log_mass_include}
+```{r pos_log_mass_include, echo = FALSE}
 include_mass <- rbind(
     # distal
     c('dist', 'log_intestinal_diameter', 0.000 < 0.05),
@@ -267,122 +267,59 @@ include_mass <- rbind(
     as_data_frame %>% 
     rename_(.dots = setNames(colnames(.), c('pos', 'y', 'include'))) %>% 
     mutate(include = as.logical(include))
+include_mass
 ```
 
 
 
-<!---
-
-***************************************************************
-***************************************************************
-
-LEFT OFF HERE
-
-***************************************************************
-***************************************************************
-
--->
 
 `phylolm` call:
 
 The actual analyses (takes ~21.7 min, which is why I saved the output):
 
 ```{r pos_analyses, eval = FALSE}
-
-for (pos in seg_types) assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
-
-mm <- map_df(
+set.seed(25413535)
+pos_fits <- lapply(
     seg_types,
     function(pos) {
-        map_df(
+        # Assigning to obj named <pos>_df so that the call identifies the position
+        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+        lapply(
             pos_ys,
             function(y) {
-                arg_list1 <- list(
-                    as.formula(paste(y, ' ~ taxon')),
+                f <- paste(y, ' ~ taxon')
+                # Whether to include log_mass covariate
+                imc <- {include_mass %>% filter(pos == pos, y == y)}$include
+                if (imc[1]) f <- paste(f, '+ log_mass')
+                arg_list <- list(
+                    as.formula(f),
                     data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = 'lambda',
-                    boot = 0)
-                arg_list2 <- list(
-                    as.formula(paste(y, ' ~ taxon + log_mass')),
-                    data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = 'lambda',
-                    boot = 0)
-                # These models don't find the peak likelihood unless specifying a
+                    phy = as.name("tr"), model = 'lambda')
+                # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
-                if ((y == "log_enterocyte_density" & pos == "med") |
-                    (y == "crypt_width" & pos == "prox")) {
-                    arg_list1 <- c(arg_list1, starting.value = 0.1)
-                    arg_list2 <- c(arg_list2, starting.value = 0.1)
+                LL_nostart <- suppressWarnings(do.call("phylolm", arg_list))$logLik
+                LL_wstart <- suppressWarnings(do.call(
+                    "phylolm", c(arg_list, starting.value = 0.1)))$logLik
+                if (LL_wstart > LL_nostart) {
+                    arg_list <- c(arg_list, starting.value = 0.1)
                 }
-                # Now call phylolm
-                suppressWarnings(
-                    z1 <- do.call("phylolm", arg_list1))
-                suppressWarnings(
-                    z2 <- do.call("phylolm", arg_list2))
-                aiccs <- map_dbl(list(z1, z2), aicc)
-                data_frame(y, pos, daic = z1$aic - z2$aic, daicc = aicc(z1) - aicc(z2))
+                arg_list <- c(arg_list, boot = 2000)
+                # Now create the final phylolm object
+                suppressWarnings(do.call("phylolm", arg_list))
             })
-})
-
-
-
-
-# Negative means log_mass raises AIC --> don't use log_mass
-mm %>% 
-    arrange(y, pos) %>% 
-    filter(y %in% c('sef', 'villus_width')) %>%
-    as.data.frame
-
-m = phylolm(villus_width ~ taxon + log_mass, med_df, phy = tr, 
-            model = 'lambda', boot = 2000)
-summary(m)
-pval(m, 'log_mass')
-
-# set.seed(25413535)
-# pos_fits <- lapply(
-#     seg_types,
-#     function(pos) {
-#         # Assigning to obj named <pos>_df so that the call identifies the position
-#         assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
-#         lapply(
-#             pos_ys,
-#             function(y) {
-#                 f <- paste(y, ' ~ taxon',
-#                            ifelse(grepl('intestinal_diameter|villus_height', y),
-#                                   '+ log_mass', ''))
-#                 arg_list <- list(
-#                     as.formula(f),
-#                     data = as.name(paste0(pos, "_df")),
-#                     phy = as.name("tr"), model = 'lambda',
-#                     boot = 2000)
-#                 # These models don't find the peak likelihood unless specifying a
-#                 # starting value of 0.1.
-#                 if ((y == "log_enterocyte_density" & pos == "med") |
-#                     (y == "crypt_width" & pos == "prox")) {
-#                     arg_list <- c(arg_list, starting.value = 0.1)
-#                 }
-#                 # Now call phylolm
-#                 suppressWarnings(do.call("phylolm", arg_list))
-#             })
-#     })
-# names(pos_fits) <- seg_types
-# for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
-# readr::write_rds(pos_fits, 'output/models_pos.rds')
+    })
+names(pos_fits) <- seg_types
+for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
+readr::write_rds(pos_fits, 'output/models_pos.rds')
 ```
 
 Loading the output and summarizing:
 
 ```{r pos_analyses_load, purl = FALSE}
 pos_fits <- readr::read_rds('output/models_pos.rds')
-sapply(pos_fits$dist, ci)
-sapply(pos_fits$med, ci)
-sapply(pos_fits$prox, ci)
-sapply(pos_fits$dist[c('log_intestinal_diameter', 'villus_height')], 
-       ci, parameter = 'log_mass')
-sapply(pos_fits$med[c('log_intestinal_diameter', 'villus_height')], 
-       ci, parameter = 'log_mass')
-sapply(pos_fits$prox[c('log_intestinal_diameter', 'villus_height')], 
-       ci, parameter = 'log_mass')
+cbind(sapply(pos_fits$dist, pval))
+cbind(sapply(pos_fits$med, pval))
+cbind(sapply(pos_fits$prox, pval))
 ```
 
 
@@ -407,47 +344,26 @@ From the original manuscript:
 > variables [X and Y] were subject to error
 
 Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` 
-to estimate Pearson correlation coefficients.
-Confidence intervals are calculated using Fisher information.
+that can conduct parametric bootstrapping.
+P-values are calculated using these bootstrapping replicates.
 
 ```{r clear_sef}
-
 clear_df <- get_df('clear')
 clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
 clear_tr <- get_tr('clear')
 
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
-
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
-
-# # Using AIC (w REML = FALSE), this doesn't need Umat for either parameter
-# Xmat <- Xmat[!is.na(clear_df$log_mass),]
-# MEmat <- MEmat[!is.na(clear_df$log_mass),]
-# Umat <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
-# rownames(Umat[[1]]) <- rownames(Xmat)
-# clear_tr_ <- ape::drop.tip(
-#     clear_tr,
-#     tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
+# Using p-values, this doesn't need Umat for either parameter
 
 # corphylo_cpp run with bootstrapping (takes ~1 min)
 set.seed(1844365955)
 clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, boot = 2000, n_cores = 4)
 clear_sef
-# hist(clear_sef$bootstrap)
 
-
-# p-value
-2 * min(mean(clear_sef$bootstrap > 0), mean(clear_sef$bootstrap < 0))
-# # Correcting for bias (not really necessary here)
-bias <- clear_sef$cor.matrix[1,2] - mean(clear_sef$bootstrap)
-2 * min(mean(clear_sef$bootstrap + bias > 0), mean(clear_sef$bootstrap + bias < 0))
-
-z <- clear_sef$bootstrap[,1] / sqrt(clear_sef$bootstrap[,2])
-2 * min(mean(z > 0), mean(z < 0))
-
-
-hist(clear_sef$bootstrap[,1] / sqrt(clear_sef$bootstrap[,2])); abline(v = clear_sef$cor.matrix[1,2], lty = 2)
+# P-value for correlation != 0
+pval(clear_sef)[1]
 ```
 
 
@@ -461,11 +377,7 @@ Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
 MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
 MEmat <- MEmat[!is.na(rowSums(MEmat)),]
-
-# # Using AIC (w REML = FALSE), this doesn't need Umat for either parameter
-# Umat <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
-# rownames(Umat[[2]]) <- rownames(Xmat)
-
+# Using p-values, this doesn't need Umat for either parameter
 
 clear_ed_tr <- ape::drop.tip(
     clear_tr, 
@@ -475,13 +387,9 @@ clear_ed_tr <- ape::drop.tip(
 # Fit and bootstrap r (takes ~1 min)
 set.seed(1442148819)
 clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, boot = 2000, n_cores = 4)
-# p-value
-2 * min(mean(clear_ed$bootstrap > 0), mean(clear_ed$bootstrap < 0))
-# # Correcting for bias (not really necessary here)
-# bias <- clear_ed$cor.matrix[1,2] - mean(clear_ed$bootstrap)
-# 2 * min(mean(clear_ed$bootstrap + bias > 0), mean(clear_ed$bootstrap + bias < 0))
 
-hist(clear_ed$bootstrap); abline(v = clear_ed$cor.matrix[1,2], lty = 2)
+# P-value for correlation != 0
+pval(clear_ed)[1]
 ```
 
 
@@ -489,55 +397,20 @@ hist(clear_ed$bootstrap); abline(v = clear_ed$cor.matrix[1,2], lty = 2)
 
 
 ```{r absorp_te}
-
 absorp_df <- get_df('absorp')
 absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
 absorp_tr <- get_tr('absorp')
 
-
 Xmat <- cp_mat(absorp_df, c('absorp', 'log_total_enterocytes'))
 MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
-# # Using Umat causes numerical issues (optim never converges)
-# Umat <- list(NULL, cp_mat(absorp_df, 'log_mass'))
+# Using p-values, this doesn't need Umat for either parameter
 
 # Fit and bootstrap
 set.seed(2016097648)
 absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, boot = 2000, n_cores = 4)
 
-hist(absorp_te$bootstrap); abline(v = absorp_te$cor.matrix[1,2], lty = 2)
-
-
-# p-value
-2 * min(mean(absorp_te$bootstrap > 0), mean(absorp_te$bootstrap < 0))
-# # Correcting for bias (not really necessary here)
-# bias <- absorp_te$cor.matrix[1,2] - mean(absorp_te$bootstrap)
-# 2 * min(mean(absorp_te$bootstrap + bias > 0), mean(absorp_te$bootstrap + bias < 0))
-
-
-
-# Too few observations to use Umat when separating by taxon
-
-Xmat <- cp_mat(absorp_df %>% filter(taxon == 'Bat'), 
-               c('absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df %>% filter(taxon == 'Bat'), 
-                c('absorp', 'log_total_enterocytes'))
-nt <- filter_tr(absorp_tr, absorp_df$species[absorp_df$taxon == 'Bat'])
-set.seed(1262771039)
-absorp_te_bat <- corphylo_cpp(Xmat, phy = nt, SeM = MEmat, boot = 2000, n_cores = 4)
-
-Xmat <- cp_mat(absorp_df %>% filter(taxon == 'Rodent'), 
-               c('absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df %>% filter(taxon == 'Rodent'), 
-                c('absorp', 'log_total_enterocytes'))
-Umat <- list(cp_mat(absorp_df %>% filter(taxon == 'Rodent'), 'log_mass'), NULL)
-nt <- filter_tr(absorp_tr, absorp_df$species[absorp_df$taxon == 'Rodent'])
-set.seed(217761492)
-absorp_te_rodent <- corphylo_cpp(Xmat, phy = nt, SeM = MEmat, boot = 2000, n_cores = 4)
-
-# p-value
-boot_diffs <- absorp_te_bat$bootstrap[,1] - absorp_te_rodent$bootstrap[,1]
-2 * min(mean(boot_diffs > 0), mean(boot_diffs < 0))
-hist(boot_diffs)
+# P-value for correlation != 0
+pval(absorp_te)[1]
 ```
 
 

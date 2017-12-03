@@ -2,38 +2,65 @@
 # Functions for summarizing phylolm models
 # 
 
-pval <- function(model, parameter = 'taxonBat') {
-    if (is(model, 'phylolm')) {
-        2 * min(c(mean(model$bootstrap[,parameter] > 0), 
-                  mean(model$bootstrap[,parameter] < 0)))
-    } else if (is(model, 'corphylo')) {
-        2 * min(c(mean(model$bootstrap[,parameter] > 0), 
-                  mean(model$bootstrap[,parameter] < 0)))
+pval <- function(.model, .parameters = 'taxonBat') {
+    p_fun <- function(x) 2 * min(c(mean(x > 0), mean(x < 0)))
+    if (is(.model, 'phylolm')) {
+        out <- lapply(.parameters, function(p) p_fun(.model$bootstrap[, p])) %>% 
+            c(recursive = TRUE)
+    } else if (is(.model, 'corphylo')) {
+        out <- as.numeric(apply(.model$bootstrap, 2, p_fun))
     } else {
         stop("only for phylolm or corphylo objects")
     }
+    return(out)
 }
 
-ci <- function(model, parameter = 'taxonBat') model$bootconfint95[,parameter]
+ci <- function(.model, .parameters = 'taxonBat') {
+    if (is(.model, 'phylolm')) {
+        out <- matrix(as.numeric(.model$bootconfint95[,.parameters]), 
+                      ncol = 2, nrow = length(.parameters), byrow = TRUE)
+        colnames(out) <- c('lower', 'upper')
+    } else if (is(.model, 'corphylo')) {
+        out <- t(apply(.model$bootstrap, 2, quantile, probs = c(0.025, 0.975)))
+        rownames(out) <- NULL
+        colnames(out) <- c('lower', 'upper')
+    } else {
+        stop("only for phylolm or corphylo objects")
+    }
+    return(out)
+}
 
-ci_df <- function(.model, .pos = NA) {
+
+# .model <- clear_sef
+# .model <- pos_fits$prox$villus_height
+
+# Row(s) of a data frame for a single model
+summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
     
-    .parameters <- names(coef(.model))[names(coef(.model)) != '(Intercept)']
     
-    .df <- as_data_frame(t(ci(.model, .parameters)))
-    colnames(.df) <- c('lower', 'upper')
-    .df <- .df %>% mutate(X = .parameters,
-                          Y = paste(.model$formula)[2], 
-                          pos = .pos,
-                          value = coef(.model)[.parameters]) %>% 
-        select(Y, X, pos, value, lower, upper)
+    if (is(.model, 'phylolm')) {
+        .parameters <- names(coef(.model))[names(coef(.model)) != '(Intercept)']
+        estimates <- as.numeric(c(coef(.model)[.parameters], .model$optpar))
+        .parameters <- c(.parameters, 'lambda')
+        Y <- paste(.model$formula)[2]
+    } else if (is(.model, 'corphylo')) {
+        if (length(.corr_pars) != 2) stop("Correlation parameters must have length == 2")
+        Y <- c(.corr_pars[1], .corr_pars)
+        .parameters <- c(.corr_pars[2], rep(NA, 2))
+        estimates <- c(.model$cor.matrix[lower.tri(.model$cor.matrix)], .model$d)
+    } else {
+        stop("only for phylolm or corphylo objects")
+    }
+    
+    
+    .df <- as_data_frame(ci(.model, .parameters))
+    .df <- .df %>% 
+        mutate(X = .parameters,
+               Y = Y, 
+               pos = .pos,
+               value = estimates,
+               P = pval(.model, .parameters)) %>% 
+        select(Y, X, pos, value, lower, upper, P)
     
     return(.df)
-}
-
-# Return AICc for a phylolm model
-aicc <- function(m) {
-    n = m$n
-    k = m$p
-    return(m$aic + { 2*k*(k+1) } / {n - k - 1})
 }

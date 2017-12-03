@@ -441,6 +441,20 @@ prep_info <- function(cp_obj) {
 
 
 
+
+# Default boot_out argument for boot_corphylo; returns correlation and d-values for OU
+# process
+
+boot_out_default <- function(cp_obj) {
+    x <- cp_obj$cor.matrix
+    out <- rbind(c(x[lower.tri(x, FALSE)], cp_obj$d))
+    colnames(out) <- c(get_par_names(nrow(x), 'r'), get_par_names(nrow(x), 'd'))
+    return(out)
+}
+
+
+
+
 # Internal function to do parametric bootstrapping from a corphylo object
 
 boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
@@ -450,12 +464,7 @@ boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
     seed <- sample.int(2^31-1, 1)
     
     if (is.null(boot_out)) {
-        boot_out <- function(cp_obj) {
-            x <- cp_obj$cor.matrix
-            out <- rbind(x[lower.tri(x, FALSE)])
-            colnames(out) <- get_par_names(nrow(x), 'r')
-            return(out)
-        }
+        boot_out <- boot_out_default
     }
     one_boot <- function(i, cp_obj, n, p, iD, U_add, SeM, U, phy) {
         z <- one_boot_fit(cp_obj, n, p, iD, U_add, SeM, U, phy)
@@ -521,11 +530,11 @@ print.corphylo <- function(x, digits = max(3, getOption("digits") - 3), ...) {
     if (nrow(x$bootstrap) > 0) {
         cat("\nBootstrapped 95% CI:\n")
         for (nn in colnames(x$bootstrap)) {
-            cat(sprintf("  %-4s %7.3g [%7.3g %7.3g]\n", 
+            cat(sprintf("  %-4s %9.3g [%9.3g %9.3g]\n", 
                         nn, 
-                        mean(x$bootstrap),
-                        as.numeric(quantile(x$bootstrap, 0.025)),
-                        as.numeric(quantile(x$bootstrap, 0.975))))
+                        mean(x$bootstrap[,nn]),
+                        as.numeric(quantile(x$bootstrap[,nn], 0.025)),
+                        as.numeric(quantile(x$bootstrap[,nn], 0.975))))
         }
     }
     cat("\n")
