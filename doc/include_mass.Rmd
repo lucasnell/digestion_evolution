@@ -141,23 +141,24 @@ pos_fits <- lapply(
                 arg_list <- list(
                     as.formula(f),
                     data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = 'lambda',
-                    boot = 2000)
-                # These models don't find the peak likelihood unless specifying a
+                    phy = as.name("tr"), model = 'lambda')
+                # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
-                if ((y == "log_enterocyte_density" & pos == "med") |
-                    (y == "crypt_width" & pos == "prox")) {
-                    arg_list <- c(arg_list, starting.value = 0.1)
-                }
+                LL_nostart <- suppressWarnings(do.call("phylolm", arg_list))$logLik
+                LL_wstart <- suppressWarnings(do.call(
+                    "phylolm", c(arg_list, starting.value = 0.1)))$logLik
+                if (LL_wstart > LL_nostart) arg_list <- c(arg_list, starting.value = 0.1)
+                # Adding number of bootstrap replicates
+                arg_list <- c(arg_list, boot = 2000)
                 # Now call phylolm
                 suppressWarnings(do.call("phylolm", arg_list))
             })
     })
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
-cbind(sapply(pos_fits$dist, pval, parameter = 'log_mass'))
-cbind(sapply(pos_fits$med, pval, parameter = 'log_mass'))
-cbind(sapply(pos_fits$prox, pval, parameter = 'log_mass'))
+cbind(sapply(pos_fits$dist, pval, .parameters = 'log_mass'))
+cbind(sapply(pos_fits$med, pval, .parameters = 'log_mass'))
+cbind(sapply(pos_fits$prox, pval, .parameters = 'log_mass'))
 ```
 
 
