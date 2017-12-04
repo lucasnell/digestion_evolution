@@ -1,7 +1,7 @@
 Clean CSVs into simpler data frames
 ================
 Lucas Nell
-28 Nov 2017
+04 Dec 2017
 
 -   [Summary of output](#summary-of-output)
 -   [Getting started](#getting-started)
@@ -116,11 +116,13 @@ Morphometric data aggregated by species
 
 For the following measures, we need a single morphometric value per species:
 
--   Intestinal length / body mass^0.4
--   NSA / body mass^0.75
--   Villus surface area / body mass^0.75
--   Total number of enterocytes (log-transformed; log body mass as covariate)
+-   Intestinal length
+-   NSA
+-   Villus surface area
+-   Total number of enterocytes
 -   Calculated as such: `log(NSA * enterocyte_density)`
+
+> All are log-transformed to improve linearity
 
 We need the following columns from `morph_df` to compute these values:
 
@@ -146,9 +148,13 @@ spp_df <- morph_df %>%
     ungroup %>% 
     # Doing the calculations / transformations now, before taking any means
     mutate(log_total_enterocytes = log(enterocyte_density * nsa),
-           log_mass = log(mass)) %>% 
+           log_mass = log(mass),
+           log_intestinal_length = log(intestinal_length), 
+           log_vill_surface_area = log(vill_surface_area), 
+           log_nsa = log(nsa),
+           log_sef = log(sef)) %>% 
     select(taxon, diet, species, id,
-           sef, intestinal_length, nsa, vill_surface_area, 
+           log_sef, log_intestinal_length, log_nsa, log_vill_surface_area, 
            log_total_enterocytes, log_mass) %>% 
     # Taking mean by individual (i.e., across segments)
     group_by(taxon, diet, species, id) %>% 
@@ -182,11 +188,11 @@ Morphometric data by species AND position
 
 For the following measures, we need 3 morphometric values per species, one per intestinal segment:
 
--   Intestinal diameter (log-transformed, body mass as covariate)
--   Villus height (body mass as covariate)
+-   Intestinal diameter (log-transformed)
+-   Villus height (log-transformed)
 -   Villus width
 -   Crypt width
--   Surface enlargement factor (SEF)
+-   Surface enlargement factor (SEF) (log-transformed)
 -   Enterocyte diameter
 -   Enterocytes per cm^2 NSA (log-transformed)
 
@@ -225,8 +231,8 @@ pos_df <- morph_df %>%
     # Now only outputting columns that are necessary
     select_(
         .dots = as.list(c('taxon', 'diet', 'species', 'pos',
-          paste0(rep(c('log_intestinal_diameter', 'villus_height', 'villus_width',
-                       'crypt_width', 'sef', 'enterocyte_diameter',
+          paste0(rep(c('log_intestinal_diameter', 'log_villus_height', 'villus_width',
+                       'crypt_width', 'log_sef', 'enterocyte_diameter',
                        'log_enterocyte_density', 'log_mass'), each = 2),
                  c('_mean', '_se'))))
     ) %>%
@@ -258,7 +264,7 @@ clear_df <- read_csv('output/clean_clearance.csv', col_types = 'ccccdddd') %>%
         log_sef = (log(prox) + log(med) + log(dist)) / 3,
         # Taking log of clearance before any means are calculated
         # Some clearances were negative, so there would be NaNs produced
-        # The below two lines are to avoid the warning message
+        # The next two lines are to avoid the warning message
         log_clear = ifelse(clear < 0, NA, clear),
         log_clear = log(log_clear)
     ) %>% 
@@ -347,6 +353,13 @@ So before taking means and variances, I have inversed `gavage` and `(nsa * sef)`
 
 The term `1 / (nsa * sef)` is called `ns` below.
 
+Lastly, I want to log-transform `absorp`. I do that as follows:
+
+    If X is lognormally distributed with mean M and variance V, X = exp(Y),
+    then the mean m and variance v of Y are
+    v = log(V/M^2 +1)
+    m = log(M)-v/2
+
 ``` r
 absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') %>%
     mutate(
@@ -391,16 +404,21 @@ absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') 
         ns_v = var(ns, na.rm = TRUE),
         ns = mean(ns, na.rm = TRUE),
         
-        # I added the sqrt and sqrt(n) bc I want the output to be the standard error
-        # instead of variance
-        absorp_se = sqrt(ns^2 * gi_v + gi^2 * ns_v + ns_v * gi_v) / sqrt(n),
+        absorp_v = ns^2 * gi_v + gi^2 * ns_v + ns_v * gi_v,
         absorp_mean = gavage * inv_injection * ns,
+        
+        # Now I log-transform absorp, first calculating the variance bc it's necessary 
+        # for both mean and se
+        log_absorp_v = log(absorp_v / absorp_mean^2 + 1),
+        log_absorp_se = sqrt(log_absorp_v) / sqrt(n),
+        log_absorp_mean = log(absorp_mean) - log_absorp_v / 2,
         
         # I don't need SE for log_mass because I'm assuming it's without error
         log_mass = mean(log_mass, na.rm = TRUE)
     ) %>% 
     ungroup %>% 
-    select(taxon, species, absorp_mean, absorp_se, log_mass)
+    select(taxon, species, log_absorp_mean, log_absorp_se, log_mass)
+
 
 rm(sep_absorps)
 ```
@@ -461,7 +479,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-11-28
+    ##  date     2017-12-04
 
     ## Packages -----------------------------------------------------------------
 
