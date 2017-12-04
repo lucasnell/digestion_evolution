@@ -30,6 +30,7 @@ suppressPackageStartupMessages({
     library(phylolm)
     library(ape)
 })
+devtools::load_all('corphyloCpp')
 ```
 
 
@@ -160,5 +161,108 @@ cbind(sapply(pos_fits$prox, pval, parameter = 'log_mass'))
 ```
 
 
+
+
+
+
+
+
+# `Clearance` on `SEF`
+
+> P-values in all following chunks are for whether the coefficient for the `U` matrix is
+> not zero. There are two p-values because I'm including the `U` matrix separately
+> for the first and second `X` matrix parameters.
+
+
+```{r clear_sef}
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
+clear_tr <- get_tr('clear')
+
+Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
+MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
+
+# For this comparison, I have to remove one row that doesn't have log_mass
+Xmat <- Xmat[!is.na(clear_df$log_mass),]
+MEmat <- MEmat[!is.na(clear_df$log_mass),]
+Umat <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
+rownames(Umat[[1]]) <- rownames(Xmat)
+Umat2 <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
+rownames(Umat2[[2]]) <- rownames(Xmat)
+
+clear_tr <- ape::drop.tip(
+    clear_tr,
+    tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
+
+# Function to retrieve the U coefficient from a corphylo object
+get_U <- function(cp_obj) {
+    rn <- rownames(cp_obj$B)[grepl('\\.1', rownames(cp_obj$B))]
+    matrix(as.numeric(cp_obj$B[rn,]), nrow = 1)
+}
+
+# corphylo_cpp run with bootstrapping (takes ~1 min)
+set.seed(1844365955)
+clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat, 
+                          boot = 2000, n_cores = 4, boot_out = get_U)
+clear_sef2 <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat2, 
+                          boot = 2000, n_cores = 4, boot_out = get_U)
+
+# P-value for coefficient != 0
+pval(clear_sef); pval(clear_sef2)
+```
+
+
+# `Clearance` on `log_enterocyte_density`
+
+
+```{r clear_ed}
+
+Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
+Xmat <- Xmat[!is.na(rowSums(Xmat)),]
+
+MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
+MEmat <- MEmat[!is.na(rowSums(MEmat)),]
+
+# Fit and bootstrap r (takes ~1 min)
+set.seed(1442148819)
+clear_ed <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat, 
+                          boot = 2000, n_cores = 4, boot_out = get_U)
+clear_ed2 <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat2, 
+                          boot = 2000, n_cores = 4, boot_out = get_U)
+
+# P-value for coefficient != 0
+pval(clear_ed); pval(clear_ed2)
+```
+
+
+# `Absorption` on `log_total_enterocytes`
+
+
+```{r absorp_te}
+
+absorp_df <- get_df('absorp')
+absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
+absorp_tr <- get_tr('absorp')
+
+
+Xmat <- cp_mat(absorp_df, c('absorp', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
+
+Umat <- list( cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]), NULL)
+rownames(Umat[[1]]) <- rownames(Xmat)
+Umat2 <- list(NULL, cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]))
+rownames(Umat2[[2]]) <- rownames(Xmat)
+
+
+# Fit and bootstrap
+set.seed(2016097648)
+absorp_te <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat, 
+                          boot = 2000, n_cores = 4, boot_out = get_U)
+absorp_te2 <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat2, 
+                          boot = 2000, n_cores = 4, boot_out = get_U)
+
+# P-value for coefficient != 0
+pval(absorp_te); pval(absorp_te2)
+```
 
 
