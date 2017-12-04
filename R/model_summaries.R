@@ -30,10 +30,6 @@ ci <- function(.model, .parameters = 'taxonBat') {
     return(out)
 }
 
-
-# .model <- clear_sef
-# .model <- pos_fits$prox$villus_height
-
 # Row(s) of a data frame for a single model
 summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
     
@@ -46,7 +42,7 @@ summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
     } else if (is(.model, 'corphylo')) {
         if (length(.corr_pars) != 2) stop("Correlation parameters must have length == 2")
         Y <- c(.corr_pars[1], .corr_pars)
-        .parameters <- c(.corr_pars[2], rep(NA, 2))
+        .parameters <- c(.corr_pars[2], rep('d', 2))
         estimates <- c(.model$cor.matrix[lower.tri(.model$cor.matrix)], .model$d)
     } else {
         stop("only for phylolm or corphylo objects")

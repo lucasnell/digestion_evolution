@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-25 Oct 2017
+03 Dec 2017
 
 -   [`source` the `R` directory](#source-the-r-directory)
 -   [`SEF` on `Diet`](#sef-on-diet)
@@ -9,6 +9,8 @@ Lucas Nell
 -   [`Morphometrics` on `Taxon`](#morphometrics-on-taxon)
 -   [`Morphometrics` on `Taxon`, separately by segment](#morphometrics-on-taxon-separately-by-segment)
 -   [`Clearance` on `SEF`](#clearance-on-sef)
+-   [`Clearance` on `log_enterocyte_density`](#clearance-on-log_enterocyte_density)
+-   [`Absorption` on `log_total_enterocytes`](#absorption-on-log_total_enterocytes)
 -   [Assembling all output into one object](#assembling-all-output-into-one-object)
 -   [Session info](#session-info)
 
@@ -19,10 +21,14 @@ suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
     library(tidyr)
+    library(purrr)
     library(phylolm)
     library(ape)
 })
+devtools::load_all('corphyloCpp')
 ```
+
+    ## Loading corphyloCpp
 
 `source` the `R` directory
 ==========================
@@ -55,7 +61,7 @@ tr <- get_tr('spp')
 
 ``` r
 set.seed(581120)
-diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr, 
+diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 ```
 
@@ -67,56 +73,13 @@ readr::write_rds(diet_fit, 'output/models_diet.rds')
 
 Summary:
 
-``` r
-summary(diet_fit)
-```
-
-    ## 
-    ## Call:
-    ## phylolm(formula = sef ~ diet, data = spp_df, phy = tr, model = "lambda", 
-    ##     boot = 2000)
-    ## 
-    ##    AIC logLik 
-    ##  95.24 -42.62 
-    ## 
-    ## Raw residuals:
-    ##     Min      1Q  Median      3Q     Max 
-    ## -4.8080 -3.1313 -0.7315  2.6783  6.5208 
-    ## 
-    ## Mean tip height: 96.46239
-    ## Parameter estimate(s) using ML:
-    ## lambda : 0.7184342
-    ## sigma2: 0.1088401 
-    ## 
-    ## Coefficients:
-    ##                Estimate   StdErr  t.value lowerbootCI upperbootCI
-    ## (Intercept)    13.60515  2.06616  6.58476     9.90143     17.4994
-    ## dietOmnivorous -2.54462  1.71353 -1.48502    -5.74463      0.6651
-    ## dietProtein    -1.34085  1.58377 -0.84662    -4.51318      1.5151
-    ##                  p.value    
-    ## (Intercept)    8.661e-06 ***
-    ## dietOmnivorous    0.1582    
-    ## dietProtein       0.4105    
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Note: p-values are conditional on lambda=0.7184342.
-    ## 
-    ## sigma2: 0.1088401
-    ##       bootstrap mean: 0.07769253 (on raw scale)
-    ##                       0.06538831 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (0.02197186,0.2035464)
-    ## 
-    ## lambda: 0.7184342
-    ##       bootstrap mean: 0.4118461 (on raw scale)
-    ##       bootstrap 95% CI: (1e-07,1)
-    ## 
-    ## Parametric bootstrap results based on 2000 fitted replicates
+    ## dietOmnivorous: -2.545 (P = 0.123)
+    ## dietProtein: -1.341 (P = 0.379)
 
 `Absorption` on `Taxon`
 =======================
 
-"Absorption" here means `Fractional absorption / (total intestinal surface / mass^0.75)`, where `total intestinal surface = NSA * SEF`
+"Absorption" here means `Fractional absorption / (total intestinal surface)`, where `total intestinal surface = NSA * SEF`
 
 Necessary data:
 
@@ -130,7 +93,7 @@ absorp_tr <- get_tr('absorp')
 ``` r
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
+    phylolm(absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 ```
@@ -143,80 +106,39 @@ readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 
 Summary:
 
-``` r
-summary(absorp_fit)
-```
-
-    ## 
-    ## Call:
-    ## phylolm(formula = absorp ~ taxon, data = absorp_df, phy = absorp_tr, 
-    ##     model = "lambda", boot = 2000)
-    ## 
-    ##    AIC logLik 
-    ## -42.73  25.37 
-    ## 
-    ## Raw residuals:
-    ##        Min         1Q     Median         3Q        Max 
-    ## -0.0186031 -0.0030835 -0.0006498  0.0030048  0.0191412 
-    ## 
-    ## Mean tip height: 96.46239
-    ## Parameter estimate(s) using ML:
-    ## lambda : 1e-07
-    ## sigma2: 1.06921e-06 
-    ## 
-    ## Coefficients:
-    ##              Estimate    StdErr   t.value lowerbootCI upperbootCI  p.value
-    ## (Intercept) 0.0180469 0.0058634 3.0778850   0.0081828      0.0281 0.021722
-    ## taxonBat    0.0466086 0.0082921 5.6208371   0.0328951      0.0610 0.001355
-    ##               
-    ## (Intercept) * 
-    ## taxonBat    **
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Note: p-values are conditional on lambda=1e-07.
-    ## 
-    ## sigma2: 1.06921e-06
-    ##       bootstrap mean: 8.161444e-07 (on raw scale)
-    ##                       6.878408e-07 (on log scale, then back transformed)
-    ##       bootstrap 95% CI: (1.722724e-07,1.962124e-06)
-    ## 
-    ## lambda: 1e-07
-    ##       bootstrap mean: 1e-07 (on raw scale)
-    ##       bootstrap 95% CI: (1e-07,1e-07)
-    ## 
-    ## Parametric bootstrap results based on 2000 fitted replicates
+    ## taxonBat: 0.004354 (P = 0)
 
 `Morphometrics` on `Taxon`
 ==========================
 
 List of `Morphometrics`:
 
--   Intestinal length / body mass^0.4
--   NSA / body mass^0.75
--   Villus surface area / body mass^0.75
--   Total number of enterocytes (log-transformed; log body mass as covariate)
+-   Intestinal length
+-   NSA
+-   Villus surface area
+-   Total number of enterocytes (log-transformed)
     -   Calculated as such: `log(NSA * enterocyte_density)`
+
+> log(body mass) as covariate for all
 
 These are the column names for the above parameters:
 
 ``` r
-spp_ys <- c("int_length_mass", "nsa_mass", "vill_area_mass", "log_total_enterocytes")
+spp_ys <- c("intestinal_length", "nsa", "vill_surface_area", "log_total_enterocytes")
 ```
 
 Necessary data: `spp_df` and `tr` are already created from fitting `sef ~ diet`.
 
 `phylolm` call:
 
-> The actual analyses (takes ~6.5 min, which is why I saved the output):
+> The actual analyses (takes ~7.5 min, which is why I saved the output):
 
 ``` r
 set.seed(88754829)
 spp_fits <- lapply(
     spp_ys,
     function(y) {
-        f <- paste(y, ' ~ taxon',
-                   ifelse(grepl('total_enterocytes', y), '+ log_mass', ''))
+        f <- paste(y, '~ taxon + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -231,19 +153,23 @@ Loading the output and summarizing:
 
 ``` r
 spp_fits <- readr::read_rds('output/models_spp.rds')
-sapply(spp_fits, ci)
+p <- 'taxonBat'
+for (nn in names(spp_fits)) {
+    cat(sprintf('Y = %s\n', nn))
+    cat(sprintf('  %s: %.4g (P = %.4g)\n', p,
+                    coef(spp_fits[[nn]])[p], 
+                    pval(spp_fits[[nn]], p)))
+}
 ```
 
-    ##       int_length_mass   nsa_mass vill_area_mass log_total_enterocytes
-    ## 2.5%       -4.9166135 -0.7478906      -2.867647            -0.2823279
-    ## 97.5%      -0.6899693 -0.1411825       4.987878             0.8362962
-
-``` r
-ci(spp_fits$log_total_enterocytes, parameter = 'log_mass')
-```
-
-    ##      2.5%     97.5% 
-    ## 0.3237234 1.0874341
+    ## Y = intestinal_length
+    ##   taxonBat: -11.67 (P = 0.024)
+    ## Y = nsa
+    ##   taxonBat: -7.001 (P = 0.007)
+    ## Y = vill_surface_area
+    ##   taxonBat: 33.71 (P = 0.339)
+    ## Y = log_total_enterocytes
+    ##   taxonBat: 0.2853 (P = 0.318)
 
 `Morphometrics` on `Taxon`, separately by segment
 =================================================
@@ -268,6 +194,23 @@ pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width',
 seg_types <- c('prox', 'med', 'dist')
 ```
 
+Below is a data frame including whether or not to include `log_mass` as a covariate. This determination was based on whether `log_mass` had a significant effect when it was included in the model, where p-values were based on parametric bootstrapping (see `docs/include_mass.md`).
+
+    ## # A tibble: 21 x 3
+    ##      pos                       y include
+    ##    <chr>                   <chr>   <lgl>
+    ##  1  dist log_intestinal_diameter    TRUE
+    ##  2  dist           villus_height    TRUE
+    ##  3  dist            villus_width   FALSE
+    ##  4  dist             crypt_width   FALSE
+    ##  5  dist                     sef   FALSE
+    ##  6  dist     enterocyte_diameter   FALSE
+    ##  7  dist  log_enterocyte_density   FALSE
+    ##  8   med log_intestinal_diameter    TRUE
+    ##  9   med           villus_height    TRUE
+    ## 10   med            villus_width   FALSE
+    ## # ... with 11 more rows
+
 `phylolm` call:
 
 The actual analyses (takes ~21.7 min, which is why I saved the output):
@@ -282,21 +225,24 @@ pos_fits <- lapply(
         lapply(
             pos_ys,
             function(y) {
-                f <- paste(y, ' ~ taxon',
-                           ifelse(grepl('intestinal_diameter|villus_height', y),
-                                  '+ log_mass', ''))
+                f <- paste(y, ' ~ taxon')
+                # Whether to include log_mass covariate
+                imc <- {include_mass %>% filter(pos == pos, y == y)}$include
+                if (imc[1]) f <- paste(f, '+ log_mass')
                 arg_list <- list(
                     as.formula(f),
                     data = as.name(paste0(pos, "_df")),
-                    phy = as.name("tr"), model = 'lambda',
-                    boot = 2000)
-                # These models don't find the peak likelihood unless specifying a
+                    phy = as.name("tr"), model = 'lambda')
+                # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
-                if ((y == "log_enterocyte_density" & pos == "med") |
-                    (y == "crypt_width" & pos == "prox")) {
+                LL_nostart <- suppressWarnings(do.call("phylolm", arg_list))$logLik
+                LL_wstart <- suppressWarnings(do.call(
+                    "phylolm", c(arg_list, starting.value = 0.1)))$logLik
+                if (LL_wstart > LL_nostart) {
                     arg_list <- c(arg_list, starting.value = 0.1)
                 }
-                # Now call phylolm
+                arg_list <- c(arg_list, boot = 2000)
+                # Now create the final phylolm object
                 suppressWarnings(do.call("phylolm", arg_list))
             })
     })
@@ -309,64 +255,43 @@ Loading the output and summarizing:
 
 ``` r
 pos_fits <- readr::read_rds('output/models_pos.rds')
-sapply(pos_fits$dist, ci)
+cbind(sapply(pos_fits$dist, pval))
 ```
 
-    ##       log_intestinal_diameter villus_height villus_width  crypt_width
-    ## 2.5%               -0.1690558     0.1292392  -0.02308230 -0.012647378
-    ## 97.5%               0.1936576     0.2965390   0.00293386 -0.003572344
-    ##            sef enterocyte_diameter log_enterocyte_density
-    ## 2.5%  3.425866       -0.0015038563              0.3086293
-    ## 97.5% 7.622589        0.0009059397              1.1674755
+    ##                          [,1]
+    ## log_intestinal_diameter 0.912
+    ## villus_height           0.000
+    ## villus_width            0.554
+    ## crypt_width             0.006
+    ## sef                     0.000
+    ## enterocyte_diameter     0.577
+    ## log_enterocyte_density  0.001
 
 ``` r
-sapply(pos_fits$med, ci)
+cbind(sapply(pos_fits$med, pval))
 ```
 
-    ##       log_intestinal_diameter villus_height villus_width  crypt_width
-    ## 2.5%               -0.1984294    0.05459952  -0.02886595 -0.013205706
-    ## 97.5%               0.2049461    0.25264785  -0.00524069 -0.001736775
-    ##            sef enterocyte_diameter log_enterocyte_density
-    ## 2.5%  2.589389       -2.339798e-03              0.3659795
-    ## 97.5% 7.925245       -1.515785e-05              1.1710685
+    ##                          [,1]
+    ## log_intestinal_diameter 0.959
+    ## villus_height           0.001
+    ## villus_width            0.085
+    ## crypt_width             0.092
+    ## sef                     0.000
+    ## enterocyte_diameter     0.050
+    ## log_enterocyte_density  0.397
 
 ``` r
-sapply(pos_fits$prox, ci)
+cbind(sapply(pos_fits$prox, pval))
 ```
 
-    ##       log_intestinal_diameter villus_height villus_width  crypt_width
-    ## 2.5%               -0.1338032   -0.02618653  -0.04749609 -0.016308120
-    ## 97.5%               0.2469784    0.20931842  -0.01601584 -0.005623053
-    ##            sef enterocyte_diameter log_enterocyte_density
-    ## 2.5%  1.552915       -0.0017673248              0.1512608
-    ## 97.5% 7.471908        0.0005472164              1.0477713
-
-``` r
-sapply(pos_fits$dist[c('log_intestinal_diameter', 'villus_height')], 
-       ci, parameter = 'log_mass')
-```
-
-    ##       log_intestinal_diameter villus_height
-    ## 2.5%                0.1336546    0.01753835
-    ## 97.5%               0.4005606    0.12853220
-
-``` r
-sapply(pos_fits$med[c('log_intestinal_diameter', 'villus_height')], 
-       ci, parameter = 'log_mass')
-```
-
-    ##       log_intestinal_diameter villus_height
-    ## 2.5%               0.05162472    0.01717659
-    ## 97.5%              0.32610715    0.15016828
-
-``` r
-sapply(pos_fits$prox[c('log_intestinal_diameter', 'villus_height')], 
-       ci, parameter = 'log_mass')
-```
-
-    ##       log_intestinal_diameter villus_height
-    ## 2.5%                0.1625201    0.07717142
-    ## 97.5%               0.4200719    0.23395167
+    ##                          [,1]
+    ## log_intestinal_diameter 0.527
+    ## villus_height           0.140
+    ## villus_width            0.012
+    ## crypt_width             0.310
+    ## sef                     0.000
+    ## enterocyte_diameter     0.336
+    ## log_enterocyte_density  0.003
 
 `Clearance` on `SEF`
 ====================
@@ -377,44 +302,126 @@ Both are log-transformed.
 
 From the original manuscript: &gt; ... we used reduced major axis regression (model II regression)... because both &gt; variables \[X and Y\] were subject to error
 
-Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` to estimate Pearson correlation coefficients. Confidence intervals are calculated using Fisher information.
+Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` that can conduct parametric bootstrapping. P-values are calculated using these bootstrapping replicates.
 
 ``` r
 clear_df <- get_df('clear')
 clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
 clear_tr <- get_tr('clear')
 
-Xmat <- cbind(clear_df$log_sef, clear_df$log_clear)
-rownames(Xmat) <- rownames(clear_df)
+Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
+MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
-MEmat <- cbind(clear_se_df$log_sef, clear_se_df$log_clear)
-rownames(MEmat) <- clear_se_df$species
+# Using p-values, this doesn't need Umat for either parameter
 
-clear_cor <- corp(Xmat, phy = clear_tr, SeM = MEmat)
-
-# Correlation with 95% CI
-clear_cor['r',]
+# corphylo_cpp run with bootstrapping (takes ~1 min)
+set.seed(1844365955)
+clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, boot = 2000, n_cores = 4)
+clear_sef
 ```
 
-    ##       value    upper      lower
-    ## r 0.5772012 1.066615 0.08778754
+    ## Call to corphylo
+    ## 
+    ## logLik    AIC    BIC 
+    ## -18.58  51.16  44.52 
+    ## 
+    ## correlation matrix:
+    ##        1      2
+    ## 1 1.0000 0.5765
+    ## 2 0.5765 1.0000
+    ## 
+    ## from OU process:
+    ##        d
+    ## 1 1.1383
+    ## 2 0.5887
+    ## 
+    ## coefficients:
+    ##        Value Std.Error  Zscore  Pvalue    
+    ## B1.0 2.41029   0.23771 10.1396 < 2e-16 ***
+    ## B2.0 0.97926   0.48545  2.0172 0.04367 *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Bootstrapped 95% CI:
+    ##   r12       0.56 [    -0.14     0.947]
+    ##   d1        1.01 [ 9.22e-12      3.66]
+    ##   d2       0.635 [ 2.21e-14      2.83]
+
+``` r
+# P-value for correlation != 0
+pval(clear_sef)[1]
+```
+
+    ## [1] 0.086
+
+`Clearance` on `log_enterocyte_density`
+=======================================
+
+> One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which is why I'm removing that row below.
+
+``` r
+Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
+Xmat <- Xmat[!is.na(rowSums(Xmat)),]
+
+MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
+MEmat <- MEmat[!is.na(rowSums(MEmat)),]
+# Using p-values, this doesn't need Umat for either parameter
+
+clear_ed_tr <- ape::drop.tip(
+    clear_tr, 
+    tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)]
+)
+
+# Fit and bootstrap r (takes ~1 min)
+set.seed(1442148819)
+clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, boot = 2000, n_cores = 4)
+
+# P-value for correlation != 0
+pval(clear_ed)[1]
+```
+
+    ## [1] 0.654
+
+`Absorption` on `log_total_enterocytes`
+=======================================
+
+``` r
+absorp_df <- get_df('absorp')
+absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
+absorp_tr <- get_tr('absorp')
+
+Xmat <- cp_mat(absorp_df, c('absorp', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
+# Using p-values, this doesn't need Umat for either parameter
+
+# Fit and bootstrap
+set.seed(2016097648)
+absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, boot = 2000, n_cores = 4)
+
+# P-value for correlation != 0
+pval(absorp_te)[1]
+```
+
+    ## [1] 0
 
 Assembling all output into one object
 =====================================
 
-I ran `ci_df` on all models above. I also added the output from the correlation between `log_sef` and `log_clear` manually at the end, which I have to do because it isn't a `phylolm` object.
+I ran `summ_df` on all models above. This function summarizes `phylolm` and `corphylo` objects.
 
 ``` r
 mod_summaries <- bind_rows(
     list(
-        ci_df(diet_fit),
-        ci_df(absorp_fit),
-        bind_rows(lapply(spp_fits, ci_df)),
+        summ_df(diet_fit),
+        summ_df(absorp_fit),
+        bind_rows(lapply(spp_fits, summ_df)),
         bind_rows(
             lapply(names(pos_fits), function(p) {
-                bind_rows(lapply(pos_fits[[p]], ci_df, .pos = p))
+                bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
             })),
-        bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
+        summ_df(clear_sef, .corr_pars = c('log_sef', 'log_clear')),
+        summ_df(clear_ed, .corr_pars = c('log_enterocyte_density', 'log_clear')),
+        summ_df(absorp_te, .corr_pars = c('absorp', 'log_total_enterocytes'))
         ))
 ```
 
@@ -438,51 +445,55 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-10-25
+    ##  date     2017-12-03
 
     ## Packages -----------------------------------------------------------------
 
-    ##  package    * version date       source        
-    ##  ape        * 4.1     2017-02-14 CRAN (R 3.4.0)
-    ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports    1.1.1   2017-09-25 CRAN (R 3.4.2)
-    ##  base       * 3.4.2   2017-10-04 local         
-    ##  bindr        0.1     2016-11-13 CRAN (R 3.4.0)
-    ##  bindrcpp   * 0.2     2017-06-17 CRAN (R 3.4.0)
-    ##  compiler     3.4.2   2017-10-04 local         
-    ##  datasets   * 3.4.2   2017-10-04 local         
-    ##  devtools     1.13.3  2017-08-02 CRAN (R 3.4.1)
-    ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
-    ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
-    ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
-    ##  graphics   * 3.4.2   2017-10-04 local         
-    ##  grDevices  * 3.4.2   2017-10-04 local         
-    ##  grid         3.4.2   2017-10-04 local         
-    ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
-    ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
-    ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)
-    ##  lattice      0.20-35 2017-03-25 CRAN (R 3.4.2)
-    ##  magrittr     1.5     2014-11-22 CRAN (R 3.4.0)
-    ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods    * 3.4.2   2017-10-04 local         
-    ##  nlme         3.1-131 2017-02-06 CRAN (R 3.4.2)
-    ##  parallel     3.4.2   2017-10-04 local         
-    ##  phylolm    * 2.5     2016-10-17 CRAN (R 3.4.0)
-    ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  purrr        0.2.4   2017-10-18 CRAN (R 3.4.2)
-    ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
-    ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
-    ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
-    ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
-    ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
-    ##  stats      * 3.4.2   2017-10-04 local         
-    ##  stringi      1.1.5   2017-04-07 CRAN (R 3.4.0)
-    ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
-    ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
-    ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
-    ##  tools        3.4.2   2017-10-04 local         
-    ##  utils      * 3.4.2   2017-10-04 local         
-    ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
-    ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
+    ##  package     * version date       source        
+    ##  ape         * 5.0     2017-10-30 CRAN (R 3.4.2)
+    ##  assertthat    0.2.0   2017-04-11 CRAN (R 3.4.0)
+    ##  backports     1.1.1   2017-09-25 CRAN (R 3.4.2)
+    ##  base        * 3.4.2   2017-10-04 local         
+    ##  bindr         0.1     2016-11-13 CRAN (R 3.4.0)
+    ##  bindrcpp    * 0.2     2017-06-17 CRAN (R 3.4.0)
+    ##  commonmark    1.4     2017-09-01 CRAN (R 3.4.1)
+    ##  compiler      3.4.2   2017-10-04 local         
+    ##  corphyloCpp * 1.0     <NA>       local         
+    ##  datasets    * 3.4.2   2017-10-04 local         
+    ##  devtools      1.13.3  2017-08-02 CRAN (R 3.4.1)
+    ##  digest        0.6.12  2017-01-27 CRAN (R 3.4.0)
+    ##  dplyr       * 0.7.4   2017-09-28 CRAN (R 3.4.2)
+    ##  evaluate      0.10.1  2017-06-24 CRAN (R 3.4.1)
+    ##  glue          1.2.0   2017-10-29 CRAN (R 3.4.2)
+    ##  graphics    * 3.4.2   2017-10-04 local         
+    ##  grDevices   * 3.4.2   2017-10-04 local         
+    ##  grid          3.4.2   2017-10-04 local         
+    ##  hms           0.3     2016-11-22 CRAN (R 3.4.0)
+    ##  htmltools     0.3.6   2017-04-28 cran (@0.3.6) 
+    ##  knitr         1.17    2017-08-10 CRAN (R 3.4.1)
+    ##  lattice       0.20-35 2017-03-25 CRAN (R 3.4.2)
+    ##  magrittr      1.5     2014-11-22 CRAN (R 3.4.0)
+    ##  memoise       1.1.0   2017-04-21 CRAN (R 3.4.0)
+    ##  methods     * 3.4.2   2017-10-04 local         
+    ##  nlme          3.1-131 2017-02-06 CRAN (R 3.4.2)
+    ##  parallel      3.4.2   2017-10-04 local         
+    ##  phylolm     * 2.5     2016-10-17 CRAN (R 3.4.0)
+    ##  pkgconfig     2.0.1   2017-03-21 CRAN (R 3.4.0)
+    ##  purrr       * 0.2.4   2017-10-18 CRAN (R 3.4.2)
+    ##  R6            2.2.2   2017-06-17 CRAN (R 3.4.0)
+    ##  Rcpp          0.12.13 2017-09-28 CRAN (R 3.4.2)
+    ##  readr       * 1.1.1   2017-05-16 CRAN (R 3.4.0)
+    ##  rlang         0.1.4   2017-11-05 CRAN (R 3.4.2)
+    ##  rmarkdown     1.6     2017-06-15 CRAN (R 3.4.0)
+    ##  roxygen2      6.0.1   2017-02-06 CRAN (R 3.4.0)
+    ##  rprojroot     1.2     2017-01-16 cran (@1.2)   
+    ##  stats       * 3.4.2   2017-10-04 local         
+    ##  stringi       1.1.5   2017-04-07 CRAN (R 3.4.0)
+    ##  stringr       1.2.0   2017-02-18 CRAN (R 3.4.0)
+    ##  tibble        1.3.4   2017-08-22 CRAN (R 3.4.1)
+    ##  tidyr       * 0.7.2   2017-10-16 CRAN (R 3.4.2)
+    ##  tools         3.4.2   2017-10-04 local         
+    ##  utils       * 3.4.2   2017-10-04 local         
+    ##  withr         2.1.0   2017-11-01 CRAN (R 3.4.2)
+    ##  xml2          1.1.1   2017-01-24 CRAN (R 3.4.0)
+    ##  yaml          2.1.14  2016-11-12 cran (@2.1.14)

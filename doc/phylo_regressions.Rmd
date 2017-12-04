@@ -369,9 +369,10 @@ pval(clear_sef)[1]
 
 # `Clearance` on `log_enterocyte_density`
 
+> One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which
+> is why I'm removing that row below.
 
 ```{r clear_ed}
-
 Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
 Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
@@ -419,24 +420,23 @@ pval(absorp_te)[1]
 # Assembling all output into one object
 
 
-
-
-I ran `ci_df` on all models above.
-I also added the output from the correlation between `log_sef` and `log_clear` 
-manually at the end, which I have to do because it isn't a `phylolm` object.
+I ran `summ_df` on all models above.
+This function summarizes `phylolm` and `corphylo` objects.
 
 
 ```{r mod_summaries, purl = FALSE}
 mod_summaries <- bind_rows(
     list(
-        ci_df(diet_fit),
-        ci_df(absorp_fit),
-        bind_rows(lapply(spp_fits, ci_df)),
+        summ_df(diet_fit),
+        summ_df(absorp_fit),
+        bind_rows(lapply(spp_fits, summ_df)),
         bind_rows(
             lapply(names(pos_fits), function(p) {
-                bind_rows(lapply(pos_fits[[p]], ci_df, .pos = p))
+                bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
             })),
-        bind_cols(X = 'log_clear', Y = 'log_sef', clear_cor['r',])
+        summ_df(clear_sef, .corr_pars = c('log_sef', 'log_clear')),
+        summ_df(clear_ed, .corr_pars = c('log_enterocyte_density', 'log_clear')),
+        summ_df(absorp_te, .corr_pars = c('absorp', 'log_total_enterocytes'))
         ))
 ```
 
