@@ -48,11 +48,7 @@ invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 The `get_tr` function in `R/get_data.R` reads the main phylogenetic tree, 
 cleans species names, and removes unnecessary species from it for a given analysis set.
 
-The function `ci` in `R/model_summaries.R` gets 95% CIs from a bootstrapped 
-`phylolm` model object.
-
-The function `ci_df` creates a tibble with 95% CIs for all parameters in a 
-single model.
+`get_df` from the same file gets a data frame for an analysis set.
 
 
 # `SEF` on `Diet`
@@ -73,7 +69,7 @@ tr <- get_tr('spp')
 
 ```{r sef_diet, eval = FALSE}
 set.seed(581120)
-diet_fit <- phylolm(sef ~ diet, data = spp_df, phy = tr,
+diet_fit <- phylolm(log_sef ~ diet, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 ```
 
@@ -116,7 +112,7 @@ absorp_tr <- get_tr('absorp')
 ```{r absorp_taxon, eval = FALSE}
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
+    phylolm(log_absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 ```
@@ -157,7 +153,8 @@ List of `Morphometrics`:
 
 These are the column names for the above parameters:
 ```{r sp_analyses_cols}
-spp_ys <- c("intestinal_length", "nsa", "vill_surface_area", "log_total_enterocytes")
+spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
+            "log_total_enterocytes")
 ```
 
 
@@ -225,8 +222,8 @@ List of `Y`s:
 Below are the column names for these parameters and all the segment types.
 
 ```{r pos_ys}
-pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width', 
-            'crypt_width', 'sef', 'enterocyte_diameter', 'log_enterocyte_density')
+pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
+            'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
 seg_types <- c('prox', 'med', 'dist')
 ```
 
@@ -333,7 +330,7 @@ cbind(sapply(pos_fits$prox, pval))
 
 
 
-# `Clearance` on `SEF`
+# `Clearance` and `SEF`
 
 Clearance = "paracellular probe L-arabinose clearance"
 
@@ -360,14 +357,13 @@ MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 # corphylo_cpp run with bootstrapping (takes ~1 min)
 set.seed(1844365955)
 clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, boot = 2000, n_cores = 4)
-clear_sef
 
 # P-value for correlation != 0
 pval(clear_sef)[1]
 ```
 
 
-# `Clearance` on `log_enterocyte_density`
+# `Clearance` and `log_enterocyte_density`
 
 > One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which
 > is why I'm removing that row below.
@@ -394,7 +390,7 @@ pval(clear_ed)[1]
 ```
 
 
-# `Absorption` on `log_total_enterocytes`
+# `Absorption` and `log_total_enterocytes`
 
 
 ```{r absorp_te}
@@ -402,8 +398,8 @@ absorp_df <- get_df('absorp')
 absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
 absorp_tr <- get_tr('absorp')
 
-Xmat <- cp_mat(absorp_df, c('absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
+Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
 # Using p-values, this doesn't need Umat for either parameter
 
 # Fit and bootstrap
@@ -415,9 +411,16 @@ pval(absorp_te)[1]
 ```
 
 
+# Saving `corphylo` objects
+
+```{r save_corphylo}
+readr::write_rds(list(clear_sef = clear_sef, clear_ed = clear_ed, absorp_te = absorp_te),
+                 'output/models_corphylo.rds')
+```
 
 
-# Assembling all output into one object
+
+# Assembling all output into one table
 
 
 I ran `summ_df` on all models above.
