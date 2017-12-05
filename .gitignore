@@ -13,3 +13,5 @@ bg_files
 *workingMEfile.txt
 *workingDataFile.txt
 .Rprofile
+*.rds
+*.RData
