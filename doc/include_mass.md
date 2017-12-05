@@ -8,9 +8,9 @@ Lucas Nell
 -   [`Absorption` on `Taxon`](#absorption-on-taxon)
 -   [`Morphometrics` on `Taxon`](#morphometrics-on-taxon)
 -   [`Morphometrics` on `Taxon`, separately by segment](#morphometrics-on-taxon-separately-by-segment)
--   [`Clearance` on `SEF`](#clearance-on-sef)
--   [`Clearance` on `log_enterocyte_density`](#clearance-on-log_enterocyte_density)
--   [`Absorption` on `log_total_enterocytes`](#absorption-on-log_total_enterocytes)
+-   [`Clearance` and `SEF`](#clearance-and-sef)
+-   [`Clearance` and `log_enterocyte_density`](#clearance-and-log_enterocyte_density)
+-   [`Absorption` and `log_total_enterocytes`](#absorption-and-log_total_enterocytes)
 
 This file determines whether to use `log_mass` in `phylolm` regressions or not. These analyses take about half an hour to run.
 
@@ -46,12 +46,12 @@ tr <- get_tr('spp')
 
 ``` r
 set.seed(29851644)
-diet_fit <- phylolm(sef ~ diet + log_mass, data = spp_df, phy = tr,
+diet_fit <- phylolm(log_sef ~ diet + log_mass, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 pval(diet_fit, 'log_mass')
 ```
 
-    ## [1] 0.369
+    ## [1] 0.501
 
 `Absorption` on `Taxon`
 =======================
@@ -70,7 +70,7 @@ absorp_tr <- get_tr('absorp')
 ``` r
 set.seed(1092141389)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
+    phylolm(log_absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 pval(absorp_fit, 'log_mass')
@@ -82,7 +82,8 @@ pval(absorp_fit, 'log_mass')
 ==========================
 
 ``` r
-spp_ys <- c("intestinal_length", "nsa", "vill_surface_area", "log_total_enterocytes")
+spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
+            "log_total_enterocytes")
 ```
 
 ``` r
@@ -102,18 +103,18 @@ names(spp_fits) <- spp_ys
 cbind(sapply(spp_fits, pval, 'log_mass'))
 ```
 
-    ##                       [,1]
-    ## intestinal_length     0.04
-    ## nsa                   0.00
-    ## vill_surface_area     0.00
-    ## log_total_enterocytes 0.00
+    ##                        [,1]
+    ## log_intestinal_length 0.028
+    ## log_nsa               0.000
+    ## log_vill_surface_area 0.000
+    ## log_total_enterocytes 0.000
 
 `Morphometrics` on `Taxon`, separately by segment
 =================================================
 
 ``` r
-pos_ys <- c('log_intestinal_diameter', 'villus_height', 'villus_width', 
-            'crypt_width', 'sef', 'enterocyte_diameter', 'log_enterocyte_density')
+pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
+            'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
 seg_types <- c('prox', 'med', 'dist')
 ```
 
@@ -153,10 +154,10 @@ cbind(sapply(pos_fits$dist, pval, .parameters = 'log_mass'))
 
     ##                          [,1]
     ## log_intestinal_diameter 0.000
-    ## villus_height           0.012
+    ## log_villus_height       0.032
     ## villus_width            0.193
     ## crypt_width             0.500
-    ## sef                     0.283
+    ## log_sef                 0.329
     ## enterocyte_diameter     0.782
     ## log_enterocyte_density  0.462
 
@@ -166,10 +167,10 @@ cbind(sapply(pos_fits$med, pval, .parameters = 'log_mass'))
 
     ##                          [,1]
     ## log_intestinal_diameter 0.006
-    ## villus_height           0.013
+    ## log_villus_height       0.039
     ## villus_width            0.062
     ## crypt_width             0.379
-    ## sef                     0.349
+    ## log_sef                 0.322
     ## enterocyte_diameter     0.621
     ## log_enterocyte_density  0.208
 
@@ -179,15 +180,15 @@ cbind(sapply(pos_fits$prox, pval, .parameters = 'log_mass'))
 
     ##                          [,1]
     ## log_intestinal_diameter 0.000
-    ## villus_height           0.001
+    ## log_villus_height       0.002
     ## villus_width            0.009
     ## crypt_width             0.881
-    ## sef                     0.024
+    ## log_sef                 0.022
     ## enterocyte_diameter     0.823
     ## log_enterocyte_density  0.203
 
-`Clearance` on `SEF`
-====================
+`Clearance` and `SEF`
+=====================
 
 > P-values in all following chunks are for whether the coefficient for the `U` matrix is not zero. There are two p-values because I'm including the `U` matrix separately for the first and second `X` matrix parameters.
 
@@ -232,8 +233,8 @@ pval(clear_sef); pval(clear_sef2)
 
     ## [1] 0.308
 
-`Clearance` on `log_enterocyte_density`
-=======================================
+`Clearance` and `log_enterocyte_density`
+========================================
 
 ``` r
 Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
@@ -257,8 +258,8 @@ pval(clear_ed); pval(clear_ed2)
 
     ## [1] 0.228
 
-`Absorption` on `log_total_enterocytes`
-=======================================
+`Absorption` and `log_total_enterocytes`
+========================================
 
 ``` r
 absorp_df <- get_df('absorp')
@@ -266,8 +267,8 @@ absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
 absorp_tr <- get_tr('absorp')
 
 
-Xmat <- cp_mat(absorp_df, c('absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df, c('absorp', 'log_total_enterocytes'))
+Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
 
 Umat <- list( cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]), NULL)
 rownames(Umat[[1]]) <- rownames(Xmat)
@@ -279,13 +280,12 @@ rownames(Umat2[[2]]) <- rownames(Xmat)
 set.seed(2016097648)
 absorp_te <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat, 
                           boot = 2000, n_cores = 4, boot_out = get_U)
-absorp_te2 <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat2, 
-                          boot = 2000, n_cores = 4, boot_out = get_U)
+# # This one gives numerical issues: non positive definite correlation matrix
+# absorp_te2 <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat2, 
+#                           boot = 2000, n_cores = 4, boot_out = get_U)
 
 # P-value for coefficient != 0
-pval(absorp_te); pval(absorp_te2)
+pval(absorp_te)  #; pval(absorp_te2)
 ```
 
-    ## [1] 0.981
-
-    ## [1] 0.42
+    ## [1] 1
