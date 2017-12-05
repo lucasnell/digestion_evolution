@@ -16,7 +16,7 @@
 #' 
 #' 
 #' This reads the initial Excel file and simplifies it into data frames.
-#' It needs to be sourced every time you run `tidy_csvs.Rmd`
+#' It needs to be sourced every time you run `doc/02-aggregate.Rmd`.
 #' 
 #' 
 #' __Load packages\:__
@@ -152,19 +152,47 @@ morph_df <- new_cols %>%
     arrange(measure, species, id)
 
 
-# # These values were input with an extra zero in the Excel file
+# Some fixes to errors in the initial Excel file
 morph_df <- morph_df %>%
+    # These values were input with an extra zero in the Excel file
     mutate(dist = ifelse(species == 'Microtus pennsylvanicus' &
                               measure == 'enterocyte width', 
                          dist * 10, dist),
            med = ifelse(species == 'Microtus pennsylvanicus' &
                              measure == 'enterocyte width', 
-                        med * 10, med))
-
-# These species' diets weren't included
-morph_df <- morph_df %>%
+                        med * 10, med)) %>% 
+    # These species' diets weren't included
     mutate(diet = ifelse(species == 'Microtus pennsylvanicus', 'Herbivorous',
-                         ifelse(species == 'Eptesicus fuscus', 'Protein', diet)))
+                         ifelse(species == 'Eptesicus fuscus', 'Protein', diet))) %>% 
+    # Oligoryzomys seems to be the more standard spelling
+    mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
+                        'Oligoryzomys nigripes', species))
+
+# Number of individuals
+N <- morph_df$id %>% unique %>% length
+
+# Measures with no position (i.e., NA in pos column instead of prox, med, or dist)
+no_pos <- morph_df %>% 
+    filter(is.na(dist)) %>% 
+    group_by(measure) %>% 
+    summarize(total = n()) %>% 
+    filter(total == N) %>% 
+    select(measure) %>% 
+    unlist %>% 
+    paste
+
+# Gathering into 'tall' format, fixing position column, removing spaces from 
+# measure column, and changing the "enterocyte_width" measure to "enterocyte_diameter".
+morph_df <- morph_df %>% 
+    gather(pos, value, prox:dist, na.rm = TRUE) %>% 
+    mutate(pos = ifelse(measure %in% no_pos, NA, pos),
+           measure = gsub('enterocyte_width', 'enterocyte_diameter', 
+                          gsub(' ', '_', measure))) %>%
+    # Changing back from tall to wide format
+    spread(measure, value)
+
+# These objects are no longer necessary
+rm(no_pos, N)
 #' 
 #' 
 #' 
@@ -371,9 +399,9 @@ rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in%
 #' 
 #' This outlines the package versions I used for this script.
 #' 
-#+  session_info, echo = FALSE
-devtools::session_info()
-#' 
+#' ```{r session_info, echo = FALSE}
+#' devtools::session_info()
+#' ```
 #' 
 
 
