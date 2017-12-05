@@ -379,7 +379,7 @@ chol_fix <- function(V, max_iter = 100) {
         
         iter <- iter + 1
     }
-    if (cholError) stop("max iteration reached...")
+    if (cholError) stop("non positive-definite correlation matrix")
     
     return(new_V)
 }
