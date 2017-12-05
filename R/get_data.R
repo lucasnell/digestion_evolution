@@ -2,13 +2,6 @@
 # Functions for retrieving data of mean, standard errors, or phylogenies among species
 # 
 
-# # Checking that packages are installed
-# for (x in c('readr', 'dplyr', 'ape')) {
-#     if (!require(x, character.only = TRUE)) {
-#         install.packages(x, dependencies = TRUE)
-#         suppressPackageStartupMessages(library(x, character.only = TRUE))
-#     }
-# }; rm(x)
 
 get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
     
@@ -34,10 +27,10 @@ get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
     }
     
     # Making sure they're all sorted the same
-    out_df <- dplyr::arrange(out_df, taxon, species)
+    out_df <- dplyr::arrange(out_df, clade, species)
     
-    # Converting taxon to factor
-    out_df$taxon <-  factor(out_df$taxon, levels = c('Rodent', 'Bat'))
+    # Converting clade to factor
+    out_df$clade <-  factor(out_df$clade, levels = c('Rodent', 'Bat'))
     
     # Converting diet to factor, if present
     if (.df %in% c('spp', 'pos')) {

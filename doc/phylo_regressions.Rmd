@@ -55,9 +55,9 @@ cleans species names, and removes unnecessary species from it for a given analys
 
 Necessary data:
 
-> The `spp_df` data frame is used for both this analysis and `Morphometrics` on `Taxon`.
-> The `tr` tree is used for this analysis, `Morphometrics` on `Taxon`, and
-> `Morphometrics` on `Taxon`, separately by segment.
+> The `spp_df` data frame is used for both this analysis and `Morphometrics` on `Clade`.
+> The `tr` tree is used for this analysis, `Morphometrics` on `Clade`, and
+> `Morphometrics` on `Clade`, separately by segment.
 
 ```{r diet_data}
 spp_df <- get_df('spp')
@@ -94,7 +94,7 @@ for (p in c('dietOmnivorous', 'dietProtein')) {
 
 
 
-# `Absorption` on `Taxon`
+# `Absorption` on `Clade`
 
 "Absorption" here means `Fractional absorption / (total intestinal surface)`,
 where `total intestinal surface = NSA * SEF`
@@ -109,10 +109,10 @@ absorp_tr <- get_tr('absorp')
 
 `phylolm` call and output:
 
-```{r absorp_taxon, eval = FALSE}
+```{r absorp_clade, eval = FALSE}
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(log_absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
+    phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 ```
@@ -131,7 +131,7 @@ absorp_fit <- readr::read_rds('output/models_absorp.rds')
 Summary:
 
 ```{r absorp_fit_summ, echo = FALSE}
-p <- 'taxonBat'
+p <- 'cladeBat'
 cat(sprintf('%s: %.4g (P = %.4g)\n', p,
                 coef(absorp_fit)[p], 
                 pval(absorp_fit, p)))
@@ -139,7 +139,7 @@ cat(sprintf('%s: %.4g (P = %.4g)\n', p,
 
 
 
-# `Morphometrics` on `Taxon`
+# `Morphometrics` on `Clade`
 
 List of `Morphometrics`:
 
@@ -171,7 +171,7 @@ set.seed(88754829)
 spp_fits <- lapply(
     spp_ys,
     function(y) {
-        f <- paste(y, '~ taxon + log_mass')
+        f <- paste(y, '~ clade + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -186,7 +186,7 @@ Loading the output and summarizing:
 
 ```{r sp_analyses_load, purl = FALSE}
 spp_fits <- readr::read_rds('output/models_spp.rds')
-p <- 'taxonBat'
+p <- 'cladeBat'
 for (nn in names(spp_fits)) {
     cat(sprintf('Y = %s\n', nn))
     cat(sprintf('  %s: %.4g (P = %.4g)\n', p,
@@ -201,7 +201,7 @@ for (nn in names(spp_fits)) {
 
 
 
-# `Morphometrics` on `Taxon`, separately by segment
+# `Morphometrics` on `Clade`, separately by segment
 
 
 (Segment = proximal, medial, or distal)
@@ -284,7 +284,7 @@ pos_fits <- lapply(
         lapply(
             pos_ys,
             function(y) {
-                f <- paste(y, ' ~ taxon')
+                f <- paste(y, ' ~ clade')
                 # Whether to include log_mass covariate
                 imc <- {include_mass %>% filter(pos == pos, y == y)}$include
                 if (imc[1]) f <- paste(f, '+ log_mass')

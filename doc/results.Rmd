@@ -17,29 +17,25 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 This script displays results from analyses using
 [`phylolm::phylolm`](https://doi.org/10.1093/sysbio/syu005) and 
 a modified version of [`ape::corphylo`](https://CRAN.R-project.org/package=ape)
-(paper link 
+(methods paper link 
 [here](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2435.2009.01596.x/full)).
 
 The `parameter` column indicates which variable (either an X variable or phylogenetic 
 signal) that row's numbers refer to.
-Column `estimate` is the parameter estimate for the specified `parameter`, while 
-`lower` and `upper` are lower and upper bounds of the 95% confidence interval
+Column `estimate` is the maximum likelihood estimate for the specified `parameter`, 
+while `lower` and `upper` are lower and upper bounds of the 95% confidence interval
 for the coefficient estimate, obtained by parametric bootstrapping.
 `P` is the p-value for an estimate not equal to zero; this is obtained by the same 
 bootstrapping as for the CI.
 I do not present P-values for phylogenetic signals because they were bound
-above zero by the models.
-Thus confidence intervals were more informative.
+above zero by the models; thus confidence intervals are more informative.
 
-Multiple `parameter` values for a given `Y` *never* indicate that separate 
-analyses were performed for each `parameter`.
+Within a given table, multiple `parameter` values for a given `Y` never indicate 
+that separate analyses were performed for each `parameter`.
 
-> This page uses the variable name `clade` for the dummy variable indicating whether
-> a species is a bat, but in the rest of the scripts in this repo, this variable 
-> is referred to as `taxon`.
+
  
- 
-```{r libraries} 
+```{r libraries}
 # Packages needed for this script 
 suppressPackageStartupMessages({
     library(readr)
@@ -49,14 +45,22 @@ suppressPackageStartupMessages({
     library(purrr)
     library(phylolm)
     library(ape)
+    library(ggplot2)
+    library(grid)
+    library(svglite)
 })
-devtools::load_all('corphyloCpp')
+# Set default ggplot2 theme
+theme_set(theme_classic())
+# Custom package that does bootstrapping on corphylo object
+suppressMessages(devtools::load_all('corphyloCpp'))
+# Sourcing scripts from R directory
+invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ``` 
  
  
 ```{r parse_output} 
 summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccdddd') %>%
-    mutate(X = ifelse(X == 'taxonBat', 'clade', X),
+    mutate(X = ifelse(X == 'cladeBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
     rename(estimate = value) %>%
     select(pos, Y, X, estimate, lower, upper, P) %>% 
@@ -150,191 +154,222 @@ knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][7:9,])
 
 
 
+
+# Influential values
+
+
+## Jackknifing
+
+In the `phylolm` model for `log_intestinal_length ~ clade`, one point is very
+influential to the results, which makes me less confident in the conclusions from the
+full dataset.
+Below I use jackknifing to determine how influential each point is to the `log_mass`
+and `clade` estimates.
+
+(See `R/model_summaries.R` for the `jack_phylolm` function.)
+
+```{r influence_jack, echo = TRUE}
+# Conducting jackknifing
+int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length, phy = get_tr('spp'))
+```
+
+
+The plot below shows log(intestinal length) on log(body mass) with point sizes 
+indicating that point's absolute jackknife influence value for the maximum likelihood
+estimate for (A) clade, (B) log(body mass), and (C) intercept.
+Color indicates clade.
+
+
+```{r influence_plots}
+# Keep the same area options for every plot
+area_opts <- scale_size_area(breaks = c(0.5, 1.0), max_size = 4)
+
+get_infl <- function(species, .est) {
+    max_infl <- max(abs({int_jack %>% filter(estimate == .est)}$influence))
+    sapply(species, 
+           function(s) {
+               infl <- abs({int_jack %>% 
+                       filter(species == s, estimate == .est)}$influence[1])
+               return(infl / max_infl)
+           })
+}
+
+add_title <- function(.p, .title) {
+    if (.p$labels$x == 'pos') {
+        suppressMessages({
+            .p <- .p + 
+                scale_x_continuous(breaks = 1:3, limits = c(0.4, 3.43),
+                                   labels = c('Proximal', 'Medial', 'Distal'))
+        })
+    }
+    x_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$x.range
+    y_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$y.range
+    if (!is.null(.p$coordinates$trans$x)) {
+        x_range <- .p$coordinates$trans$x$inverse(x_range)
+    }
+    if (!is.null(.p$coordinates$trans$y)) {
+        y_range <- .p$coordinates$trans$y$inverse(y_range)
+    }
+    min_x <- min(x_range) + 0.02 * diff(x_range)
+    max_y <- max(y_range) - 0.02 * diff(y_range)
+    .p <- .p + 
+        geom_text(data = NULL, label = .title, 
+                  x = min_x, y = max_y, hjust = 0, vjust = 1, 
+                  size = 14 * (25.4/72), fontface = 'plain', color = 'black')
+    return(.p)
+}
+
+
+infl_plots <- function(estimate, guide_area = TRUE, guide_color = TRUE, title_ = NULL) {
+
+    p <- get_df('spp') %>%
+        mutate(influence = get_infl(species, estimate)) %>% 
+        ggplot(aes(log_mass, log_intestinal_length, color = clade, size = influence)) +
+        geom_point() +
+        xlab('log(body mass [g])') +
+        ylab('log(intestinal length [cm])') +
+        theme(axis.title = element_blank(), plot.title = element_text(size = 12))
+    if (guide_area) {
+        p <- p + scale_size_area(breaks = c(0.5, 1.0), max_size = 4)
+    } else {
+        p <- p + scale_size_area(breaks = c(0.5, 1.0), max_size = 4, guide = FALSE)
+    }
+    if (guide_color) {
+        p <- p + scale_color_manual(values = c('firebrick2', 'dodgerblue'))
+    } else {
+        p <- p + scale_color_manual(values = c('firebrick2', 'dodgerblue'), guide = FALSE)
+    }
+    if (!is.null(title_)) {
+        p <- add_title(p, title_)
+    }
+    return(p)
+}
+
+# Plotting influence on `cladeBat` onto plot of log_intestinal_length ~ log_mass
+infl_clade <- infl_plots('cladeBat', guide_area = FALSE, guide_color = FALSE, 'A') +
+    ggtitle('clade')
+
+# Plotting influence on `log_mass` onto plot of log_intestinal_length ~ log_mass
+infl_mass <- infl_plots('log_mass', TRUE, TRUE, 'B') +
+    ggtitle('log(mass)')
+
+# Plotting influence on `(Intercept)` onto plot of log_intestinal_length ~ log_mass
+infl_int <- infl_plots('intercept', FALSE, FALSE, 'C') +
+    ggtitle('intercept')
+
+library(gridExtra)
+g_legend <- function(a.gplot){
+    tmp <- ggplot_gtable(ggplot_build(a.gplot))
+    leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+    legend <- tmp$grobs[[leg]]
+    legend
+}
+
+.legend <- g_legend(infl_mass)
+
+.ylab <- ggplot(data_frame(x = 0, y = 0), aes(x, y)) +
+    geom_text(label = 'log(intestinal length [cm])', angle = 90) +
+    theme_void()
+.xlab <- ggplot(data_frame(x = 0, y = 0), aes(x, y)) +
+    geom_text(label = 'log(mass [g])') +
+    theme_void()
+.void <- ggplot() + geom_blank()
+
+grobs <- grid.arrange(.void, ggplotGrob(infl_clade), .void,
+                      .ylab, ggplotGrob(infl_mass + theme(legend.position = 'none')), .legend,
+                      .void, ggplotGrob(infl_int), .void,
+                      .void, .xlab, .void,
+                      ncol = 3, nrow = 4, widths = c(1/10, 7/10, 2/10), 
+                      heights = c(1, 1, 1, 1/10))
+
+quartz(type = 'pdf', file = "figs/influence.pdf", family = 'Helvetica', 
+       width = 4, height = 8)
+grid.draw(grobs)
+invisible(dev.off())
+```
+
+![influence figure](figs/influence.pdf "Plot of influence values")
+
+
+## Re-running model without influential point
+
+Below is the model summary including all values.
+
+```{r influence_firstrun}
+plm_mods$spp$log_intestinal_length %>% summary
+```
+
+
+Now the results without including the most influential value:
+
+```{r influence_rerun}
+spp_df <- get_df('spp')
+spp_tr <- get_tr('spp')
+
+.df <- get_df('spp')
+.df <- .df[.df$species != 'Artibeus lituratus',]
+.tr <- get_tr('spp') %>% filter_tr(.df$species)
+z <- phylolm(log_intestinal_length ~ clade + log_mass, model = 'lambda',
+        data = .df, boot = 2000, phy = .tr)
+z %>% summary
+pval(z, 'cladeBat')
+pval(plm_mods$spp$log_intestinal_length, 'cladeBat')
+```
+
+
+We can see that we're much less sure about mass's influence on intestinal length when
+we remove that one point.
+
+
+
 # Percent differences
 
 This is for the percent differences in the discussion and abstract.
 
+I calculated rodent and bat estimates at `log(body mass) = 0` to remove the effect
+of body mass.
+If the variable was log-transformed (all those below were), then I exponentiated
+both rodent and bat estimates before computing the proportional, then percentage, 
+difference.
+
 ```{r percent_diff, echo = TRUE}
-perc_diff <- function(.m, log_trans = FALSE) {
-    .c <- {.m %>% summary %>% coef}[,'Estimate']
-    .r <- .c[['(Intercept)']]
-    .b <- .r + .c[['taxonBat']]
-    .d <- .b - .r
-    .d / .r
-    if (log_trans) {
-        prop_diff <- {exp(.c[2] + .c[1]) - exp(.c[1])} / exp(.c[1])
-    } else {
-        prop_diff <- .c[['taxonBat']] / .c[['(Intercept)']]
+perc_diff <- function(.mod) {
+    
+    # Detect log-transform from formula
+    logged <- grepl('^log', paste(.mod$formula)[2])
+    
+    coefs <- {.mod %>% summary %>% coef}[,'Estimate']
+    rodents <- coefs[['(Intercept)']]
+    bats <- rodents + coefs[['cladeBat']]
+    if (logged) {
+        rodents <- exp(rodents)
+        bats <- exp(bats)
     }
+    prop_diff <- (bats - rodents) / rodents
     return(prop_diff * 100)
 }
-
-.m <- plm_mods$spp$nsa
-
-
-# here include jackknife evidence that row 1 is super influential and re-run model 
-# without it (present those results in the paper too)
-
-mm <- phylolm(log(sef) ~ taxon + log_mass, get_df('spp'), model = 'lambda', 
-              phy = get_tr('spp'))
-summary(mm)
-
-nd <- as_tibble(expand.grid(log_mass = seq(2, 5, length.out = 100), taxon = c('Bat', 'Rodent'))) %>% 
-    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
-nd$intestinal_length <- exp(as.numeric(predict(mm, newdata = nd)))
-nd$sef <- exp(as.numeric(predict(mm, newdata = nd)))
-# nd$nsa <- as.numeric(predict(mm, newdata = nd))^2
-nd$nsa2 <- as.numeric(predict(.m, newdata = nd))
-
-
-library(ggplot2)
-theme_set(theme_bw())
-source(".Rprofile")
-
-p_df <- lapply(c('prox', 'med', 'dist'), function(p) get_df('pos', p) %>% mutate(pos = p)) %>% 
-    bind_rows %>% 
-    as_tibble %>% 
-    mutate(pos = factor(pos, levels = c('prox', 'med', 'dist')))
-
-p_df %>% 
-    ggplot(aes(log_mass, log_enterocyte_density, color = taxon)) +
-    geom_point() +
-    facet_grid(. ~ pos)
-
-invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
-
-
-get_df('spp') %>% 
-    ggplot(aes(log_mass, log(intestinal_length), color = taxon)) +
-    geom_point()
-
-source("R/get_data.R")
-plm <- plm_mods$spp$intestinal_length
-phy = get_tr('spp')
-
-
-
-
-# Function to do jackknifing on phylolm object to find influential points (i.e., species)
-jack_phylolm <- function(plm, phy, return_fxn = NULL) {
-    
-    if (is.null(return_fxn)) {
-        return_fxn <- function(.plm) return(t(coef(.plm)))
-    }
-    
-    X_names <- gsub("\\s+", "", unlist(strsplit(paste(plm$formula)[3], '\\+|\\*')))
-    
-    df_ <- cbind(plm$X[,-1], as.data.frame(plm$y))
-    colnames(df_)[length(colnames(df_))] <- paste(plm$formula)[2]
-    # Dealing with factors
-    for (xn in X_names) {
-        ii <- which(grepl(xn, colnames(df_)))
-        # This one must be taxon 
-        if (colnames(df_)[ii][1] == 'taxonBat') {
-            new_col <- factor(ifelse(df_$taxonBat == 1, 'Bat', 'Rodent'),
-                              levels = c('Rodent', 'Bat'))
-            df_[,xn] <- new_col
-            df_ <- df_[,-ii]
-        } else if (length(ii) == 2) {
-        # This one must be diet
-            new_col <- factor(ifelse(df_$dietOmnivorous == 1, 'Omnivorous', 
-                                     ifelse(df_$dietProtein == 1, 'Protein', 'Herbivorous')),
-                              levels = c('Herbivorous', 'Omnivorous', 'Protein'))
-            df_[,xn] <- new_col
-            df_ <- df_[,-ii]
-        }
-    }; rm(xn, ii, new_col)
-    
-    comp_ <- return_fxn(plm)
-    
-    jack_df <- lapply(1:nrow(df_), 
-           function(i) {
-               .df <- df_[-i,]
-               .tr <- ape::drop.tip(phy, phy$tip.label[!phy$tip.label %in% rownames(.df)])
-               suppressWarnings(
-                   .plm <- update(plm, data = .df, phy = .tr, boot = 0)
-               )
-               return(return_fxn(.plm) - comp_)
-           }) %>% 
-        do.call(what = rbind) %>% 
-    as_tibble %>% 
-    rename(intercept = `(Intercept)`) %>% 
-    mutate(species = rownames(df_)) %>% 
-    gather('estimate', 'influence', -species)
-    
-    return(jack_df)
-}
-
-
-
-
-
-
-spp_df <- get_df('spp')
-spp_tr <- get_tr('spp')
-
-
-
-int_jack <- jack_phylolm(plm_mods$spp$intestinal_length, get_tr('spp'))
-
-int_jack %>% 
-    ggplot(aes(abs(influence), reorder(species, abs(influence)), color = estimate)) +
-    geom_point() +
-    xlab('Jackknife influence value') +
-    theme(axis.title.y = element_blank(), axis.text.y = element_text(face = 'italic'),
-          legend.position = c(0.9, 0.1), legend.justification = c(1, 0),
-          legend.background = element_rect(color = 'black', size = 0.25))
-
-
-
-
-
-which(spp_df$species == 'Artibeus lituratus')
-which(spp_df$species == 'Euryoryzomys russatus')
-spp_df[c(1, 12),]
-
-
-
-spp_df %>% 
-    ggplot(aes(log_mass, log_intestinal_length, color = taxon)) +
-    geom_point()
-
-.df <- .df[.df$species != 'Artibeus lituratus',]
-.tr <- get_tr('spp') %>% filter_tr(spp[spp != 'Artibeus lituratus'])
-z <- phylolm(intestinal_length ~ taxon + log_mass, model = 'lambda',
-        data = .df, boot = 2000, phy = .tr)
-z %>% summary
-pval(z, c('taxonBat', 'log_mass'))
-
-summary(plm_mods$spp$intestinal_length)
-pval(plm_mods$spp$intestinal_length, c('taxonBat', 'log_mass'))
-
-
-hist(resid(plm_mods$pos$prox$log_enterocyte_density))
-hist(resid(mm))
-
 ```
 
-## NSA corrected for mass
+## NSA
 ```{r percent_diff_nsa, echo = TRUE}
-cat(sprintf('%.4g %%\n', perc_diff(plm_mods$spp$nsa)))
+cat(sprintf('%.4g %%\n', perc_diff(plm_mods$spp$log_nsa)))
 ```
 
 ## SEF
 ```{r percent_diff_sef, echo = TRUE}
 cat(sprintf('%.4g %%\n', mean(c(
-    perc_diff(plm_mods$pos$prox$sef),
-    perc_diff(plm_mods$pos$med$sef),
-    perc_diff(plm_mods$pos$dist$sef)
+    perc_diff(plm_mods$pos$prox$log_sef),
+    perc_diff(plm_mods$pos$med$log_sef),
+    perc_diff(plm_mods$pos$dist$log_sef)
 ))))
 ```
 
 ## Enterocyte density
 ```{r percent_diff_ent_dens, echo = TRUE}
 cat(sprintf('%.4g %%\n', mean(c(
-    perc_diff(plm_mods$pos$prox$log_enterocyte_density, TRUE), 
-    perc_diff(plm_mods$pos$med$log_enterocyte_density, TRUE), 
-    perc_diff(plm_mods$pos$dist$log_enterocyte_density, TRUE)
+    perc_diff(plm_mods$pos$prox$log_enterocyte_density), 
+    perc_diff(plm_mods$pos$med$log_enterocyte_density), 
+    perc_diff(plm_mods$pos$dist$log_enterocyte_density)
 ))))
 ```
 
@@ -342,15 +377,14 @@ cat(sprintf('%.4g %%\n', mean(c(
 
 
 
-# SEF on Taxon and log(Mass)
+# SEF on Clade and log(Mass)
 
 This is to determine whether there's an effect of body mass on SEF. It appears there
 is not.
 
-```{r sef_taxon_mass, echo = TRUE}
-invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
+```{r sef_clade_mass, echo = TRUE}
 tr <- get_tr('spp')
-spp_df <- get_df('spp') %>% rename(clade = taxon)
+spp_df <- get_df('spp')
 set.seed(940318092)
 mod <- suppressWarnings(
     phylolm(log_sef ~ clade + log_mass, data = spp_df, phy = tr, model = "lambda",

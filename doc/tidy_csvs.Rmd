@@ -1,5 +1,5 @@
 ---
-title: "Clean CSVs into simpler data frames"
+title: "Clean simpler data frames into CSVs"
 author: "Lucas Nell"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
 output:
@@ -14,19 +14,24 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
 
 
-This reads the cleaned CSV files with data for individual animals and simplifies 
-them into CSV files with means by species and/or intestinal segment.
+This converts the cleaned Excel-file-derived data frames (with data for individual 
+animals) into CSV files with means and standard errors by species and/or 
+intestinal segment.
 It needs to be run only once, and not at all if you have the csv files already.
+
+Sourcing the file `doc/xl_to_csvs.R` creates three data frames: `morph_df`, `clear_df`, 
+and `absorp_df`.
+Each is associated with one or more data set(s) output from this file.
 
 # Summary of output
 
-I created two data sets from morphometric data in `output/clean_morph.csv`:
+I created two data sets from morphometric data in `morph_df`:
 
 1. Measurements separated by species (found in `output/tidy_spp.csv`)
 2. Measurements separated by species and intestinal segment (`output/tidy_pos.csv`)
 
-I also created one data set each from `output/clean_clearance.csv` and
-`output/clean_absorption.csv`.
+I also created one data set each from `clear_df` and
+`absorp_df`.
 These csvs are found in `output/tidy_clear.csv` and `output/tidy_absorp.csv`, 
 respectively.
 
@@ -65,6 +70,7 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(purrr)
 })
+source("doc/xl_to_csvs.R")
 ```
 
 # Standard error
@@ -96,7 +102,7 @@ na_se <- function(.x) {
 This data frame of morphometric measurements will be useful for the next two sections.
 
 ```{r morpho}
-morph_df <- read_csv('output/clean_morph.csv', col_types = 'cccccddd') %>%
+morph_df <- morph_df %>%
     # Oligoryzomys seems to be the more standard spelling
     mutate(species = ifelse(species == 'Olygoryzomys nigripes', 
                             'Oligoryzomys nigripes', species))
@@ -156,12 +162,12 @@ spp_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
     # Selecting measurement columns, plus the identifying columns
-    select_(.dots = append(list('diet', 'taxon', 'species', 'id', 'pos'), 
+    select_(.dots = append(list('diet', 'clade', 'species', 'id', 'pos'), 
                            spp_measures)) %>% 
     # Removing all rows with all NAs in measures columns
     filter(Reduce(`+`, lapply(.[,spp_measures], is.na)) < length(spp_measures)) %>% 
     # Add nsa to all positions' estimates (for total_enterocytes below)
-    group_by(taxon, diet, species, id) %>% 
+    group_by(clade, diet, species, id) %>% 
     mutate(nsa = ifelse(is.na(nsa), nsa[!is.na(nsa)], nsa)) %>% 
     ungroup %>% 
     # Doing the calculations / transformations now, before taking any means
@@ -171,21 +177,21 @@ spp_df <- morph_df %>%
            log_vill_surface_area = log(vill_surface_area), 
            log_nsa = log(nsa),
            log_sef = log(sef)) %>% 
-    select(taxon, diet, species, id,
+    select(clade, diet, species, id,
            log_sef, log_intestinal_length, log_nsa, log_vill_surface_area, 
            log_total_enterocytes, log_mass) %>% 
     # Taking mean by individual (i.e., across segments)
-    group_by(taxon, diet, species, id) %>% 
+    group_by(clade, diet, species, id) %>% 
     summarize_all(mean, na.rm = TRUE) %>% 
     ungroup %>% 
     # Now taking mean and SE by species
     select(-id) %>% 
-    group_by(taxon, diet, species) %>% 
+    group_by(clade, diet, species) %>% 
     summarize_all(funs(mean, se), na.rm = TRUE) %>% 
     # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
     mutate_at(vars(ends_with('_se')), na_se) %>%
     ungroup %>%
-    arrange(taxon, diet, species)
+    arrange(clade, diet, species)
 ```
 
 
@@ -195,7 +201,7 @@ filtering for a given statistic easier.
 
 ```{r spp_stat}
 spp_df <- spp_df %>%
-    gather('measure', 'value', -taxon, -diet, -species) %>%
+    gather('measure', 'value', -clade, -diet, -species) %>%
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
            measure = sapply(measure,
                             function(s) {
@@ -235,10 +241,10 @@ parameter that I will be analyzing.
 pos_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
-    select_(.dots = append(list('taxon', 'diet', 'species', 'pos', 'id'), 
+    select_(.dots = append(list('clade', 'diet', 'species', 'pos', 'id'), 
                            as.list(pos_measures))) %>% 
     # Add mass to all positions' estimates
-    group_by(taxon, diet, species, id) %>% 
+    group_by(clade, diet, species, id) %>% 
     mutate(mass = ifelse(is.na(mass), mass[!is.na(mass)], mass)) %>% 
     ungroup %>% 
     # Now removing rows with pos == NA bc they don't have the other measurements
@@ -248,7 +254,7 @@ pos_df <- morph_df %>%
                              paste0('log_', pos_measures))) %>% 
     # Grouping by, then taking mean and SE of all measurement columns and transformed-
     # measurement columns
-    group_by(taxon, diet, species, pos) %>% 
+    group_by(clade, diet, species, pos) %>% 
     summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), funs(mean, se), 
                  na.rm = TRUE) %>% 
     ungroup %>% 
@@ -256,13 +262,13 @@ pos_df <- morph_df %>%
     mutate_at(vars(ends_with('_se')), na_se) %>%
     # Now only outputting columns that are necessary
     select_(
-        .dots = as.list(c('taxon', 'diet', 'species', 'pos',
+        .dots = as.list(c('clade', 'diet', 'species', 'pos',
           paste0(rep(c('log_intestinal_diameter', 'log_villus_height', 'villus_width',
                        'crypt_width', 'log_sef', 'enterocyte_diameter',
                        'log_enterocyte_density', 'log_mass'), each = 2),
                  c('_mean', '_se'))))
     ) %>%
-    arrange(taxon, diet, species, pos)
+    arrange(clade, diet, species, pos)
 ```
 
 
@@ -272,7 +278,7 @@ filtering for a given statistic easier.
 
 ```{r gather_pos}
 pos_df <- pos_df %>%
-    gather('measure', 'value', -taxon, -diet, -species, -pos) %>%
+    gather('measure', 'value', -clade, -diet, -species, -pos) %>%
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
            measure = sapply(measure,
                             function(s) {
@@ -289,9 +295,9 @@ pos_df <- pos_df %>%
 
 
 ```{r clear_df}
-clear_df <- read_csv('output/clean_clearance.csv', col_types = 'ccccdddd') %>%
+clear_df <- clear_df %>%
     mutate(
-        # They lumped herbivores and omnivores together as "carb eater <taxon>"
+        # They lumped herbivores and omnivores together as "carb eater <clade>"
         diet = ifelse(diet == "Protein", diet, "Carb"),
         # Averaging SEF by individual, on log scale
         log_sef = (log(prox) + log(med) + log(dist)) / 3,
@@ -303,7 +309,7 @@ clear_df <- read_csv('output/clean_clearance.csv', col_types = 'ccccdddd') %>%
     ) %>% 
     # These are no longer necessary
     select(-prox, -med, -dist, -clear) %>% 
-    group_by(diet, taxon, species) %>% 
+    group_by(diet, clade, species) %>% 
     summarize_at(vars(log_sef, log_clear), funs(mean, se), na.rm = TRUE) %>% 
     ungroup
 ```
@@ -317,7 +323,7 @@ data frame.
 tmp_df <- morph_df %>%
     # Changing from tall to wide format
     spread(measure, value) %>% 
-    select(taxon, diet, species, pos, id, mass, enterocyte_density) %>% 
+    select(clade, diet, species, pos, id, mass, enterocyte_density) %>% 
     # Taking the log now, before taking any means
     mutate(log_mass = log(mass), log_enterocyte_density = log(enterocyte_density)) %>% 
     # Grouping by, then taking mean by individual (i.e., among segments)
@@ -354,7 +360,7 @@ filtering for a given statistic easier.
 
 ```{r clear_stat}
 clear_df <- clear_df %>%
-    gather('measure', 'value', -diet, -taxon, -species, -log_mass) %>%
+    gather('measure', 'value', -diet, -clade, -species, -log_mass) %>%
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
            measure = sapply(measure,
                             function(s) {
@@ -421,14 +427,14 @@ m = log(M)-v/2
 
 
 ```{r absorp_df}
-absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') %>%
+absorp_df <- absorp_df %>%
     mutate(
         # Averaging SEF by individual (i.e., across segments)
         sef = (prox + med + dist) / 3,
         ns = 1 / (nsa * sef),
         log_mass = log(mass)
     ) %>% 
-    group_by(diet, taxon, species) %>% 
+    group_by(diet, clade, species) %>% 
     summarize(
         
         # I'm being conservative and taking the minimum sample size among
@@ -477,7 +483,7 @@ absorp_df <- read_csv('output/clean_absorption.csv', col_types = 'ccccddddddd') 
         log_mass = mean(log_mass, na.rm = TRUE)
     ) %>% 
     ungroup %>% 
-    select(taxon, species, log_absorp_mean, log_absorp_se, log_mass)
+    select(clade, species, log_absorp_mean, log_absorp_se, log_mass)
 
 
 rm(sep_absorps)
@@ -508,7 +514,7 @@ filtering for a given statistic easier.
 
 ```{r absorp_stat}
 absorp_df <- absorp_df %>%
-    gather('measure', 'value', -taxon, -species, -log_mass) %>%
+    gather('measure', 'value', -clade, -species, -log_mass) %>%
     mutate(stat = sapply(measure, function(s) tail(strsplit(s, '_')[[1]], 1)),
            measure = sapply(measure,
                             function(s) {

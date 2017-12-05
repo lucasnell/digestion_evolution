@@ -1,4 +1,4 @@
-taxon,diet,species,stat,log_intestinal_length,log_mass,log_nsa,log_sef,log_total_enterocytes,log_vill_surface_area
+clade,diet,species,stat,log_intestinal_length,log_mass,log_nsa,log_sef,log_total_enterocytes,log_vill_surface_area
 Bat,Herbivorous,Artibeus lituratus,mean,3.867176158213428,4.238070309447957,3.332183772741312,2.82218486983062,20.660122270368962,6.168186590191751
 Bat,Herbivorous,Artibeus lituratus,se,0.03538508922463512,0.06638258518894152,0.08344280634490614,0.02212020204851134,0.01919735701715017,0.0757403515522748
 Bat,Herbivorous,Carollia perspicillata,mean,2.1428728396620054,2.85199308880006,1.8642531569744323,2.8345317783128263,19.895622880056706,4.723636589324421

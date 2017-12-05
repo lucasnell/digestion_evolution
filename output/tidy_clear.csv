@@ -1,4 +1,4 @@
-diet,taxon,species,log_mass,stat,log_clear,log_enterocyte_density,log_sef
+diet,clade,species,log_mass,stat,log_clear,log_enterocyte_density,log_sef
 Carb,Bat,Artibeus lituratus,4.238070309447957,mean,2.6756412720305858,17.327938497627652,2.82218486983062
 Carb,Bat,Artibeus lituratus,4.238070309447957,se,0.18610338799916099,0.07938016622755854,0.022120202048511454
 Carb,Bat,Carollia perspicillata,2.85199308880006,mean,2.1579265508497203,18.03136972308227,2.8345317783128263

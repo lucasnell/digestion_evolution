@@ -59,7 +59,7 @@ data <- list(absorp = get_df('absorp') %>% as_tibble,
                                   mutate(pos = p)}) %>% 
                  bind_rows %>% as_tibble %>% 
                  select(pos, everything()) %>% 
-                 gather('measure', 'value', -pos, -taxon, -diet, -species) %>% 
+                 gather('measure', 'value', -pos, -clade, -diet, -species) %>% 
                  mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
                                      labels = c('Proximal', 'Medial', 'Distal'))),
              spp = get_df('spp') %>% as_tibble,
@@ -84,11 +84,11 @@ mod_ci <- function(.model){
     if ('log_mass' %in% colnames(.model$X)) {
         new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0), 
                           rep(mean(.model$X[,'log_mass']), 2))
-        new_data_df <- data.frame(taxon = c(1.0, 0.0), 
+        new_data_df <- data.frame(clade = c(1.0, 0.0), 
                                   log_mass = rep(mean(.model$X[,'log_mass']), 2))
     } else {
         new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0))
-        new_data_df <- data.frame(taxon = c(1.0, 0.0))
+        new_data_df <- data.frame(clade = c(1.0, 0.0))
     }
     
     # Column names coinciding with phylogenetic parameters from models lambda:
@@ -107,11 +107,11 @@ mod_ci <- function(.model){
         as_data_frame %>% 
         rename_(.dots = setNames(colnames(.), c('estimate', 'low', 'high'))) %>% 
         mutate(measure = y_measure,
-               taxon = factor(c(1.0, 0.0), levels = c(0,1), 
+               clade = factor(c(1.0, 0.0), levels = c(0,1), 
                               labels = c('Rodent', 'Bat'))) %>% 
-        select(taxon, measure, everything()) %>% 
+        select(clade, measure, everything()) %>% 
         mutate(pos = pos_name) %>% 
-        select(taxon, pos, measure, everything())
+        select(clade, pos, measure, everything())
     
     return(out_df)
 }
@@ -124,21 +124,21 @@ mod_ci <- function(.model){
 ## Function to create base plots
 
 ```{r plots_spp_only_base}
-taxon_only_plot <- function(.model, y_axis_title, title = NULL) {
+clade_only_plot <- function(.model, y_axis_title, title = NULL) {
     y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
     .p <- mod_ci(.model) %>%
-        ggplot(aes(taxon, estimate)) +
+        ggplot(aes(clade, estimate)) +
         geom_point(data = data_frame(y_name = as.numeric(.model$y), 
-                                     taxon = factor(as.integer(.model$X[,'taxonBat']), 
+                                     clade = factor(as.integer(.model$X[,'cladeBat']), 
                                                     levels = c(0,1), 
                                                     labels = c('Rodent', 'Bat'))),
-                   aes(y = y_name, shape = taxon),
+                   aes(y = y_name, shape = clade),
                    position = position_jitter(width = 0.2, height = 0),
                    color = 'black', size = 2, fill = 'gray60') +
         geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
         geom_segment(aes(yend = estimate, 
-                         x = as.numeric(taxon) - 0.1, 
-                         xend = as.numeric(taxon) + 0.1)) +
+                         x = as.numeric(clade) - 0.1, 
+                         xend = as.numeric(clade) + 0.1)) +
         scale_shape_manual(values = c(1, 21)) +
         theme(legend.position = 'none', axis.title.x = element_blank(),
               axis.ticks.x = element_blank(),
@@ -165,22 +165,22 @@ taxon_only_plot <- function(.model, y_axis_title, title = NULL) {
 
 ```{r plots_spp_only}
 # Figure 1A
-fig1a <- taxon_only_plot(models$spp$int_length_mass, 
+fig1a <- clade_only_plot(models$spp$int_length_mass, 
                          expression(atop("Intestinal length / body" ~ mass^{0.4},
                                          "(" * cm / g^{0.4} * ")")),
                          'A')
 # Figure 1B
-fig1b <- taxon_only_plot(models$spp$nsa_mass,
+fig1b <- clade_only_plot(models$spp$nsa_mass,
                          expression(atop("NSA / body" ~ mass^{0.75},
                                          "(" * cm^2 / g^{0.75} * ")")),
                          'B')
 # Figure 4
-fig4 <- taxon_only_plot(models$spp$vill_area_mass, 
+fig4 <- clade_only_plot(models$spp$vill_area_mass, 
                         expression(atop("Villous surface area / body" ~ mass^{0.75},
                                         "(" * cm^2 / g^{0.75} * ")")))
 
 # Figure 6
-fig6 <- taxon_only_plot(models$spp$log_total_enterocytes,
+fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
                         expression("Total enterocytes (" %*% 10^9 * ")")) +
     theme(axis.title.y = element_text(margin = margin(0, 5.5, 0, 0))) +
     scale_y_continuous(breaks = log(200e6 * 2^(0:3)), labels = 0.2 * 2^(0:3))
@@ -225,17 +225,17 @@ spp_pos_plot <- function(.measure) {
     .p <- pos_ci %>%
         filter(measure == .measure) %>% 
         mutate(pos = as.numeric(pos)) %>% 
-        group_by(taxon) %>% 
-        mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
+        group_by(clade) %>% 
+        mutate(pos = pos + ifelse(clade == 'Bat', 0.2, -0.2)) %>% 
         ungroup %>% 
-        ggplot(aes(pos, group = taxon)) + 
+        ggplot(aes(pos, group = clade)) + 
         geom_point(data = data$pos %>% 
                        filter(measure == .measure) %>% 
                        mutate(pos = as.numeric(pos)) %>% 
-                       group_by(taxon) %>% 
-                       mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
+                       group_by(clade) %>% 
+                       mutate(pos = pos + ifelse(clade == 'Bat', 0.2, -0.2)) %>% 
                        ungroup, 
-                   aes(y = value, shape = taxon),
+                   aes(y = value, shape = clade),
                    color = 'black', size = 2, fill = 'gray60',
                    position = position_jitter(0.075, 0)) +
         geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
@@ -344,14 +344,14 @@ fig5b <- {pos_plots$log_enterocyte_density +
 ```{r plots_absorp_clear}
 fig7a <- data$clear %>%
     mutate(sef = exp(log_sef), clear = exp(log_clear),
-           spp_type = interaction(diet, taxon) %>% 
+           spp_type = interaction(diet, clade) %>% 
                recode_factor(`Carb.Bat` =       "Bat, carb", 
                              `Protein.Bat` =    "Bat, protein",
                              `Carb.Rodent` =    "Rodent, carb", 
                              `Protein.Rodent` = "Rodent, protein")) %>% 
     ggplot(aes(sef, clear, shape = spp_type)) +
     geom_point(color = 'black', size = 2, fill = 'gray60') +
-    guides(shape = guide_legend('Taxon, diet:', nrow = 4)) +
+    guides(shape = guide_legend('Clade, diet:', nrow = 4)) +
     theme(legend.position = c(0.01, 0.875),
           legend.title = element_text(size = 10, face = 'italic'),
           legend.title.align = 0,
@@ -368,7 +368,7 @@ fig7a <- fig7a %>%
     add_title('A')
 # Mention that both axes are on the log scale
 
-fig7b <- taxon_only_plot(models$absorp, 
+fig7b <- clade_only_plot(models$absorp, 
                          expression(atop(
                              "Fractional absorption /",
                              "total intestinal surface (cm"^{-2} ~ g^{0.75} * ")")),

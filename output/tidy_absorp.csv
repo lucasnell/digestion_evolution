@@ -1,4 +1,4 @@
-taxon,species,log_mass,stat,log_absorp,log_total_enterocytes
+clade,species,log_mass,stat,log_absorp,log_total_enterocytes
 Bat,Artibeus lituratus,4.238070309447957,mean,-6.269544465418706,20.660122270368962
 Bat,Artibeus lituratus,4.238070309447957,se,0.07933805914281898,0.01919735701715017
 Bat,Eptesicus fuscus,2.7283848506207966,mean,-4.634471459489207,19.234972326773093

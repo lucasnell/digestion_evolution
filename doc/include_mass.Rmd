@@ -58,7 +58,7 @@ pval(diet_fit, 'log_mass')
 
 
 
-# `Absorption` on `Taxon`
+# `Absorption` on `Clade`
 
 "Absorption" here means `Fractional absorption / (total intestinal surface)`,
 where `total intestinal surface = NSA * SEF`
@@ -73,10 +73,10 @@ absorp_tr <- get_tr('absorp')
 
 `phylolm` call and output:
 
-```{r absorp_taxon, eval = TRUE}
+```{r absorp_clade, eval = TRUE}
 set.seed(1092141389)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(log_absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
+    phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 pval(absorp_fit, 'log_mass')
@@ -85,7 +85,7 @@ pval(absorp_fit, 'log_mass')
 
 
 
-# `Morphometrics` on `Taxon`
+# `Morphometrics` on `Clade`
 
 ```{r sp_analyses_cols}
 spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
@@ -98,7 +98,7 @@ set.seed(357885189)
 spp_fits <- lapply(
     spp_ys,
     function(y) {
-        f <- paste(y, '~ taxon + log_mass')
+        f <- paste(y, '~ clade + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -114,7 +114,7 @@ cbind(sapply(spp_fits, pval, 'log_mass'))
 
 
 
-# `Morphometrics` on `Taxon`, separately by segment
+# `Morphometrics` on `Clade`, separately by segment
 
 
 ```{r pos_ys}
@@ -137,7 +137,7 @@ pos_fits <- lapply(
         lapply(
             pos_ys,
             function(y) {
-                f <- paste(y, ' ~ taxon + log_mass')
+                f <- paste(y, ' ~ clade + log_mass')
                 arg_list <- list(
                     as.formula(f),
                     data = as.name(paste0(pos, "_df")),

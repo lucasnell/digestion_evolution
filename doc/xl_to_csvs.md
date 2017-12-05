@@ -1,14 +1,15 @@
-Convert raw Excel file into CSVs
+Convert raw Excel file into simpler data frames
 ================
 Lucas Nell
-27 Nov 2017
+05 Dec 2017
 
 -   [Morphometric data](#morphometric-data)
 -   [Clearance data](#clearance-data)
 -   [Absorption data](#absorption-data)
+-   [Remove excess objects](#remove-excess-objects)
 -   [Session info](#session-info)
 
-This reads the initial Excel file and simplifies it into csv files. It needs to be run only once, and not at all if you have the csv files already (the ones that start with "clean\_...").
+This reads the initial Excel file and simplifies it into data frames. It needs to be sourced every time you run `tidy_csvs.Rmd`
 
 **Load packages:**
 
@@ -64,19 +65,19 @@ spp_df$abbrev[spp_df$full == 'Microtus pennsylvanicus'] <- 'Microtus'
 spp_df$abbrev[spp_df$full == 'Molossus molossus'] <- 'Mmo'
 
 
-# Start of final morphometrics data frame, starting with diet, taxon, name, and 
+# Start of final morphometrics data frame, starting with diet, clade, name, and 
 # villus heights
 initial_df <- xl[c(4:34,36:64),1:6] %>%  # (<-- row 35 is all NAs)
     rename_(.dots = setNames(paste0('X__', 1:6), 
-                             c('diet', 'taxon', 'id', 
+                             c('diet', 'clade', 'id', 
                                'prox', 'med', 'dist'))) %>% 
     mutate_at(vars(prox, med, dist), 
               function(x) as.numeric(ifelse(x == 'None', NA, x))) %>% 
     mutate(measure = 'villus height')
 
 # Resolving ambiguous ids
-initial_df$id[initial_df$taxon == 'Bat' & initial_df$id == 'E'] <- 'Eg'
-initial_df$id[initial_df$taxon == 'Bat' & grepl('Mm', initial_df$id)] <- paste0('Mmo', 1:3)
+initial_df$id[initial_df$clade == 'Bat' & initial_df$id == 'E'] <- 'Eg'
+initial_df$id[initial_df$clade == 'Bat' & grepl('Mm', initial_df$id)] <- paste0('Mmo', 1:3)
 initial_df$id[grepl('My', initial_df$id)] <- paste0('My', 1:3)
 
 # Assigning species names
@@ -84,7 +85,7 @@ initial_df <- initial_df %>%
     mutate(species = sapply(id, function(.id) {
         spp_df$full[spp_df$abbrev == gsub('[0-9]', '', .id)]
     })) %>% 
-    select(diet, taxon, species, id, measure, everything())
+    select(diet, clade, species, id, measure, everything())
 ```
 
 I'm next going to make a new data frame of column names along with their column location in the Excel file and the number of additional columns to take (after the one specified). It's assumed that all these are located in rows `c(4:34,36:64)`, like the villus height data. Also, `n` should only be 2 or 0, for measures with and without separate proximal, medial, and distal measurements, respectively. Lastly, although I am extracting columns from the Excel file, I want the new csv file to be in "long" format, so I'm binding them by rows.
@@ -121,8 +122,8 @@ xl_extr <- function(.x) {
         mutate_all(function(x) as.numeric(ifelse(x == 'None', NA, x))) %>% 
         mutate(measure = .x$name)
     # Now adding columns common to all dataframes
-    out_df <- bind_cols(initial_df %>% select(diet, taxon, species, id), .df) %>% 
-        select(diet, taxon, species, id, measure, everything())
+    out_df <- bind_cols(initial_df %>% select(diet, clade, species, id), .df) %>% 
+        select(diet, clade, species, id, measure, everything())
     
     return(out_df)
 }
@@ -148,12 +149,6 @@ morph_df <- morph_df %>%
 morph_df <- morph_df %>%
     mutate(diet = ifelse(species == 'Microtus pennsylvanicus', 'Herbivorous',
                          ifelse(species == 'Eptesicus fuscus', 'Protein', diet)))
-```
-
-Writing to CSV file.
-
-``` r
-write_csv(morph_df, 'output/clean_morph.csv')
 ```
 
 Clearance data
@@ -186,9 +181,9 @@ abbrev_id <- function(ids) {
                         })
     return(abbrev_ids)
 }
-# Next two functions: Find taxon and diet from a full species name
-find_taxon <- function(species) {
-    taxa <- sapply(species, function(s) morph_df$taxon[morph_df$species == s][1])
+# Next two functions: Find clade and diet from a full species name
+find_clade <- function(species) {
+    taxa <- sapply(species, function(s) morph_df$clade[morph_df$species == s][1])
     # In case you didn't know, rats are rodents.
     taxa[is.na(taxa) & species == 'Rattus norvegicus'] <- 'Rodent'
     return(taxa)
@@ -234,11 +229,11 @@ sef_df <- xl_sef %>%
         species = full_spp(species),
         # now changing ids to abbreviations since I now have full species names
         id = abbrev_id(id),
-        # Now for taxon, then diet
+        # Now for clade, then diet
         diet = find_diet(species),
-        taxon = find_taxon(species)
+        clade = find_clade(species)
     ) %>% 
-    select(diet, taxon, species, id, prox, med, dist)
+    select(diet, clade, species, id, prox, med, dist)
 
 
 
@@ -253,28 +248,22 @@ clear_df <- xl_clear %>%
         species = full_spp(species),
         # now changing ids to abbreviations since I now have full species names
         id = abbrev_id(id),
-        # Now for taxon, then diet
+        # Now for clade, then diet
         diet = find_diet(species),
-        taxon = find_taxon(species)
+        clade = find_clade(species)
         ) %>% 
-    select(diet, taxon, species, id, clear)
+    select(diet, clade, species, id, clear)
 
 
 # Combine
 clear_df <- bind_rows(sef_df, clear_df) %>% 
-    arrange(taxon, diet, species, id)
-```
-
-Writing to CSV file.
-
-``` r
-write_csv(clear_df, 'output/clean_clearance.csv')
+    arrange(clade, diet, species, id)
 ```
 
 Absorption data
 ===============
 
-For "Fractional absorption / total intestinal surface (cm^-2)" vs taxon (Figure 7B)
+For "Fractional absorption / total intestinal surface (cm^-2)" vs clade (Figure 7B)
 
 This uses many of the same functions that the clearance data did.
 
@@ -305,11 +294,11 @@ abs_df <- xl_abs %>%
         species = full_spp(species),
         # now changing ids to abbreviations since I now have full species names
         id = abbrev_id(id),
-        # Now for taxon, then diet
+        # Now for clade, then diet
         diet = find_diet(species),
-        taxon = find_taxon(species)
+        clade = find_clade(species)
     ) %>% 
-    select(diet, taxon, species, id, gavage, injection)
+    select(diet, clade, species, id, gavage, injection)
 
 
 abs_df2 <- xl_abs %>%
@@ -325,20 +314,24 @@ abs_df2 <- xl_abs %>%
         species = full_spp(species),
         # now changing ids to abbreviations since I now have full species names
         id = abbrev_id(id2),
-        # Now for taxon, then diet
+        # Now for clade, then diet
         diet = find_diet(species),
-        taxon = find_taxon(species)
+        clade = find_clade(species)
     ) %>% 
-    select(diet, taxon, species, id, prox, med, dist, nsa, mass)
+    select(diet, clade, species, id, prox, med, dist, nsa, mass)
 
 absorp_df <- bind_rows(abs_df, abs_df2) %>% 
-    arrange(taxon, diet, species, id)
+    arrange(clade, diet, species, id)
 ```
 
-Writing to CSV file.
+Remove excess objects
+=====================
+
+Only the objects `morph_df`, `clear_df`, and `absorp_df` are needed downstream.
 
 ``` r
-write_csv(absorp_df, 'output/clean_absorption.csv')
+rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% 
+                                   c('morph_df', 'clear_df', 'absorp_df')])
 ```
 
 Session info
@@ -355,7 +348,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-11-27
+    ##  date     2017-12-05
 
     ## Packages -----------------------------------------------------------------
 
