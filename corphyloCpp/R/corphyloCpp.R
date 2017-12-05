@@ -52,7 +52,7 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
           method = c("Nelder-Mead", "SANN"), constrain.d = FALSE, reltol = 10^-6, 
           maxit.NM = 1000, maxit.SA = 1000, temp.SA = 1, tmax.SA = 1, 
           verbose = FALSE,
-          boot = 0, boot_out = NULL, n_cores = 1) {
+          boot = 0, boot_out = NULL, n_cores = 1, max_iter = 100) {
     
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -310,7 +310,7 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Added bootstrapping to output
     if (boot > 0) {
-        results$bootstrap <- boot_corphylo(results, boot, boot_out, n_cores)
+        results$bootstrap <- boot_corphylo(results, boot, boot_out, n_cores, max_iter)
     } else {
         results$bootstrap <- matrix(NA, 0, 0)
     }
@@ -387,7 +387,7 @@ chol_fix <- function(V, max_iter = 100) {
 
 # Prepping info for input corphylo
 
-prep_info <- function(cp_obj) {
+prep_info <- function(cp_obj, max_iter = 100) {
     
     # Set up parameter values for simulating data
     p <- length(cp_obj$d)
@@ -430,7 +430,7 @@ prep_info <- function(cp_obj) {
     ## phylogenetic signal: a vector of independent normal random variables,
     ## when multiplied by the transpose of the Cholesky deposition of Vphy will
     ## have covariance matrix equal to Vphy.
-    V <- chol_fix(cp_obj$V)
+    V <- chol_fix(cp_obj$V, max_iter)
     
     iD <- t(chol(V))
     
@@ -457,7 +457,7 @@ boot_out_default <- function(cp_obj) {
 
 # Internal function to do parametric bootstrapping from a corphylo object
 
-boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
+boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1, max_iter = 100) {
     
     # This allows output to be reproducible if someone uses set.seed outside this 
     # function, even when doing this in parallel
@@ -477,7 +477,7 @@ boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1) {
     if (n_cores < 1 | n_cores %% 1 != 0) stop("n_cores must be an integer >= 1")
 
     # Adding objects from the corphylo object to a list for later using `do.call`
-    arg_list <- prep_info(cp_obj)
+    arg_list <- prep_info(cp_obj, max_iter = 100)
     arg_list <- c(list(X = 1:boot, FUN = one_boot, cp_obj = cp_obj), arg_list)
     
     # Perform boot simulations and collect the results
