@@ -1,5 +1,5 @@
 ---
-title: "Include log_mass in phylogenetic linear regression"
+title: "Test whether to include log_mass in phylogenetic linear regression"
 author: "Lucas Nell"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
 output:
@@ -17,10 +17,10 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 This file determines whether to use `log_mass` in `phylolm` regressions or not.
 These analyses take about half an hour to run.
 
-#### Loading packages:
+All p-values below are for whether the coefficient for log(mass) are not equal to zero.
 
 
-```{r load_packages}
+```{r load_packages, echo = FALSE}
 suppressPackageStartupMessages({
     library(readr)
     library(dplyr)
@@ -29,71 +29,92 @@ suppressPackageStartupMessages({
     library(phylolm)
     library(ape)
 })
-devtools::load_all('corphyloCpp')
-```
-
-
-```{r source_R}
+suppressMessages(devtools::load_all('corphyloCpp'))
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ```
+```{r load_models, echo = FALSE, eval = TRUE}
+diet_fit <- read_rds('output/inc_mass_diet_fit.rds')
+absorp_fit <- read_rds('output/inc_mass_absorp_fit.rds')
+spp_fits <- read_rds('output/inc_mass_spp_fits.rds')
+pos_fits <- read_rds('output/inc_mass_pos_fits.rds')
+load('output/inc_mass_corphylo.RData')
+```
+
+
+# Necessary data:
+
+```{r absorp_data}
+# Morphometrics by species
+spp_df <- get_df('spp')
+tr <- get_tr('spp')
+# Morphometrics by species and segment
+seg_types <- c('prox', 'med', 'dist')
+pos_df_list <- lapply(seg_types, get_df, .df = 'pos')
+names(pos_df_list) <- seg_types
+# Absorption by species
+absorp_df <- get_df('absorp')
+absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
+absorp_tr <- get_tr('absorp')
+# Clearance by species
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
+clear_tr <- get_tr('clear')
+```
+
+
 
 
 # `SEF` on `Diet`
 
-
-```{r diet_data}
-spp_df <- get_df('spp')
-tr <- get_tr('spp')
-```
-
-
 `phylolm` call and output:
 
-```{r sef_diet, eval = TRUE}
+```{r sef_diet, eval = FALSE}
 set.seed(29851644)
 diet_fit <- phylolm(log_sef ~ diet + log_mass, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
-pval(diet_fit, 'log_mass')
+```
+```{r write_diet, echo = FALSE, eval = FALSE}
+write_rds(diet_fit, 'output/inc_mass_diet_fit.rds')
 ```
 
+P-value:
+
+```{r sef_diet_pval, echo = FALSE}
+cat(sprintf('P = %.4g\n', pval(diet_fit, 'log_mass')))
+```
 
 
 # `Absorption` on `Clade`
 
-"Absorption" here means `Fractional absorption / (total intestinal surface)`,
-where `total intestinal surface = NSA * SEF`
-
-
-Necessary data:
-
-```{r absorp_data}
-absorp_df <- get_df('absorp')
-absorp_tr <- get_tr('absorp')
-```
 
 `phylolm` call and output:
 
-```{r absorp_clade, eval = TRUE}
+```{r absorp_clade, eval = FALSE}
 set.seed(1092141389)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
-pval(absorp_fit, 'log_mass')
+```
+```{r write_absorp, echo = FALSE, eval = FALSE}
+write_rds(absorp_fit, 'output/inc_mass_absorp_fit.rds')
 ```
 
+P-value:
+
+```{r absorp_clade_pval, echo = FALSE}
+cat(sprintf('P = %.4g\n', pval(absorp_fit, 'log_mass')))
+```
 
 
 
 # `Morphometrics` on `Clade`
 
-```{r sp_analyses_cols}
+`phylolm` calls:
+
+```{r sp_analyses, eval = FALSE}
 spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
             "log_total_enterocytes")
-```
-
-
-```{r sp_analyses, eval = TRUE}
 set.seed(357885189)
 spp_fits <- lapply(
     spp_ys,
@@ -106,8 +127,15 @@ spp_fits <- lapply(
         )
     })
 names(spp_fits) <- spp_ys
+```
+```{r write_spp, echo = FALSE, eval = FALSE}
+write_rds(spp_fits, 'output/inc_mass_spp_fits.rds')
+```
 
-cbind(sapply(spp_fits, pval, 'log_mass'))
+P-values:
+
+```{r sp_analyses_pvals, echo = FALSE}
+cbind(P = sapply(spp_fits, pval, 'log_mass'))
 ```
 
 
@@ -117,23 +145,18 @@ cbind(sapply(spp_fits, pval, 'log_mass'))
 # `Morphometrics` on `Clade`, separately by segment
 
 
-```{r pos_ys}
+`phylolm` calls:
+
+
+```{r pos_analyses, eval = FALSE}
 pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
             'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
-seg_types <- c('prox', 'med', 'dist')
-```
-
-
-`phylolm` call:
-
-
-```{r pos_analyses, eval = TRUE}
 set.seed(632929430)
 pos_fits <- lapply(
     seg_types,
     function(pos) {
         # Assigning to obj named <pos>_df so that the call identifies the position
-        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+        assign(paste0(pos, '_df'), pos_df_list[[pos]])
         lapply(
             pos_ys,
             function(y) {
@@ -156,9 +179,21 @@ pos_fits <- lapply(
     })
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
-cbind(sapply(pos_fits$dist, pval, .parameters = 'log_mass'))
-cbind(sapply(pos_fits$med, pval, .parameters = 'log_mass'))
-cbind(sapply(pos_fits$prox, pval, .parameters = 'log_mass'))
+```
+```{r write_pos, echo = FALSE, eval = FALSE}
+write_rds(pos_fits, 'output/inc_mass_pos_fits.rds')
+```
+
+
+P-values:
+
+```{r pos_analyses_pvals, echo = FALSE}
+cat("proximal:\n")
+cbind(P = sapply(pos_fits$prox, pval, .parameters = 'log_mass'))
+cat("medial:\n")
+cbind(P = sapply(pos_fits$med, pval, .parameters = 'log_mass'))
+cat("distal:\n")
+cbind(P = sapply(pos_fits$dist, pval, .parameters = 'log_mass'))
 ```
 
 
@@ -170,15 +205,20 @@ cbind(sapply(pos_fits$prox, pval, .parameters = 'log_mass'))
 
 # `Clearance` and `SEF`
 
-> P-values in all following chunks are for whether the coefficient for the `U` matrix is
-> not zero. There are two p-values because I'm including the `U` matrix separately
+> P-values in all following sections are for whether the coefficient for the `U` 
+> matrix is not zero.
+> There are two p-values because I'm including the `U` matrix separately
 > for the first and second `X` matrix parameters.
 
 
-```{r clear_sef}
-clear_df <- get_df('clear')
-clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
-clear_tr <- get_tr('clear')
+```{r clear_sef, eval = FALSE}
+# Function to retrieve the U coefficient(s) from a corphylo object
+get_U <- function(cp_obj) {
+    rn <- rownames(cp_obj$B)[grepl('\\.1', rownames(cp_obj$B))]
+    uc <- matrix(as.numeric(cp_obj$B[rn,]), nrow = 1)
+    colnames(uc) <- rn
+    return(uc)
+}
 
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
@@ -195,29 +235,25 @@ clear_tr <- ape::drop.tip(
     clear_tr,
     tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
 
-# Function to retrieve the U coefficient from a corphylo object
-get_U <- function(cp_obj) {
-    rn <- rownames(cp_obj$B)[grepl('\\.1', rownames(cp_obj$B))]
-    matrix(as.numeric(cp_obj$B[rn,]), nrow = 1)
-}
-
 # corphylo_cpp run with bootstrapping (takes ~1 min)
 set.seed(1844365955)
 clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat, 
                           boot = 2000, n_cores = 4, boot_out = get_U)
 clear_sef2 <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat2, 
                           boot = 2000, n_cores = 4, boot_out = get_U)
+```
 
-# P-value for coefficient != 0
-pval(clear_sef); pval(clear_sef2)
+P-values:
+```{r clear_sef_pval, echo = FALSE}
+cat(sprintf('P = %.4g\n', pval(clear_sef)))
+cat(sprintf('P = %.4g\n', pval(clear_sef2)))
 ```
 
 
 # `Clearance` and `log_enterocyte_density`
 
 
-```{r clear_ed}
-
+```{r clear_ed, eval = FALSE}
 Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
 Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
@@ -230,30 +266,26 @@ clear_ed <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat,
                           boot = 2000, n_cores = 4, boot_out = get_U)
 clear_ed2 <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat2, 
                           boot = 2000, n_cores = 4, boot_out = get_U)
+```
 
-# P-value for coefficient != 0
-pval(clear_ed); pval(clear_ed2)
+P-values:
+```{r clear_ed_pval, echo = FALSE}
+cat(sprintf('P = %.4g\n', pval(clear_ed)))
+cat(sprintf('P = %.4g\n', pval(clear_ed2)))
 ```
 
 
 # `Absorption` and `log_total_enterocytes`
 
 
-```{r absorp_te}
-
-absorp_df <- get_df('absorp')
-absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
-absorp_tr <- get_tr('absorp')
-
-
+```{r absorp_te, eval = FALSE}
 Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
 MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
 
-Umat <- list( cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]), NULL)
+Umat <- list(cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]), NULL)
 rownames(Umat[[1]]) <- rownames(Xmat)
 Umat2 <- list(NULL, cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]))
 rownames(Umat2[[2]]) <- rownames(Xmat)
-
 
 # Fit and bootstrap
 set.seed(2016097648)
@@ -262,9 +294,25 @@ absorp_te <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat,
 # # This one gives numerical issues: non positive definite correlation matrix
 # absorp_te2 <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat2, 
 #                           boot = 2000, n_cores = 4, boot_out = get_U)
+```
 
-# P-value for coefficient != 0
-pval(absorp_te)  #; pval(absorp_te2)
+P-value:
+```{r absorp_te_pval, echo = FALSE}
+cat(sprintf('P = %.4g\n', pval(absorp_te)))  #; pval(absorp_te2)
 ```
 
 
+```{r corphylo_write, eval = FALSE}
+save(clear_sef, clear_sef2, clear_ed, clear_ed2, absorp_te, 
+     file = 'output/inc_mass_corphylo.RData')
+```
+
+
+
+# Session info
+
+This outlines the package versions I used for this script.
+
+```{r session_info, echo = FALSE}
+devtools::session_info()
+```
