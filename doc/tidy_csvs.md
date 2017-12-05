@@ -16,7 +16,7 @@ Lucas Nell
 
 This converts the cleaned Excel-file-derived data frames (with data for individual animals) into CSV files with means and standard errors by species and/or intestinal segment. It needs to be run only once, and not at all if you have the csv files already.
 
-Sourcing the file `doc/xl_to_csvs.R` creates three data frames: `morph_df`, `clear_df`, and `absorp_df`. Each is associated with one or more data set(s) output from this file.
+Sourcing the file `doc/01-xl_to_dfs.R` creates three data frames: `morph_df`, `clear_df`, and `absorp_df`. Each is associated with one or more data set(s) output from this file.
 
 Summary of output
 =================
@@ -52,7 +52,7 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(purrr)
 })
-source("doc/xl_to_csvs.R")
+source("doc/01-xl_to_dfs.R")
 ```
 
 Standard error
