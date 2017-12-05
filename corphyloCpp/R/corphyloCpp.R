@@ -529,12 +529,22 @@ print.corphylo <- function(x, digits = max(3, getOption("digits") - 3), ...) {
     }
     if (nrow(x$bootstrap) > 0) {
         cat("\nBootstrapped 95% CI:\n")
-        for (nn in colnames(x$bootstrap)) {
-            cat(sprintf("  %-4s %9.3g [%9.3g %9.3g]\n", 
-                        nn, 
-                        mean(x$bootstrap[,nn]),
-                        as.numeric(quantile(x$bootstrap[,nn], 0.025)),
-                        as.numeric(quantile(x$bootstrap[,nn], 0.975))))
+        if (!is.null(colnames(x$bootstrap))) {
+            for (nn in colnames(x$bootstrap)) {
+                cat(sprintf("  %-4s %9.3g [%9.3g %9.3g]\n", 
+                            nn, 
+                            mean(x$bootstrap[,nn]),
+                            as.numeric(quantile(x$bootstrap[,nn], 0.025)),
+                            as.numeric(quantile(x$bootstrap[,nn], 0.975))))
+            }
+        } else {
+            for (nn in 1:ncol(x$bootstrap)) {
+                cat(sprintf("  %-4s %9.3g [%9.3g %9.3g]\n", 
+                            paste0('col', nn), 
+                            mean(x$bootstrap[,nn]),
+                            as.numeric(quantile(x$bootstrap[,nn], 0.025)),
+                            as.numeric(quantile(x$bootstrap[,nn], 0.975))))
+            }
         }
     }
     cat("\n")
