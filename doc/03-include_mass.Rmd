@@ -6,6 +6,8 @@ output:
   github_document:
     toc: true
     toc_depth: 2
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
@@ -183,6 +185,23 @@ for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
 ```{r write_pos, echo = FALSE, eval = FALSE}
 write_rds(pos_fits, 'output/inc_mass_pos_fits.rds')
 ```
+
+
+Because there are so many models, I'm writing whether to include mass to a csv file:
+
+```{r csv_pos}
+include_df <- lapply(
+    seg_types, 
+    function(p) {
+        data_frame(pos = p, y = names(pos_fits[[p]]),
+                   include = sapply(pos_fits[[p]], pval, 
+                                    .parameters = 'log_mass') < 0.05)
+    }) %>% 
+    bind_rows
+write_csv(include_df, 'output/include_mass_pos.csv')
+```
+
+
 
 
 P-values:

@@ -138,6 +138,20 @@ names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
 ```
 
+Because there are so many models, I'm writing whether to include mass to a csv file:
+
+``` r
+include_df <- lapply(
+    seg_types, 
+    function(p) {
+        data_frame(pos = p, y = names(pos_fits[[p]]),
+                   include = sapply(pos_fits[[p]], pval, 
+                                    .parameters = 'log_mass') < 0.05)
+    }) %>% 
+    bind_rows
+write_csv(include_df, 'output/include_mass_pos.csv')
+```
+
 P-values:
 
     ## proximal:

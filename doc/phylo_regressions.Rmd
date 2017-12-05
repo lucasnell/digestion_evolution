@@ -29,7 +29,8 @@ suppressPackageStartupMessages({
     library(phylolm)
     library(ape)
 })
-devtools::load_all('corphyloCpp')
+# A version of ape::corphylo that does parametric bootstrapping
+suppressMessages(devtools::load_all('corphyloCpp'))
 ```
 
 
@@ -38,7 +39,6 @@ devtools::load_all('corphyloCpp')
 The `R` directory provides functions to summarize `phylolm` objects, run a version
 of `ape::corphylo` with confidence interval output, and retrieve morphometric,
 clearance, and absorption data.
-See `tidy_csvs.md` for more info.
 
 ```{r source_R}
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
@@ -231,39 +231,10 @@ seg_types <- c('prox', 'med', 'dist')
 Below is a data frame including whether or not to include `log_mass` as a covariate.
 This determination was based on whether `log_mass` had a significant effect when it was
 included in the model, where p-values were based on parametric bootstrapping 
-(see `docs/include_mass.md`).
+(see `docs/03-include_mass.md`).
 
 ```{r pos_log_mass_include, echo = FALSE}
-include_mass <- rbind(
-    # distal
-    c('dist', 'log_intestinal_diameter', 0.000 < 0.05),
-    c('dist', 'villus_height',           0.032 < 0.05),
-    c('dist', 'villus_width',            0.193 < 0.05),
-    c('dist', 'crypt_width',             0.500 < 0.05),
-    c('dist', 'sef',                     0.329 < 0.05),
-    c('dist', 'enterocyte_diameter',     0.782 < 0.05),
-    c('dist', 'log_enterocyte_density',  0.462 < 0.05),
-    
-    # medial
-    c('med', 'log_intestinal_diameter', 0.006 < 0.05),
-    c('med', 'villus_height',           0.039 < 0.05),
-    c('med', 'villus_width',            0.062 < 0.05),
-    c('med', 'crypt_width',             0.379 < 0.05),
-    c('med', 'sef',                     0.322 < 0.05),
-    c('med', 'enterocyte_diameter',     0.621 < 0.05),
-    c('med', 'log_enterocyte_density',  0.208 < 0.05),
-    
-    # proximal
-    c('prox', 'log_intestinal_diameter', 0.000 < 0.05),
-    c('prox', 'villus_height',           0.002 < 0.05),
-    c('prox', 'villus_width',            0.009 < 0.05),
-    c('prox', 'crypt_width',             0.881 < 0.05),
-    c('prox', 'sef',                     0.022 < 0.05),
-    c('prox', 'enterocyte_diameter',     0.823 < 0.05),
-    c('prox', 'log_enterocyte_density',  0.203 < 0.05)) %>% 
-    as_data_frame %>% 
-    rename_(.dots = setNames(colnames(.), c('pos', 'y', 'include'))) %>% 
-    mutate(include = as.logical(include))
+include_mass <- read_csv('output/include_mass_pos.csv', col_types = 'ccl')
 include_mass
 ```
 
