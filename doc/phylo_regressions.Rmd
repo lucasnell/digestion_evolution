@@ -237,28 +237,28 @@ included in the model, where p-values were based on parametric bootstrapping
 include_mass <- rbind(
     # distal
     c('dist', 'log_intestinal_diameter', 0.000 < 0.05),
-    c('dist', 'villus_height',           0.012 < 0.05),
+    c('dist', 'villus_height',           0.032 < 0.05),
     c('dist', 'villus_width',            0.193 < 0.05),
     c('dist', 'crypt_width',             0.500 < 0.05),
-    c('dist', 'sef',                     0.283 < 0.05),
+    c('dist', 'sef',                     0.329 < 0.05),
     c('dist', 'enterocyte_diameter',     0.782 < 0.05),
     c('dist', 'log_enterocyte_density',  0.462 < 0.05),
     
     # medial
     c('med', 'log_intestinal_diameter', 0.006 < 0.05),
-    c('med', 'villus_height',           0.013 < 0.05),
+    c('med', 'villus_height',           0.039 < 0.05),
     c('med', 'villus_width',            0.062 < 0.05),
     c('med', 'crypt_width',             0.379 < 0.05),
-    c('med', 'sef',                     0.349 < 0.05),
+    c('med', 'sef',                     0.322 < 0.05),
     c('med', 'enterocyte_diameter',     0.621 < 0.05),
     c('med', 'log_enterocyte_density',  0.208 < 0.05),
     
     # proximal
     c('prox', 'log_intestinal_diameter', 0.000 < 0.05),
-    c('prox', 'villus_height',           0.001 < 0.05),
+    c('prox', 'villus_height',           0.002 < 0.05),
     c('prox', 'villus_width',            0.009 < 0.05),
     c('prox', 'crypt_width',             0.881 < 0.05),
-    c('prox', 'sef',                     0.024 < 0.05),
+    c('prox', 'sef',                     0.022 < 0.05),
     c('prox', 'enterocyte_diameter',     0.823 < 0.05),
     c('prox', 'log_enterocyte_density',  0.203 < 0.05)) %>% 
     as_data_frame %>% 
@@ -332,6 +332,16 @@ cbind(sapply(pos_fits$prox, pval))
 
 # `Clearance` and `SEF`
 
+```{r corphylo_under_hood, echo = FALSE}
+# Thes "*_under_hood" chunks are to output summaries from the corphylo_cpp fits
+cp_list <- readr::read_rds('output/models_corphylo.rds')
+clear_sef <- cp_list$clear_sef
+clear_ed <- cp_list$clear_ed
+absorp_te <- cp_list$absorp_te
+rm(cp_list)
+```
+
+
 Clearance = "paracellular probe L-arabinose clearance"
 
 Both are log-transformed.
@@ -344,7 +354,7 @@ Instead of an RMA regression, I'll be using a modified version of `ape::corphylo
 that can conduct parametric bootstrapping.
 P-values are calculated using these bootstrapping replicates.
 
-```{r clear_sef}
+```{r clear_sef, eval = FALSE}
 clear_df <- get_df('clear')
 clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
 clear_tr <- get_tr('clear')
@@ -361,6 +371,10 @@ clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, boot = 2000, n_
 # P-value for correlation != 0
 pval(clear_sef)[1]
 ```
+```{r clear_sef_under_hood, echo = FALSE}
+pval(clear_sef)[1]
+```
+
 
 
 # `Clearance` and `log_enterocyte_density`
@@ -368,7 +382,7 @@ pval(clear_sef)[1]
 > One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which
 > is why I'm removing that row below.
 
-```{r clear_ed}
+```{r clear_ed, eval = FALSE}
 Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
 Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
@@ -388,12 +402,16 @@ clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, boot = 2000, n_co
 # P-value for correlation != 0
 pval(clear_ed)[1]
 ```
+```{r clear_ed_under_hood, echo = FALSE}
+pval(clear_ed)[1]
+```
+
 
 
 # `Absorption` and `log_total_enterocytes`
 
 
-```{r absorp_te}
+```{r absorp_te, eval = FALSE}
 absorp_df <- get_df('absorp')
 absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
 absorp_tr <- get_tr('absorp')
@@ -409,11 +427,14 @@ absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, boot = 2000, n_cor
 # P-value for correlation != 0
 pval(absorp_te)[1]
 ```
+```{r absorp_te_under_hood, echo = FALSE}
+pval(absorp_te)[1]
+```
 
 
 # Saving `corphylo` objects
 
-```{r save_corphylo}
+```{r save_corphylo, eval = FALSE}
 readr::write_rds(list(clear_sef = clear_sef, clear_ed = clear_ed, absorp_te = absorp_te),
                  'output/models_corphylo.rds')
 ```
