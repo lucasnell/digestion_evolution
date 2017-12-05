@@ -15,13 +15,24 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
  
  
 This script displays results from analyses using
-[`phylolm`](https://doi.org/10.1093/sysbio/syu005). 
-Column `estimate` is the coefficient estimate for the specified `X`, while 
+[`phylolm::phylolm`](https://doi.org/10.1093/sysbio/syu005) and 
+a modified version of [`ape::corphylo`](https://CRAN.R-project.org/package=ape)
+(paper link 
+[here](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2435.2009.01596.x/full)).
+
+The `parameter` column indicates which variable (either an X variable or phylogenetic 
+signal) that row's numbers refer to.
+Column `estimate` is the parameter estimate for the specified `parameter`, while 
 `lower` and `upper` are lower and upper bounds of the 95% confidence interval
-for the coefficient estimate obtained by parametric bootstrapping.
-Multiple `X` parameters for a given `Y` indicate that both `X`s were included
-in the regression with `Y`, *not* that separate regressions were performed for 
-each `X`.
+for the coefficient estimate, obtained by parametric bootstrapping.
+`P` is the p-value for an estimate not equal to zero; this is obtained by the same 
+bootstrapping as for the CI.
+I do not present P-values for phylogenetic signals because they were bound
+above zero by the models.
+Thus confidence intervals were more informative.
+
+Multiple `parameter` values for a given `Y` *never* indicate that separate 
+analyses were performed for each `parameter`.
 
 > This page uses the variable name `clade` for the dummy variable indicating whether
 > a species is a bat, but in the rest of the scripts in this repo, this variable 
@@ -37,133 +48,105 @@ suppressPackageStartupMessages({
     library(stringr)
     library(purrr)
     library(phylolm)
-}) 
+    library(ape)
+})
+devtools::load_all('corphyloCpp')
 ``` 
  
  
 ```{r parse_output} 
-summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccddd') %>%
+summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccdddd') %>%
     mutate(X = ifelse(X == 'taxonBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
     rename(estimate = value) %>%
-    select(pos, Y, X, estimate, lower, upper) %>% 
-    arrange(pos, Y, X) %>%
+    select(pos, Y, X, estimate, lower, upper, P) %>% 
     mutate_if(is.numeric, function(s) sprintf('%.4g', s)) %>% 
-    nest(-pos)
-models <- list(absorp = read_rds('output/models_absorp.rds'),
+    mutate(model = ifelse((X %in% c('absorp', 'log_clear', 'd') | 
+                               Y %in% c('absorp', 'log_clear')) & 
+                              !X %in% c('clade', 'lambda', 'log_mass'), 
+                          'corphylo','phylolm'),
+           P = ifelse(X %in% c('lambda', 'd'), "–", P)) %>% 
+    rename(parameter = X) %>% 
+    nest(-model, -pos)
+plm_mods <- list(absorp = read_rds('output/models_absorp.rds'),
                diet = read_rds('output/models_diet.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
+cp_mods <- read_rds('output/models_corphylo.rds')
 ``` 
  
 
-# Coefficient estimates
+# `phylolm` estimates
+
+Below, the `parameter` column names coefficients (i.e., X variables), except for
+when `parameter == "lambda"`.
+When `parameter == "lambda"`, this refers to the phylogenetic correlation parameter
+(Pagel's lambda).
+
 
 ## Positions combined 
  
 ```{r spp_summs} 
-knitr::kable(filter(summ_df, pos == 'all')$data[[1]]) 
+knitr::kable(filter(summ_df, pos == 'all', model == 'phylolm')$data[[1]] %>% 
+    arrange(Y, parameter) %>%
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
 ``` 
  
  
 ## Proximal 
  
 ```{r prox_summs} 
-knitr::kable(filter(summ_df, pos == 'prox')$data[[1]])
+knitr::kable(filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>% 
+    arrange(Y, parameter) %>%
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
 ``` 
  
  
 ## Medial 
  
 ```{r med_summs} 
-knitr::kable(filter(summ_df, pos == 'med')$data[[1]])
+knitr::kable(filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
+    arrange(Y, parameter) %>%
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
 ``` 
  
  
 ## Distal 
  
 ```{r dist_summs} 
-knitr::kable(filter(summ_df, pos == 'dist')$data[[1]])
+knitr::kable(filter(summ_df, pos == 'dist', model == 'phylolm')$data[[1]] %>% 
+    arrange(Y, parameter) %>%
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
 ``` 
 
 
-# Phylogenetic signal
+# `corphylo` estimates
 
-```{r phy_signal_fxn}
-phylo_summ <- function(.model, .pos = NA) {
-    .pars <- paste(.model$formula)[c(2, 3)]
-    data_frame(Y = .pars[1], X = .pars[2], pos = .pos,
-               lambda = sprintf('%.4g [%.4g, %.4g]', .model$optpar,
-                                .model$bootconfint95[1,'lambda'],
-                                .model$bootconfint95[2,'lambda']),
-               sigma2 = sprintf('%.4g [%.4g, %.4g]', .model$sigma2,
-                                .model$bootconfint95[1,'sigma2'],
-                                .model$bootconfint95[2,'sigma2']))
-}
+Below, when `parameter != "d"`, that row refers to the correlation between the
+`Y` and `parameter` variables. There are no real X and Y variables here.
 
-mod_phylo_summs <- bind_rows(
-    list(
-        phylo_summ(models$absorp),
-        phylo_summ(models$diet),
-        bind_rows(lapply(models$spp, phylo_summ)),
-        bind_rows(
-            lapply(names(models$pos), function(p) {
-                bind_rows(lapply(models$pos[[p]], phylo_summ, .pos = p))
-            }))
-        )) %>%
-    mutate(X = gsub('taxon', 'clade', X),
-           pos = ifelse(is.na(pos), 'all', pos)) %>% 
-    select(pos, Y, X, lambda, sigma2) %>%
-    arrange(pos, Y, X) %>% 
-    nest(-pos)
+When `parameter == "d"`, this row refers to the phylogenetic signal from an 
+Ornstein-Uhlenbeck process for variable `Y`.
+
+# `Clearance` and `SEF`
+
+```{r clear_sef_kable}
+knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][1:3,])
 ```
 
-## Positions combined 
- 
-```{r phylo_spp_summs} 
-knitr::kable(filter(mod_phylo_summs, pos == 'all')$data[[1]])
-``` 
- 
- 
-## Proximal 
- 
-```{r phylo_prox_summs} 
-knitr::kable(filter(mod_phylo_summs, pos == 'prox')$data[[1]])
-``` 
- 
- 
-## Medial 
- 
-```{r phylo_med_summs} 
-knitr::kable(filter(mod_phylo_summs, pos == 'med')$data[[1]])
-``` 
- 
- 
-## Distal 
- 
-```{r phylo_dist_summs} 
-knitr::kable(filter(mod_phylo_summs, pos == 'dist')$data[[1]])
-``` 
+# `Clearance` and `log_enterocyte_density`
 
-
-
-
-# SEF on Taxon and log(Mass)
-
-This is to determine whether there's an effect of body mass on SEF. It appears there 
-is not.
-
-```{r sef_taxon_mass, echo = TRUE}
-invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
-tr <- get_tr('spp')
-spp_df <- get_df('spp') %>% rename(clade = taxon)
-set.seed(940318092)
-mod <- suppressWarnings(
-    phylolm(sef ~ clade + log_mass, data = spp_df, phy = tr, model = "lambda", 
-            boot = 2000))
-# Confidence intervals for coefficient estimates using parametric bootstrapping:
-t(ci(mod, c('log_mass', 'cladeBat')))
+```{r clear_ed_kable}
+knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][4:6,])
 ```
+
+
+# `Absorption` and `log_total_enterocytes`
+
+```{r absorp_te_kable}
+knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][7:9,])
+```
+
 
 
 
@@ -173,36 +156,206 @@ This is for the percent differences in the discussion and abstract.
 
 ```{r percent_diff, echo = TRUE}
 perc_diff <- function(.m, log_trans = FALSE) {
-    .c <- as.numeric({.m %>% summary %>% coef}[,'Estimate'])
+    .c <- {.m %>% summary %>% coef}[,'Estimate']
+    .r <- .c[['(Intercept)']]
+    .b <- .r + .c[['taxonBat']]
+    .d <- .b - .r
+    .d / .r
     if (log_trans) {
         prop_diff <- {exp(.c[2] + .c[1]) - exp(.c[1])} / exp(.c[1])
     } else {
-        prop_diff <- .c[2] / .c[1]
+        prop_diff <- .c[['taxonBat']] / .c[['(Intercept)']]
     }
     return(prop_diff * 100)
 }
+
+.m <- plm_mods$spp$nsa
+
+
+# here include jackknife evidence that row 1 is super influential and re-run model 
+# without it (present those results in the paper too)
+
+mm <- phylolm(log(sef) ~ taxon + log_mass, get_df('spp'), model = 'lambda', 
+              phy = get_tr('spp'))
+summary(mm)
+
+nd <- as_tibble(expand.grid(log_mass = seq(2, 5, length.out = 100), taxon = c('Bat', 'Rodent'))) %>% 
+    mutate(taxon = factor(taxon, levels = c('Rodent', 'Bat')))
+nd$intestinal_length <- exp(as.numeric(predict(mm, newdata = nd)))
+nd$sef <- exp(as.numeric(predict(mm, newdata = nd)))
+# nd$nsa <- as.numeric(predict(mm, newdata = nd))^2
+nd$nsa2 <- as.numeric(predict(.m, newdata = nd))
+
+
+library(ggplot2)
+theme_set(theme_bw())
+source(".Rprofile")
+
+p_df <- lapply(c('prox', 'med', 'dist'), function(p) get_df('pos', p) %>% mutate(pos = p)) %>% 
+    bind_rows %>% 
+    as_tibble %>% 
+    mutate(pos = factor(pos, levels = c('prox', 'med', 'dist')))
+
+p_df %>% 
+    ggplot(aes(log_mass, log_enterocyte_density, color = taxon)) +
+    geom_point() +
+    facet_grid(. ~ pos)
+
+invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
+
+
+get_df('spp') %>% 
+    ggplot(aes(log_mass, log(intestinal_length), color = taxon)) +
+    geom_point()
+
+source("R/get_data.R")
+plm <- plm_mods$spp$intestinal_length
+phy = get_tr('spp')
+
+
+
+
+# Function to do jackknifing on phylolm object to find influential points (i.e., species)
+jack_phylolm <- function(plm, phy, return_fxn = NULL) {
+    
+    if (is.null(return_fxn)) {
+        return_fxn <- function(.plm) return(t(coef(.plm)))
+    }
+    
+    X_names <- gsub("\\s+", "", unlist(strsplit(paste(plm$formula)[3], '\\+|\\*')))
+    
+    df_ <- cbind(plm$X[,-1], as.data.frame(plm$y))
+    colnames(df_)[length(colnames(df_))] <- paste(plm$formula)[2]
+    # Dealing with factors
+    for (xn in X_names) {
+        ii <- which(grepl(xn, colnames(df_)))
+        # This one must be taxon 
+        if (colnames(df_)[ii][1] == 'taxonBat') {
+            new_col <- factor(ifelse(df_$taxonBat == 1, 'Bat', 'Rodent'),
+                              levels = c('Rodent', 'Bat'))
+            df_[,xn] <- new_col
+            df_ <- df_[,-ii]
+        } else if (length(ii) == 2) {
+        # This one must be diet
+            new_col <- factor(ifelse(df_$dietOmnivorous == 1, 'Omnivorous', 
+                                     ifelse(df_$dietProtein == 1, 'Protein', 'Herbivorous')),
+                              levels = c('Herbivorous', 'Omnivorous', 'Protein'))
+            df_[,xn] <- new_col
+            df_ <- df_[,-ii]
+        }
+    }; rm(xn, ii, new_col)
+    
+    comp_ <- return_fxn(plm)
+    
+    jack_df <- lapply(1:nrow(df_), 
+           function(i) {
+               .df <- df_[-i,]
+               .tr <- ape::drop.tip(phy, phy$tip.label[!phy$tip.label %in% rownames(.df)])
+               suppressWarnings(
+                   .plm <- update(plm, data = .df, phy = .tr, boot = 0)
+               )
+               return(return_fxn(.plm) - comp_)
+           }) %>% 
+        do.call(what = rbind) %>% 
+    as_tibble %>% 
+    rename(intercept = `(Intercept)`) %>% 
+    mutate(species = rownames(df_)) %>% 
+    gather('estimate', 'influence', -species)
+    
+    return(jack_df)
+}
+
+
+
+
+
+
+spp_df <- get_df('spp')
+spp_tr <- get_tr('spp')
+
+
+
+int_jack <- jack_phylolm(plm_mods$spp$intestinal_length, get_tr('spp'))
+
+int_jack %>% 
+    ggplot(aes(abs(influence), reorder(species, abs(influence)), color = estimate)) +
+    geom_point() +
+    xlab('Jackknife influence value') +
+    theme(axis.title.y = element_blank(), axis.text.y = element_text(face = 'italic'),
+          legend.position = c(0.9, 0.1), legend.justification = c(1, 0),
+          legend.background = element_rect(color = 'black', size = 0.25))
+
+
+
+
+
+which(spp_df$species == 'Artibeus lituratus')
+which(spp_df$species == 'Euryoryzomys russatus')
+spp_df[c(1, 12),]
+
+
+
+spp_df %>% 
+    ggplot(aes(log_mass, log_intestinal_length, color = taxon)) +
+    geom_point()
+
+.df <- .df[.df$species != 'Artibeus lituratus',]
+.tr <- get_tr('spp') %>% filter_tr(spp[spp != 'Artibeus lituratus'])
+z <- phylolm(intestinal_length ~ taxon + log_mass, model = 'lambda',
+        data = .df, boot = 2000, phy = .tr)
+z %>% summary
+pval(z, c('taxonBat', 'log_mass'))
+
+summary(plm_mods$spp$intestinal_length)
+pval(plm_mods$spp$intestinal_length, c('taxonBat', 'log_mass'))
+
+
+hist(resid(plm_mods$pos$prox$log_enterocyte_density))
+hist(resid(mm))
+
 ```
 
 ## NSA corrected for mass
 ```{r percent_diff_nsa, echo = TRUE}
-cat(sprintf('%.4g %%\n', perc_diff(models$spp$nsa_mass)))
+cat(sprintf('%.4g %%\n', perc_diff(plm_mods$spp$nsa)))
 ```
 
 ## SEF
 ```{r percent_diff_sef, echo = TRUE}
 cat(sprintf('%.4g %%\n', mean(c(
-    perc_diff(models$pos$prox$sef),
-    perc_diff(models$pos$med$sef),
-    perc_diff(models$pos$dist$sef)
+    perc_diff(plm_mods$pos$prox$sef),
+    perc_diff(plm_mods$pos$med$sef),
+    perc_diff(plm_mods$pos$dist$sef)
 ))))
 ```
 
 ## Enterocyte density
 ```{r percent_diff_ent_dens, echo = TRUE}
 cat(sprintf('%.4g %%\n', mean(c(
-    perc_diff(models$pos$prox$log_enterocyte_density, TRUE), 
-    perc_diff(models$pos$med$log_enterocyte_density, TRUE), 
-    perc_diff(models$pos$dist$log_enterocyte_density, TRUE)
+    perc_diff(plm_mods$pos$prox$log_enterocyte_density, TRUE), 
+    perc_diff(plm_mods$pos$med$log_enterocyte_density, TRUE), 
+    perc_diff(plm_mods$pos$dist$log_enterocyte_density, TRUE)
 ))))
+```
+
+
+
+
+
+# SEF on Taxon and log(Mass)
+
+This is to determine whether there's an effect of body mass on SEF. It appears there
+is not.
+
+```{r sef_taxon_mass, echo = TRUE}
+invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
+tr <- get_tr('spp')
+spp_df <- get_df('spp') %>% rename(clade = taxon)
+set.seed(940318092)
+mod <- suppressWarnings(
+    phylolm(log_sef ~ clade + log_mass, data = spp_df, phy = tr, model = "lambda",
+            boot = 2000))
+# P-values for coefficient estimates != 0, using parametric bootstrapping:
+pval(mod, c('log_mass', 'cladeBat'))
 ```
 
