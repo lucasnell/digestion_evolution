@@ -1,8 +1,30 @@
 # 
-# Functions for retrieving data of mean, standard errors, or phylogenies among species
+# Functions to retrieve and prepare data for phylolm and corphylo
 # 
 
 
+
+#' Get data frame for an analysis set
+#'
+#' @param .df refers to the analysis set and must be one of the following:
+#' \describe{
+#'     \item{ \code{'spp'} }{ morphometric analyses by species }
+#'     \item{ \code{'clear'} }{ analyses for clearance }
+#'     \item{ \code{'absorp'} }{ analyses for absorption }
+#'     \item{ \code{'pos'} }{ morphometric analyses by species and position }
+#'     }
+#' @param .pos Position of intestine to return data from. Takes values of \code{'prox'}, 
+#'     \code{'med'}, or {'dist'}. This argument is ignored if \code{.df != 'pos'}.
+#'     Defaults to \code{NA}, which will return an error if \code{.df == 'pos'}.
+#' @param .stat Statistic to return, which can be \code{'mean'} or \code{'se'} for 
+#'     mean and standard error, respectively. Defaults to \code{'mean'}.
+#'
+#' @return A data frame with factors consistently formatted and species names as 
+#'     row names
+#' 
+#' @export
+#'
+#'
 get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
     
     .df <- match.arg(.df, c('spp', 'clear', 'absorp', 'pos'))
@@ -49,7 +71,19 @@ get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
 }
 
 
+
+#' Get a phylogenetic tree for an analysis set
+#'
+#' @param .df See \code{\link{get_df}}.
+#'
+#' @return A phylogenetic tree for a given analysis set
+#' 
+#' @export
+#'
+#'
 get_tr <- function(.df) {
+    
+    .df <- match.arg(.df, c('spp', 'clear', 'absorp', 'pos'))
     
     # Just choosing parameters for get_df. These won't affect anything bc this is just
     # to retrieve species names.
@@ -66,7 +100,37 @@ get_tr <- function(.df) {
 }
 
 
+#' Filter a phylogenetic tree
+#'
+#' @param tr A \code{phylo} object.
+#' @param keep_spp A character vector of species names to keep.
+#'
+#' @return A \code{phylo} object with only the species specified.
+#' 
+#' @export
+#'
+#'
+filter_tr <- function(tr, keep_spp) {
+    cleared_tr <- ape::drop.tip(
+        tr, 
+        tip = tr$tip.label[!tr$tip.label %in% keep_spp]
+    )
+    return(cleared_tr)
+}
 
+
+
+
+#' Create a matrix for a call to corphylo
+#'
+#' @param .df A data frame. It should contain the species names and parameters of 
+#'     interest.
+#' @param .pars A character vector. Column names for the parameters of interest.
+#'
+#' @return A matrix with proper rownames for corphylo to use.
+#' 
+#' @export
+#'
 cp_mat <- function(.df, .pars) {
     out <- as.matrix(.df[,.pars])
     colnames(out) <- NULL
@@ -74,11 +138,3 @@ cp_mat <- function(.df, .pars) {
     return(out)
 }
 
-filter_tr <- function(tr, keep_spp) {
-    cleared_tr <- ape::drop.tip(
-        tr, 
-        tip = tr$tip.label[!tr$tip.label %in% keep_spp]
-    )
-    return(cleared_tr)
-    
-}

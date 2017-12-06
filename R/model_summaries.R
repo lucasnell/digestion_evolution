@@ -1,8 +1,24 @@
 # 
-# Functions for summarizing phylolm models
+# Functions for summarizing phylolm and/or corphylo models
 # 
 
+
+
+#' P-value(s) for a \code{phylolm} or \code{corphylo} object.
+#'
+#' @param .model A \code{phylolm} or \code{corphylo} object that has bootstrap 
+#'     replicates within (i.e., was run with \code{boot > 0}).
+#' @param .parameters A character vector of the parameter name(s) of interest. 
+#'     Defaults to \code{'cladeBat'}.
+#'
+#' @return A numeric vector of p-values for each parameter not equalling zero.
+#' 
+#' @export
+#'
 pval <- function(.model, .parameters = 'cladeBat') {
+    if (length(.model$bootstrap) == 0) {
+        stop("The input model must include bootstrap replicates.")
+    }
     p_fun <- function(x) 2 * min(c(mean(x > 0), mean(x < 0)))
     if (is(.model, 'phylolm')) {
         out <- lapply(.parameters, function(p) p_fun(.model$bootstrap[, p])) %>% 
@@ -15,24 +31,44 @@ pval <- function(.model, .parameters = 'cladeBat') {
     return(out)
 }
 
+#' Confidence interval(s) for a \code{phylolm} or \code{corphylo} object.
+#'
+#' @inheritParams pval
+#'
+#' @return A two-column matrix of confidence intervals for each parameter, where the
+#'     first colum is the lower limit and the second is the upper.
+#' 
+#' @export
+#'
 ci <- function(.model, .parameters = 'cladeBat') {
     if (is(.model, 'phylolm')) {
         out <- matrix(as.numeric(.model$bootconfint95[,.parameters]), 
                       ncol = 2, nrow = length(.parameters), byrow = TRUE)
-        colnames(out) <- c('lower', 'upper')
     } else if (is(.model, 'corphylo')) {
         out <- t(apply(.model$bootstrap, 2, quantile, probs = c(0.025, 0.975)))
         rownames(out) <- NULL
-        colnames(out) <- c('lower', 'upper')
     } else {
         stop("only for phylolm or corphylo objects")
     }
+    colnames(out) <- c('lower', 'upper')
     return(out)
 }
 
-# Row(s) of a data frame for a single model
+
+
+#' Summarize a \code{phylolm} or \code{corphylo} object.
+#' 
+#'
+#' @param .model A \code{phylolm} or \code{corphylo} object that has bootstrap 
+#'     replicates within (i.e., was run with \code{boot > 0}).
+#' @param .pos 
+#' @param .corr_pars 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
-    
     
     if (is(.model, 'phylolm')) {
         .parameters <- names(coef(.model))[names(coef(.model)) != '(Intercept)']
@@ -65,7 +101,24 @@ summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
 
 
 
-# Function to do jackknifing on phylolm object to find influential points (i.e., species)
+
+#' Jackknifing on a \code{phylolm} object to find influential points.
+#' 
+#' \emph{Note}: this function only works for my specific analyses.
+#' The portion of this function dealing with factors is particularly non-generalizable,
+#' plus it assumes an intercept is estimated.
+#'
+#' @param plm A \code{phylolm} object.
+#' @param phy The \code{phylo} object, the same one that was used to fit the original
+#'     \code{phylolm} model.
+#'
+#' @return An `n` by `p` data frame, where `n` is the sample size and `p` is the 
+#'     number of coefficients estimated by the \code{phylolm} model. 
+#'     A cell in row `i` and column `j` is the jackknife influence value on 
+#'     coefficient `j` for removing row `i` from the analysis.
+#' 
+#' @export
+#'
 jack_phylolm <- function(plm, phy) {
     
     return_fxn <- function(.plm) return(t(coef(.plm)))
@@ -99,8 +152,9 @@ jack_phylolm <- function(plm, phy) {
     jack_df <- lapply(1:nrow(df_), 
                       function(i) {
                           .df <- df_[-i,]
-                          .tips_to_drop <- phy$tip.label[!phy$tip.label %in% rownames(.df)]
-                          .tr <- ape::drop.tip(phy, .tips_to_drop)
+                          .to_drop <- phy$tip.label
+                          .to_drop <- .to_drop[!.to_drop %in% rownames(.df)]
+                          .tr <- ape::drop.tip(phy, .to_drop)
                           suppressWarnings(
                               .plm <- update(plm, data = .df, phy = .tr, boot = 0)
                           )
