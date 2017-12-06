@@ -1,62 +1,57 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-04 Dec 2017
+05 Dec 2017
 
--   [`source` the `R` directory](#source-the-r-directory)
--   [`SEF` on `Diet`](#sef-on-diet)
--   [`Absorption` on `Taxon`](#absorption-on-taxon)
--   [`Morphometrics` on `Taxon`](#morphometrics-on-taxon)
--   [`Morphometrics` on `Taxon`, separately by segment](#morphometrics-on-taxon-separately-by-segment)
--   [`Clearance` and `SEF`](#clearance-and-sef)
--   [`Clearance` and `log_enterocyte_density`](#clearance-and-log_enterocyte_density)
--   [`Absorption` and `log_total_enterocytes`](#absorption-and-log_total_enterocytes)
--   [Saving `corphylo` objects](#saving-corphylo-objects)
+-   [Retrieve data](#retrieve-data)
+-   [`phylolm`](#phylolm)
+    -   [`SEF` on `Diet`](#sef-on-diet)
+    -   [`Absorption` on `Clade`](#absorption-on-clade)
+    -   [`Morphometrics` on `Clade`](#morphometrics-on-clade)
+    -   [`Morphometrics` on `Clade`, separately by segment](#morphometrics-on-clade-separately-by-segment)
+-   [`corphylo`](#corphylo)
+    -   [`Clearance` and `SEF`](#clearance-and-sef)
+    -   [`Clearance` and `log_enterocyte_density`](#clearance-and-log_enterocyte_density)
+    -   [`Absorption` and `log_total_enterocytes`](#absorption-and-log_total_enterocytes)
+    -   [Saving `corphylo` objects](#saving-corphylo-objects)
 -   [Assembling all output into one table](#assembling-all-output-into-one-table)
 -   [Session info](#session-info)
 
-Loading packages:
+Retrieve data
+=============
+
+For more information on the functions `get_df` and `get_tr` below (plus `filter_tr` and `cp_mat` used later), see [`R/get_data.R`](R/get_data.R).
+
+Note that absorption and clearance data need standard errors as well as means.
 
 ``` r
-suppressPackageStartupMessages({
-    library(readr)
-    library(dplyr)
-    library(tidyr)
-    library(purrr)
-    library(phylolm)
-    library(ape)
-})
-devtools::load_all('corphyloCpp')
+# Tree for all morphometric and diet analyses
+tr <- get_tr('spp')
+# Morphometrics by species
+spp_df <- get_df('spp')
+# Morphometrics by species and segment
+seg_types <- c('prox', 'med', 'dist')
+pos_df_list <- lapply(seg_types, get_df, .df = 'pos')
+names(pos_df_list) <- seg_types
+# Absorption by species
+absorp_df <- get_df('absorp')
+absorp_se_df <- get_df('absorp', .stat = 'se')
+absorp_tr <- get_tr('absorp')
+# Clearance by species
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')
+clear_tr <- get_tr('clear')
 ```
 
-    ## Loading corphyloCpp
+`phylolm`
+=========
 
-`source` the `R` directory
-==========================
-
-The `R` directory provides functions to summarize `phylolm` objects, run a version of `ape::corphylo` with confidence interval output, and retrieve morphometric, clearance, and absorption data. See `tidy_csvs.md` for more info.
-
-``` r
-invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
-```
-
-The `get_tr` function in `R/get_data.R` reads the main phylogenetic tree, cleans species names, and removes unnecessary species from it for a given analysis set.
-
-`get_df` from the same file gets a data frame for an analysis set.
+The following sections are regressions using `phylolm::phylolm`.
 
 `SEF` on `Diet`
-===============
+---------------
 
-Necessary data:
-
-> The `spp_df` data frame is used for both this analysis and `Morphometrics` on `Taxon`. The `tr` tree is used for this analysis, `Morphometrics` on `Taxon`, and `Morphometrics` on `Taxon`, separately by segment.
-
-``` r
-spp_df <- get_df('spp')
-tr <- get_tr('spp')
-```
-
-`phylolm` call and output:
+`phylolm` call:
 
 ``` r
 set.seed(581120)
@@ -64,51 +59,35 @@ diet_fit <- phylolm(log_sef ~ diet, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 ```
 
-I'm saving output for this fit because I'll be using that for summarizing.
+Saving output:
 
 ``` r
 readr::write_rds(diet_fit, 'output/models_diet.rds')
 ```
 
-Summary:
-
-    ## dietOmnivorous: -0.2266 (P = 0.122)
-    ## dietProtein: -0.0844 (P = 0.505)
-
-`Absorption` on `Taxon`
-=======================
+`Absorption` on `Clade`
+-----------------------
 
 "Absorption" here means `Fractional absorption / (total intestinal surface)`, where `total intestinal surface = NSA * SEF`
 
-Necessary data:
-
-``` r
-absorp_df <- get_df('absorp')
-absorp_tr <- get_tr('absorp')
-```
-
-`phylolm` call and output:
+`phylolm` call:
 
 ``` r
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
-    phylolm(log_absorp ~ taxon + log_mass, data = absorp_df, phy = absorp_tr, 
+    phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 ```
 
-I'm saving output for this fit because I'll be using that for plotting.
+Saving output:
 
 ``` r
 readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 ```
 
-Summary:
-
-    ## taxonBat: 1.136 (P = 0)
-
-`Morphometrics` on `Taxon`
-==========================
+`Morphometrics` on `Clade`
+--------------------------
 
 List of `Morphometrics`:
 
@@ -127,18 +106,15 @@ spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
             "log_total_enterocytes")
 ```
 
-Necessary data: `spp_df` and `tr` are already created from fitting `sef ~ diet`.
-
-`phylolm` call:
-
-> The actual analyses (takes ~7.5 min, which is why I saved the output):
+`phylolm` calls:
 
 ``` r
+# (takes ~7.5 min)
 set.seed(88754829)
 spp_fits <- lapply(
     spp_ys,
     function(y) {
-        f <- paste(y, '~ taxon + log_mass')
+        f <- paste(y, '~ clade + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -146,33 +122,16 @@ spp_fits <- lapply(
         )
     })
 names(spp_fits) <- spp_ys
+```
+
+Saving output:
+
+``` r
 readr::write_rds(spp_fits, 'output/models_spp.rds')
 ```
 
-Loading the output and summarizing:
-
-``` r
-spp_fits <- readr::read_rds('output/models_spp.rds')
-p <- 'taxonBat'
-for (nn in names(spp_fits)) {
-    cat(sprintf('Y = %s\n', nn))
-    cat(sprintf('  %s: %.4g (P = %.4g)\n', p,
-                    coef(spp_fits[[nn]])[p], 
-                    pval(spp_fits[[nn]], p)))
-}
-```
-
-    ## Y = log_intestinal_length
-    ##   taxonBat: -0.5582 (P = 0.003)
-    ## Y = log_nsa
-    ##   taxonBat: -0.5312 (P = 0)
-    ## Y = log_vill_surface_area
-    ##   taxonBat: 0.02009 (P = 0.922)
-    ## Y = log_total_enterocytes
-    ##   taxonBat: 0.2853 (P = 0.318)
-
-`Morphometrics` on `Taxon`, separately by segment
-=================================================
+`Morphometrics` on `Clade`, separately by segment
+-------------------------------------------------
 
 (Segment = proximal, medial, or distal)
 
@@ -194,28 +153,32 @@ pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width',
 seg_types <- c('prox', 'med', 'dist')
 ```
 
-Below is a data frame including whether or not to include `log_mass` as a covariate. This determination was based on whether `log_mass` had a significant effect when it was included in the model, where p-values were based on parametric bootstrapping (see `docs/include_mass.md`).
+Below is a data frame including whether or not to include `log_mass` as a covariate. This determination was based on whether `log_mass` had a significant effect when it was included in the model, where p-values were based on parametric bootstrapping (see [`docs/03-include_mass`](docs/03-include_mass.md)).
+
+``` r
+include_mass <- read_csv('output/include_mass_pos.csv', col_types = 'ccl')
+include_mass
+```
 
     ## # A tibble: 21 x 3
     ##      pos                       y include
     ##    <chr>                   <chr>   <lgl>
-    ##  1  dist log_intestinal_diameter    TRUE
-    ##  2  dist           villus_height    TRUE
-    ##  3  dist            villus_width   FALSE
-    ##  4  dist             crypt_width   FALSE
-    ##  5  dist                     sef   FALSE
-    ##  6  dist     enterocyte_diameter   FALSE
-    ##  7  dist  log_enterocyte_density   FALSE
+    ##  1  prox log_intestinal_diameter    TRUE
+    ##  2  prox       log_villus_height    TRUE
+    ##  3  prox            villus_width    TRUE
+    ##  4  prox             crypt_width   FALSE
+    ##  5  prox                 log_sef    TRUE
+    ##  6  prox     enterocyte_diameter   FALSE
+    ##  7  prox  log_enterocyte_density   FALSE
     ##  8   med log_intestinal_diameter    TRUE
-    ##  9   med           villus_height    TRUE
+    ##  9   med       log_villus_height    TRUE
     ## 10   med            villus_width   FALSE
     ## # ... with 11 more rows
 
 `phylolm` call:
 
-The actual analyses (takes ~21.7 min, which is why I saved the output):
-
 ``` r
+# (takes ~22 min)
 set.seed(25413535)
 pos_fits <- lapply(
     seg_types,
@@ -225,7 +188,7 @@ pos_fits <- lapply(
         lapply(
             pos_ys,
             function(y) {
-                f <- paste(y, ' ~ taxon')
+                f <- paste(y, ' ~ clade')
                 # Whether to include log_mass covariate
                 imc <- {include_mass %>% filter(pos == pos, y == y)}$include
                 if (imc[1]) f <- paste(f, '+ log_mass')
@@ -248,84 +211,47 @@ pos_fits <- lapply(
     })
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
+```
+
+Saving output:
+
+``` r
 readr::write_rds(pos_fits, 'output/models_pos.rds')
 ```
 
-Loading the output and summarizing:
+`corphylo`
+==========
 
-``` r
-pos_fits <- readr::read_rds('output/models_pos.rds')
-cbind(sapply(pos_fits$dist, pval))
-```
+From the original manuscript:
 
-    ##                          [,1]
-    ## log_intestinal_diameter 0.912
-    ## log_villus_height       0.000
-    ## villus_width            0.554
-    ## crypt_width             0.006
-    ## log_sef                 0.000
-    ## enterocyte_diameter     0.577
-    ## log_enterocyte_density  0.001
+> ... we used reduced major axis regression (model II regression)... because both variables \[X and Y\] were subject to error
 
-``` r
-cbind(sapply(pos_fits$med, pval))
-```
+Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` that can conduct parametric bootstrapping. P-values are calculated using these bootstrap replicates.
 
-    ##                          [,1]
-    ## log_intestinal_diameter 0.959
-    ## log_villus_height       0.001
-    ## villus_width            0.085
-    ## crypt_width             0.092
-    ## log_sef                 0.000
-    ## enterocyte_diameter     0.050
-    ## log_enterocyte_density  0.397
+I used the same P-values to determine that I do not need to use `log_mass` as an independent variable for any of these fits (see [`docs/03-include_mass`](docs/03-include_mass.md) for more info).
 
-``` r
-cbind(sapply(pos_fits$prox, pval))
-```
-
-    ##                          [,1]
-    ## log_intestinal_diameter 0.527
-    ## log_villus_height       0.177
-    ## villus_width            0.012
-    ## crypt_width             0.310
-    ## log_sef                 0.000
-    ## enterocyte_diameter     0.336
-    ## log_enterocyte_density  0.003
+All variables under this section are log-transformed.
 
 `Clearance` and `SEF`
-=====================
+---------------------
 
 Clearance = "paracellular probe L-arabinose clearance"
 
-Both are log-transformed.
-
-From the original manuscript: &gt; ... we used reduced major axis regression (model II regression)... because both &gt; variables \[X and Y\] were subject to error
-
-Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` that can conduct parametric bootstrapping. P-values are calculated using these bootstrapping replicates.
-
 ``` r
 clear_df <- get_df('clear')
-clear_se_df <- get_df('clear', .stat = 'se')  # <-- contains standard errors
+clear_se_df <- get_df('clear', .stat = 'se')
 clear_tr <- get_tr('clear')
 
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
-# Using p-values, this doesn't need Umat for either parameter
-
-# corphylo_cpp run with bootstrapping (takes ~1 min)
 set.seed(1844365955)
-clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, boot = 2000, n_cores = 4)
-
-# P-value for correlation != 0
-pval(clear_sef)[1]
+clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, 
+                          boot = 2000, n_cores = 4)
 ```
 
-    ## [1] 0.086
-
 `Clearance` and `log_enterocyte_density`
-========================================
+----------------------------------------
 
 > One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which is why I'm removing that row below.
 
@@ -335,57 +261,41 @@ Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
 MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
 MEmat <- MEmat[!is.na(rowSums(MEmat)),]
-# Using p-values, this doesn't need Umat for either parameter
 
-clear_ed_tr <- ape::drop.tip(
-    clear_tr, 
-    tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)]
-)
+clear_ed_tr <- filter_tr(clear_tr, rownames(Xmat))
 
-# Fit and bootstrap r (takes ~1 min)
 set.seed(1442148819)
-clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, boot = 2000, n_cores = 4)
-
-# P-value for correlation != 0
-pval(clear_ed)[1]
+clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, 
+                         boot = 2000, n_cores = 4)
 ```
-
-    ## [1] 0.654
 
 `Absorption` and `log_total_enterocytes`
-========================================
+----------------------------------------
 
 ``` r
-absorp_df <- get_df('absorp')
-absorp_se_df <- get_df('absorp', .stat = 'se')  # <-- contains standard errors
-absorp_tr <- get_tr('absorp')
-
 Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
 MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
-# Using p-values, this doesn't need Umat for either parameter
 
-# Fit and bootstrap
 set.seed(2016097648)
-absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, boot = 2000, n_cores = 4)
-
-# P-value for correlation != 0
-pval(absorp_te)[1]
+absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, 
+                          boot = 2000, n_cores = 4)
 ```
 
-    ## [1] 0.002
-
 Saving `corphylo` objects
-=========================
+-------------------------
+
+I'm saving all these objects together.
 
 ``` r
-readr::write_rds(list(clear_sef = clear_sef, clear_ed = clear_ed, absorp_te = absorp_te),
+readr::write_rds(list(clear_sef = clear_sef, clear_ed = clear_ed, 
+                      absorp_te = absorp_te), 
                  'output/models_corphylo.rds')
 ```
 
 Assembling all output into one table
 ====================================
 
-I ran `summ_df` on all models above. This function summarizes `phylolm` and `corphylo` objects.
+I ran `summ_df` on all models (both `phylolm` and `corphylo`) above. This function summarizes both of these object classes into a single data frame. See [`R/model_summaries.R`](R/model_summaries.R) for more info.
 
 ``` r
 mod_summaries <- bind_rows(
@@ -423,7 +333,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-04
+    ##  date     2017-12-05
 
     ## Packages -----------------------------------------------------------------
 
