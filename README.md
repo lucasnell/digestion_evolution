@@ -21,7 +21,7 @@ Lucas A. Nell
       [timetree.org](http://timetree.org/)
 
 * `doc`: Files to create the electronic supplementary material document.
-    - `phylo_tree`: create pdf of phylogeny.
+    - `phylo_tree`: create plot of phylogeny.
     - `results`: table of coefficient estimates.
 
 

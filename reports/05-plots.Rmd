@@ -31,18 +31,27 @@ suppressPackageStartupMessages({
     library(ggplot2)
     library(grid)
 })
-# The `R/get_data.R` file provides functions to retrieve morphometric, clearance, and
-# absorption data.
-# See `tidy_csvs.md` for more info.
+# Functions `get_df`, `get_tr`, `filter_tr`, `cp_mat`
 source('R/get_data.R')
+# Functions `pval`, `ci`, `summ_df`, `jack_phylolm`, and `predict_ci`
+source('R/model_summaries.R')
+# Custom version of ape::corphylo
+suppressMessages(devtools::load_all('corphyloCpp'))
 
-# setting `ggplot2` theme
+# setting default `ggplot2` theme
 theme_set(theme_classic() %+replace% 
               theme(strip.background = element_blank(),
                     strip.text = element_text(size = 10),
                     legend.background = element_blank(),
                     plot.title = element_text(size = 14, hjust = 0)))
 ```
+
+
+> Below, the `predict_ci` function creates a data frame of predictions and 95% CI from a 
+> `phylolm` object.
+> See its documentation in [`R/model_summaries.R`](R/model_summaries.R) 
+> for more information.
+
 
 
 # Loading model data
@@ -57,7 +66,8 @@ data <- list(absorp = get_df('absorp') %>% as_tibble,
              pos = lapply(c('prox','med', 'dist'), 
                           function(p) {get_df(.df = 'pos', .pos = p) %>% 
                                   mutate(pos = p)}) %>% 
-                 bind_rows %>% as_tibble %>% 
+                 bind_rows %>% 
+                 as_tibble %>% 
                  select(pos, everything()) %>% 
                  gather('measure', 'value', -pos, -clade, -diet, -species) %>% 
                  mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
@@ -67,95 +77,68 @@ data <- list(absorp = get_df('absorp') %>% as_tibble,
 ```
 
 
-# Function to calculate confidence intervals
-
-```{r ci_funs}
-# Creates data frame containing 95% CI based on bootstrapping for one model
-mod_ci <- function(.model){
-    
-    stopifnot(is(.model, 'phylolm'))
-    
-    y_measure <- {paste(.model$formula) %>% purrr::discard(~ grepl('~', .x))}[1]
-    pos_name <- paste(.model$call) %>% 
-        purrr::keep(~ grepl('_df', .x)) %>% 
-        gsub(pattern = '_df', replacement = '')
-    if (pos_name == 'spp') pos_name <- NA
-    
-    if ('log_mass' %in% colnames(.model$X)) {
-        new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0), 
-                          rep(mean(.model$X[,'log_mass']), 2))
-        new_data_df <- data.frame(clade = c(1.0, 0.0), 
-                                  log_mass = rep(mean(.model$X[,'log_mass']), 2))
-    } else {
-        new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0))
-        new_data_df <- data.frame(clade = c(1.0, 0.0))
-    }
-    
-    # Column names coinciding with phylogenetic parameters from models lambda:
-    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2'))
-    
-    ci_matrix <- .model$bootstrap %>% 
-        apply(1, 
-              function(x) {
-                  matrix(x[-phylo_cols] %*% new_data)
-              }) %>% 
-        apply(1,
-              function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
-        t
-    
-    out_df <- cbind(predict(.model, new_data_df), ci_matrix) %>% 
-        as_data_frame %>% 
-        rename_(.dots = setNames(colnames(.), c('estimate', 'low', 'high'))) %>% 
-        mutate(measure = y_measure,
-               clade = factor(c(1.0, 0.0), levels = c(0,1), 
-                              labels = c('Rodent', 'Bat'))) %>% 
-        select(clade, measure, everything()) %>% 
-        mutate(pos = pos_name) %>% 
-        select(clade, pos, measure, everything())
-    
-    return(out_df)
-}
-```
 
 
 # Individual plots for models by species only
 
-
 ## Function to create base plots
 
+This creates the base plots for those models that have only clade on the x-axis
+(i.e., those organized by species only---not by intestinal segment).
+All these models include log(mass) as a covariate so are plotted with log(mass)
+on the x-axis.
+
 ```{r plots_spp_only_base}
-clade_only_plot <- function(.model, y_axis_title, title = NULL) {
+clade_only_plot <- function(.model, y_axis_title, y_breaks, title = NULL, 
+                            y_labels = NULL) {
+    
+    if (missing(y_breaks)) {
+        y_breaks <- predict_ci(.model) %>%
+            mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
+            summarize(min = min(low), max = max(high)) %>% 
+            {seq(.$min, .$max, length.out = 4)}
+    }
+    
+    if (!'log_mass' %in% colnames(.model$X)) {
+        stop("Model must include log(mass) as a covariate")
+    }
     y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
-    .p <- mod_ci(.model) %>%
-        ggplot(aes(clade, estimate)) +
-        geom_point(data = data_frame(y_name = as.numeric(.model$y), 
+    .p <- predict_ci(.model) %>%
+        mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
+        ggplot(aes(log_mass, estimate, color = clade)) +
+        geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
+                    fill = 'gray80', color = NA, alpha = 0.5) +
+        geom_point(data = data_frame(estimate = as.numeric(.model$y), 
+                                     log_mass = as.numeric(.model$X[,'log_mass']),
                                      clade = factor(as.integer(.model$X[,'cladeBat']), 
                                                     levels = c(0,1), 
-                                                    labels = c('Rodent', 'Bat'))),
-                   aes(y = y_name, shape = clade),
-                   position = position_jitter(width = 0.2, height = 0),
-                   color = 'black', size = 2, fill = 'gray60') +
-        geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
-        geom_segment(aes(yend = estimate, 
-                         x = as.numeric(clade) - 0.1, 
-                         xend = as.numeric(clade) + 0.1)) +
-        scale_shape_manual(values = c(1, 21)) +
-        theme(legend.position = 'none', axis.title.x = element_blank(),
-              axis.ticks.x = element_blank(),
-              axis.text.x = element_text(color = 'black', size = 10, margin = margin(6)),
-              axis.title.y = element_text(margin = margin(t = 0, r = -8, 
-                                                          b = 0, l = 0))) +
-        ylab(y_axis_title)
+                                                    labels = c('Rodent', 'Bat'))) %>%
+                       mutate_at(vars(log_mass, estimate), exp),
+                   size = 2) +
+        geom_line() +
+        theme(legend.position = 'none') +
+        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2)) +
+        scale_color_manual(values = c('#de2d26', '#9ecae1'))
+    
+    if (!is.null(y_labels)) {
+        .p <- .p +
+            scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks, 
+                               labels = y_labels)
+    } else {
+        .p <- .p +
+            scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks)
+    }
+    
     if (!is.null(title)) {
         min_x <- min(ggplot_build(.p)$layout$panel_ranges[[1]]$x.range) + 
             0.01 * diff(ggplot_build(.p)$layout$panel_ranges[[1]]$x.range)
-        max_y <- max(ggplot_build(.p)$layout$panel_ranges[[1]]$y.range) +
+        max_y <- max(ggplot_build(.p)$layout$panel_ranges[[1]]$y.range) -
             0.01 * diff(ggplot_build(.p)$layout$panel_ranges[[1]]$y.range)
-        .p <- .p + 
-            geom_text(data = NULL, label = title, 
-                      x = min_x * 1.1, y = max_y * 0.99, hjust = 0, vjust = 1, 
-                      size = 14 * (25.4/72), fontface = 'plain')
-        
+        .p <- .p +
+            geom_text(data = NULL, label = title, color = 'black',
+                      x = min_x, y = max_y, hjust = 0, vjust = 1, 
+                      size = 14 * (25.4/72), # <-- 25.4/72 is to convert from mm to pt
+                      fontface = 'plain')
     }
     return(.p)
 }
@@ -163,29 +146,28 @@ clade_only_plot <- function(.model, y_axis_title, title = NULL) {
 
 ## Creating plot objects
 
+For all the plots below...
+
+1. Y-axes are on the log scale.
+2. Bars represent model predictions at mean log(body mass) among all species.
+
+
 ```{r plots_spp_only}
 # Figure 1A
-fig1a <- clade_only_plot(models$spp$int_length_mass, 
-                         expression(atop("Intestinal length / body" ~ mass^{0.4},
-                                         "(" * cm / g^{0.4} * ")")),
-                         'A')
+fig1a <- clade_only_plot(models$spp$log_intestinal_length,
+                         "Intestinal length (cm)", 15 * 2^(0:2), "A")
 # Figure 1B
-fig1b <- clade_only_plot(models$spp$nsa_mass,
-                         expression(atop("NSA / body" ~ mass^{0.75},
-                                         "(" * cm^2 / g^{0.75} * ")")),
-                         'B')
+fig1b <- clade_only_plot(models$spp$log_nsa,
+                         expression("NSA (" * cm^2 * ")"), 5 * 2^(0:3), title = 'B')
 # Figure 4
-fig4 <- clade_only_plot(models$spp$vill_area_mass, 
-                        expression(atop("Villous surface area / body" ~ mass^{0.75},
-                                        "(" * cm^2 / g^{0.75} * ")")))
+fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
+                        expression("Villous surface area (" * cm^2 * ")"),
+                        50 * 3^(0:2))
 
 # Figure 6
 fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
-                        expression("Total enterocytes (" %*% 10^9 * ")")) +
-    theme(axis.title.y = element_text(margin = margin(0, 5.5, 0, 0))) +
-    scale_y_continuous(breaks = log(200e6 * 2^(0:3)), labels = 0.2 * 2^(0:3))
-# Mention that bars represent model predictions at mean log(body mass) among all species
-# Mention that y is on the log scale
+                        expression("Total enterocytes (" %*% 10^9 * ")"),
+                        200e6 * 2^(0:3), y_labels = 0.2 * 2^(0:3))
 ```
 
 
@@ -202,13 +184,18 @@ fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
 # (Nesting by parameter, not position, bc the former is how they'll be plotted.)
 pos_ci <- lapply(names(models$pos$prox), 
                  function(n) {
-                     bind_rows(list(mod_ci(models$pos$prox[[n]]),
-                                    mod_ci(models$pos$med[[n]]),
-                                    mod_ci(models$pos$dist[[n]])))
+                     bind_rows(list(predict_ci(models$pos$prox[[n]]),
+                                    predict_ci(models$pos$med[[n]]),
+                                    predict_ci(models$pos$dist[[n]])))
                  }) %>% 
     bind_rows %>% 
     mutate(pos = factor(pos, levels = c('prox', 'med', 'dist'), 
                         labels = c('Proximal', 'Medial', 'Distal')))
+
+
+predict_ci(models$pos$med$enterocyte_diameter)
+
+
 
 # Table of y-axis names for each parameter
 plot_names <- read_csv('og,new
