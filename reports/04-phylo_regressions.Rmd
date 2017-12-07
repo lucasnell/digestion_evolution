@@ -7,6 +7,8 @@ output:
   github_document:
     toc: true
     toc_depth: 2
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
@@ -137,8 +139,8 @@ spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
 set.seed(88754829)
 spp_fits <- lapply(
     spp_ys,
-    function(y) {
-        f <- paste(y, '~ clade + log_mass')
+    function(y_) {
+        f <- paste(y_, '~ clade + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -199,23 +201,23 @@ include_mass
 `phylolm` call:
 
 ```{r pos_analyses, eval = FALSE}
-# (takes ~22 min)
+# (takes ~32 min)
 set.seed(25413535)
 pos_fits <- lapply(
     seg_types,
-    function(pos) {
-        # Assigning to obj named <pos>_df so that the call identifies the position
-        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+    function(pos_) {
+        # Assigning to obj named <pos_>_df so that the call identifies the position
+        assign(paste0(pos_, '_df'), get_df('pos', .pos = pos_))
         lapply(
             pos_ys,
-            function(y) {
-                f <- paste(y, ' ~ clade')
+            function(y_) {
+                f <- paste(y_, ' ~ clade')
                 # Whether to include log_mass covariate
-                imc <- {include_mass %>% filter(pos == pos, y == y)}$include
+                imc <- {include_mass %>% filter(pos == pos_, y == y_)}$include
                 if (imc[1]) f <- paste(f, '+ log_mass')
                 arg_list <- list(
                     as.formula(f),
-                    data = as.name(paste0(pos, "_df")),
+                    data = as.name(paste0(pos_, "_df")),
                     phy = as.name("tr"), model = 'lambda')
                 # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.

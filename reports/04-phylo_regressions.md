@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-05 Dec 2017
+07 Dec 2017
 
 -   [Retrieve data](#retrieve-data)
 -   [`phylolm`](#phylolm)
@@ -113,8 +113,8 @@ spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
 set.seed(88754829)
 spp_fits <- lapply(
     spp_ys,
-    function(y) {
-        f <- paste(y, '~ clade + log_mass')
+    function(y_) {
+        f <- paste(y_, '~ clade + log_mass')
         suppressWarnings(
             do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
                                     phy = as.name("tr"), model = 'lambda',
@@ -178,23 +178,23 @@ include_mass
 `phylolm` call:
 
 ``` r
-# (takes ~22 min)
+# (takes ~32 min)
 set.seed(25413535)
 pos_fits <- lapply(
     seg_types,
-    function(pos) {
-        # Assigning to obj named <pos>_df so that the call identifies the position
-        assign(paste0(pos, '_df'), get_df('pos', .pos = pos))
+    function(pos_) {
+        # Assigning to obj named <pos_>_df so that the call identifies the position
+        assign(paste0(pos_, '_df'), get_df('pos', .pos = pos_))
         lapply(
             pos_ys,
-            function(y) {
-                f <- paste(y, ' ~ clade')
+            function(y_) {
+                f <- paste(y_, ' ~ clade')
                 # Whether to include log_mass covariate
-                imc <- {include_mass %>% filter(pos == pos, y == y)}$include
+                imc <- {include_mass %>% filter(pos == pos_, y == y_)}$include
                 if (imc[1]) f <- paste(f, '+ log_mass')
                 arg_list <- list(
                     as.formula(f),
-                    data = as.name(paste0(pos, "_df")),
+                    data = as.name(paste0(pos_, "_df")),
                     phy = as.name("tr"), model = 'lambda')
                 # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
@@ -333,7 +333,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-05
+    ##  date     2017-12-07
 
     ## Packages -----------------------------------------------------------------
 
