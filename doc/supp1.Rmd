@@ -1,0 +1,36 @@
+---
+title: 'Electronic Supplementary Material: Supplemental Methods and Results'
+author: ""
+date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
+header-includes:
+  - \usepackage{bbm}
+  - \usepackage{fontspec}
+fontsize: 12pt
+csl: "ecology.csl"
+bibliography: "refs.bib"
+geometry: margin=1in
+geometry: letterpaper
+documentclass: article
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: true
+    df_print: kable
+    highlight: haddock
+    latex_engine: xelatex
+    citation_package: biblatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+# Testing
+
+I wish now to test my citation manager [@Nell:2016cg; @KahlJr:1964ju].
+
+# References
+
