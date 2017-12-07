@@ -56,6 +56,22 @@ ci <- function(.model, .parameters = 'cladeBat') {
 
 
 
+#' Extract phylogenetic signal string from a \code{phylolm} object.
+#'
+#' @param .model \code{phylolm} object.
+#'
+#' @return A string specifying the name of the coefficient for the phylogenetic signal.
+#' @export
+#'
+phy_signal_str <- function(.model) {
+    switch(.model$model,
+           OUfixedRoot = "alpha",
+           OUrandomRoot = "alpha",
+           EB = "rate",
+           .model$model)
+}
+
+
 #' Summarize a \code{phylolm} or \code{corphylo} object.
 #' 
 #'
@@ -71,12 +87,14 @@ ci <- function(.model, .parameters = 'cladeBat') {
 summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
     
     if (is(.model, 'phylolm')) {
+        error_model <- .model$model
         .parameters <- names(coef(.model))[names(coef(.model)) != '(Intercept)']
         estimates <- as.numeric(c(coef(.model)[.parameters], .model$optpar))
-        .parameters <- c(.parameters, 'lambda')
+        .parameters <- c(.parameters, phy_signal_str(.model))
         Y <- paste(.model$formula)[2]
     } else if (is(.model, 'corphylo')) {
         if (length(.corr_pars) != 2) stop("Correlation parameters must have length == 2")
+        error_model <- "OU"
         Y <- c(.corr_pars[1], .corr_pars)
         .parameters <- c(.corr_pars[2], rep('d', 2))
         estimates <- c(.model$cor.matrix[lower.tri(.model$cor.matrix)], .model$d)
@@ -84,15 +102,15 @@ summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
         stop("only for phylolm or corphylo objects")
     }
     
-    
     .df <- as_data_frame(ci(.model, .parameters))
     .df <- .df %>% 
-        mutate(X = .parameters,
-               Y = Y, 
+        mutate(Y = Y, 
+               X = .parameters,
                pos = .pos,
+               phy_model = error_model,
                value = estimates,
                P = pval(.model, .parameters)) %>% 
-        select(Y, X, pos, value, lower, upper, P)
+        select(Y, X, pos, phy_model, value, lower, upper, P)
     
     return(.df)
 }
@@ -228,8 +246,9 @@ predict_ci <- function(.model){
         new_data_df <- data.frame(clade = c(1.0, 0.0))
     }
     
-    # Column names coinciding with phylogenetic parameters from models lambda:
-    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2'))
+    # Column names coinciding with phylogenetic parameters from the model:
+    phylo_cols <- which(colnames(.model$bootstrap) %in% 
+                            c('sigma2', phy_signal_str(.model)))
     
     # Calculating confidence intervals for predicted y-value for bats, then rodents.
     # Bats are the first `n_mass` rows, rodents the second.
@@ -257,3 +276,6 @@ predict_ci <- function(.model){
     
     return(out_df)
 }
+
+
+

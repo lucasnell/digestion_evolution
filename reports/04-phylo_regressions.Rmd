@@ -237,6 +237,28 @@ for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
 ```
 
 
+The model for `crypt_width ~ clade` in the proximal segment has a higher log likelihood
+at a very high phylogenetic signal (`logLik = 68.14` at `lambda = 0.993`) than at 
+very low signal (`logLik = 66.88` at `lambda = 1e-7`).
+However, this model is sensitive to starting values, which suggests multiple peaks in
+the likelihood profile.
+Moreover, the models for the other segments show very low phylogenetic signal 
+(`1e-7` for both), and this model re-run with the Ornstein-Uhlenbeck model for
+phylogenetic error ("OU"; `OUfixedRoot` in `phylolm`) has a higher log likelihood and
+shows a much lower phylogenetic signal (`logLik = 68.54` and `alpha = 0.0156`).
+Thus the model likely had convergence issues using Pagel's lambda, so I'm 
+replacing the original model with one using the OU error model below.
+I'm saving the original one to report it, too.
+
+```{r pos_analyses_crypt_width_prox, eval = FALSE}
+pos_fits$prox$crypt_width_pagel <- pos_fits$prox$crypt_width
+prox_df <- get_df('pos', .pos = 'prox')
+set.seed(1340481016)
+pos_fits$prox$crypt_width <- update(pos_fits$prox$crypt_width, 
+                                       model = "OUfixedRoot")
+```
+
+
 Saving output:
 
 ```{r save_pos, eval = FALSE, purl = FALSE}
@@ -361,6 +383,9 @@ This function summarizes both of these object classes into a single data frame.
 See [`R/model_summaries.R`](R/model_summaries.R) for more info.
 
 ```{r mod_summaries, purl = FALSE}
+summ_df(pos_fits$prox$crypt_width_pagel)
+summ_df(pos_fits$prox$crypt_width)
+
 mod_summaries <- bind_rows(
     list(
         summ_df(diet_fit),

@@ -213,6 +213,16 @@ names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
 ```
 
+The model for `crypt_width ~ clade` in the proximal segment has a higher log likelihood at a very high phylogenetic signal (`logLik = 68.14` at `lambda = 0.993`) than at very low signal (`logLik = 66.88` at `lambda = 1e-7`). However, this model is sensitive to starting values, which suggests multiple peaks in the likelihood profile. Moreover, the models for the other segments show very low phylogenetic signal (`1e-7` for both), and this model re-run with the Ornstein-Uhlenbeck model for phylogenetic error ("OU"; `OUfixedRoot` in `phylolm`) has a higher log likelihood and shows a much lower phylogenetic signal (`logLik = 68.54` and `alpha = 0.0156`). Thus the model likely had convergence issues using Pagel's lambda, so I'm replacing the original model with one using the OU error model below. I'm saving the original one to report it, too.
+
+``` r
+pos_fits$prox$crypt_width_pagel <- pos_fits$prox$crypt_width
+prox_df <- get_df('pos', .pos = 'prox')
+set.seed(1340481016)
+pos_fits$prox$crypt_width <- update(pos_fits$prox$crypt_width, 
+                                       model = "OUfixedRoot")
+```
+
 Saving output:
 
 ``` r
@@ -296,6 +306,28 @@ Assembling all output into one table
 ====================================
 
 I ran `summ_df` on all models (both `phylolm` and `corphylo`) above. This function summarizes both of these object classes into a single data frame. See [`R/model_summaries.R`](R/model_summaries.R) for more info.
+
+``` r
+summ_df(pos_fits$prox$crypt_width_pagel)
+```
+
+    ## # A tibble: 2 x 8
+    ##             Y        X   pos phy_model       value      lower      upper
+    ##         <chr>    <chr> <lgl>     <chr>       <dbl>      <dbl>      <dbl>
+    ## 1 crypt_width cladeBat    NA    lambda -0.01048766 -0.0315114 0.01036664
+    ## 2 crypt_width   lambda    NA    lambda  0.99299121  0.0000001 1.00000000
+    ## # ... with 1 more variables: P <dbl>
+
+``` r
+summ_df(pos_fits$prox$crypt_width)
+```
+
+    ## # A tibble: 2 x 8
+    ##             Y        X   pos   phy_model       value        lower
+    ##         <chr>    <chr> <lgl>       <chr>       <dbl>        <dbl>
+    ## 1 crypt_width cladeBat    NA OUfixedRoot -0.01077394 -0.023208583
+    ## 2 crypt_width    alpha    NA OUfixedRoot  0.01558186  0.008038714
+    ## # ... with 2 more variables: upper <dbl>, P <dbl>
 
 ``` r
 mod_summaries <- bind_rows(
