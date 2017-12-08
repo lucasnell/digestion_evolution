@@ -1,32 +1,59 @@
 ---
 title: 'Electronic Supplementary Material: Supplemental Methods and Results'
-author: ""
+subtitle: "``Morphometric bases for intestinal paracellular absorption in bats and rodents''"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
 header-includes:
-  - \usepackage{bbm}
-  - \usepackage{fontspec}
+    - \usepackage{bbm}
+author:
+    - name: Antonio Brun
+      nums: "1,2"
+    - name: Guido Fernández Marinone
+      nums: "1,2"
+    - name: Edwin R. Price
+      nums: "3"
+    - name: Lucas A. Nell
+      nums: "3"
+    - name: Beatriz Marques
+      nums: "4"
+    - name: Alexandre Castellar
+      nums: "4"
+    - name: Ariovaldo P. Cruz-Neto
+      nums: "4"
+    - name: William H. Karasov
+      nums: "3"
+    - name: Enrique Caviedes-Vidal
+      nums: "1,2"
+affil:
+    - name: Instituto Multidisciplinario de Investigaciones Biológicas de San Luis
+      num: "1"
+    - name: Universidad Nacional de San Luis
+      num: "2"
+    - name: University of Wisconsin--Madison
+      num: "3"
+    - name: Universidade Estadual Paulista ``Julio de Mesquita Filho'' Rio Claro
+      num: "4"
 fontsize: 12pt
 csl: "ecology.csl"
 bibliography: "refs.bib"
-geometry: margin=1in
-geometry: letterpaper
+geometry: margin=1in,letterpaper
 documentclass: article
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 2
-    number_sections: true
-    fig_caption: true
-    df_print: kable
-    highlight: haddock
-    latex_engine: xelatex
-    citation_package: biblatex
+    pdf_document:
+      df_print: kable
+      fig_caption: yes
+      highlight: haddock
+      number_sections: yes
+      template: template.tex
+      toc: yes
+      toc_depth: 2
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
+
+
 
 # Testing
 
