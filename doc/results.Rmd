@@ -47,7 +47,7 @@ suppressPackageStartupMessages({
     library(ape)
     library(ggplot2)
     library(grid)
-    library(svglite)
+    library(gridExtra)
 })
 # Set default ggplot2 theme
 theme_set(theme_classic())
@@ -257,7 +257,7 @@ infl_mass <- infl_plots('log_mass', TRUE, TRUE, 'B') +
 infl_int <- infl_plots('intercept', FALSE, FALSE, 'C') +
     ggtitle('intercept')
 
-library(gridExtra)
+# To extract the legend from a ggplot object
 g_legend <- function(a.gplot){
     tmp <- ggplot_gtable(ggplot_build(a.gplot))
     leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
