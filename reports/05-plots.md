@@ -1,10 +1,10 @@
 Regression plots
 ================
 Lucas Nell
-25 Oct 2017
+07 Dec 2017
 
 -   [Loading model data](#loading-model-data)
--   [Function to calculate confidence intervals](#function-to-calculate-confidence-intervals)
+-   [Standardize plot titles](#standardize-plot-titles)
 -   [Individual plots for models by species only](#individual-plots-for-models-by-species-only)
     -   [Function to create base plots](#function-to-create-base-plots)
     -   [Creating plot objects](#creating-plot-objects)
@@ -27,19 +27,25 @@ suppressPackageStartupMessages({
     library(ape)
     library(ggplot2)
     library(grid)
+    library(gridExtra)
 })
-# The `R/get_data.R` file provides functions to retrieve morphometric, clearance, and
-# absorption data.
-# See `tidy_csvs.md` for more info.
+# Functions `get_df`, `get_tr`, `filter_tr`, `cp_mat`
 source('R/get_data.R')
+# Functions `pval`, `ci`, `summ_df`, `jack_phylolm`, and `predict_ci`
+source('R/model_summaries.R')
+# Custom version of ape::corphylo
+suppressMessages(devtools::load_all('corphyloCpp'))
 
-# setting `ggplot2` theme
+# setting default `ggplot2` theme
 theme_set(theme_classic() %+replace% 
               theme(strip.background = element_blank(),
-                    strip.text = element_text(size = 10),
+                    strip.text = element_text(size = 11, face = 'italic'),
+                    legend.title = element_blank(),
                     legend.background = element_blank(),
                     plot.title = element_text(size = 14, hjust = 0)))
 ```
+
+> Below, the `predict_ci` function creates a data frame of predictions and 95% CI from a `phylolm` object. See its documentation in [`R/model_summaries.R`](R/model_summaries.R) for more information.
 
 Loading model data
 ==================
@@ -48,68 +54,57 @@ Loading model data
 models <- list(absorp = read_rds('output/models_absorp.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
+# I'm not plotting this one here
+models$pos$prox$crypt_width_pagel <- NULL
 
 data <- list(absorp = get_df('absorp') %>% as_tibble,
              pos = lapply(c('prox','med', 'dist'), 
                           function(p) {get_df(.df = 'pos', .pos = p) %>% 
                                   mutate(pos = p)}) %>% 
-                 bind_rows %>% as_tibble %>% 
+                 bind_rows %>% 
+                 as_tibble %>% 
                  select(pos, everything()) %>% 
-                 gather('measure', 'value', -pos, -taxon, -diet, -species) %>% 
+                 gather('measure', 'value', -pos, -clade, -diet, -species, -log_mass) %>% 
                  mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
                                      labels = c('Proximal', 'Medial', 'Distal'))),
              spp = get_df('spp') %>% as_tibble,
              clear = get_df('clear') %>% as_tibble)
 ```
 
-Function to calculate confidence intervals
-==========================================
+Standardize plot titles
+=======================
+
+The below function adds titles to the top left corner of plots.
+
+-   `.p`: `ggplot` object to add the title to.
+-   `.title`: String to add as the plot title.
+-   `.mult`: List specifying multipliers for offset for x- and y-axes. Offsets are the amount of space from the upper-left corner of the plot the upper-left corner of the title text.
 
 ``` r
-# Creates data frame containing 95% CI based on bootstrapping for one model
-mod_ci <- function(.model){
+add_title <- function(.p, .title, .mult = list(x = 1, y = 1), .data = NULL) {
     
-    stopifnot(is(.model, 'phylolm'))
+    if (missing(.title)) stop("Why is .title missing?")
+    if (is.null(.title)) return(.p)
     
-    y_measure <- {paste(.model$formula) %>% purrr::discard(~ grepl('~', .x))}[1]
-    pos_name <- paste(.model$call) %>% 
-        purrr::keep(~ grepl('_df', .x)) %>% 
-        gsub(pattern = '_df', replacement = '')
-    if (pos_name == 'spp') pos_name <- NA
-    
-    if ('log_mass' %in% colnames(.model$X)) {
-        new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0), 
-                          rep(mean(.model$X[,'log_mass']), 2))
-        new_data_df <- data.frame(taxon = c(1.0, 0.0), 
-                                  log_mass = rep(mean(.model$X[,'log_mass']), 2))
-    } else {
-        new_data <- rbind(c(1.0, 1.0), c(1.0, 0.0))
-        new_data_df <- data.frame(taxon = c(1.0, 0.0))
+    x_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$x.range
+    y_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$y.range
+    if (!is.null(.p$coordinates$trans$x)) {
+        x_range <- .p$coordinates$trans$x$inverse(x_range)
     }
-    
-    # Column names coinciding with phylogenetic parameters from models lambda:
-    phylo_cols <- which(colnames(.model$bootstrap) %in% c('lambda', 'sigma2'))
-    
-    ci_matrix <- .model$bootstrap %>% 
-        apply(1, 
-              function(x) {
-                  matrix(x[-phylo_cols] %*% new_data)
-              }) %>% 
-        apply(1,
-              function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
-        t
-    
-    out_df <- cbind(predict(.model, new_data_df), ci_matrix) %>% 
-        as_data_frame %>% 
-        rename_(.dots = setNames(colnames(.), c('estimate', 'low', 'high'))) %>% 
-        mutate(measure = y_measure,
-               taxon = factor(c(1.0, 0.0), levels = c(0,1), 
-                              labels = c('Rodent', 'Bat'))) %>% 
-        select(taxon, measure, everything()) %>% 
-        mutate(pos = pos_name) %>% 
-        select(taxon, pos, measure, everything())
-    
-    return(out_df)
+    if (!is.null(.p$coordinates$trans$y)) {
+        y_range <- .p$coordinates$trans$y$inverse(y_range)
+    }
+    min_x <- min(x_range) + .mult$x * 0.02 * diff(x_range)
+    max_y <- max(y_range) - .mult$y * 0.02 * diff(y_range)
+    .p <- .p +
+        geom_text(data = .data, 
+                  label = .title,
+                  x = min_x, y = max_y,
+                  color = 'black',
+                  hjust = 0, vjust = 1, 
+                  size = 14 * (25.4/72), # <-- 25.4/72 is to convert from mm to pt
+                  fontface = 'plain')
+    return(.p)
 }
 ```
 
@@ -119,40 +114,52 @@ Individual plots for models by species only
 Function to create base plots
 -----------------------------
 
+This creates the base plots for those models that have only clade on the x-axis (i.e., those organized by species only---not by intestinal segment). All these models include log(mass) as a covariate so are plotted with log(mass) on the x-axis.
+
 ``` r
-taxon_only_plot <- function(.model, y_axis_title, title = NULL) {
-    y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
-    .p <- mod_ci(.model) %>%
-        ggplot(aes(taxon, estimate)) +
-        geom_point(data = data_frame(y_name = as.numeric(.model$y), 
-                                     taxon = factor(as.integer(.model$X[,'taxonBat']), 
-                                                    levels = c(0,1), 
-                                                    labels = c('Rodent', 'Bat'))),
-                   aes(y = y_name, shape = taxon),
-                   position = position_jitter(width = 0.2, height = 0),
-                   color = 'black', size = 2, fill = 'gray60') +
-        geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
-        geom_segment(aes(yend = estimate, 
-                         x = as.numeric(taxon) - 0.1, 
-                         xend = as.numeric(taxon) + 0.1)) +
-        scale_shape_manual(values = c(1, 21)) +
-        theme(legend.position = 'none', axis.title.x = element_blank(),
-              axis.ticks.x = element_blank(),
-              axis.text.x = element_text(color = 'black', size = 10, margin = margin(6)),
-              axis.title.y = element_text(margin = margin(t = 0, r = -8, 
-                                                          b = 0, l = 0))) +
-        ylab(y_axis_title)
-    if (!is.null(title)) {
-        min_x <- min(ggplot_build(.p)$layout$panel_ranges[[1]]$x.range) + 
-            0.01 * diff(ggplot_build(.p)$layout$panel_ranges[[1]]$x.range)
-        max_y <- max(ggplot_build(.p)$layout$panel_ranges[[1]]$y.range) +
-            0.01 * diff(ggplot_build(.p)$layout$panel_ranges[[1]]$y.range)
-        .p <- .p + 
-            geom_text(data = NULL, label = title, 
-                      x = min_x * 1.1, y = max_y * 0.99, hjust = 0, vjust = 1, 
-                      size = 14 * (25.4/72), fontface = 'plain')
-        
+clade_only_plot <- function(.model, y_axis_title, y_breaks, plot_title = NULL, 
+                            y_labels = NULL, y_limits = NULL) {
+    
+    if (missing(y_breaks)) {
+        y_breaks <- predict_ci(.model) %>%
+            mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
+            summarize(min = min(low), max = max(high)) %>% 
+            {seq(.$min, .$max, length.out = 4)}
     }
+    
+    if (!'log_mass' %in% colnames(.model$X)) {
+        stop("Model must include log(mass) as a covariate")
+    }
+    y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
+    .p <- predict_ci(.model) %>%
+        mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
+        ggplot(aes(log_mass, estimate, color = clade)) +
+        geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
+                    fill = 'gray80', color = NA, alpha = 0.5) +
+        geom_point(data = data_frame(estimate = as.numeric(.model$y), 
+                                     log_mass = as.numeric(.model$X[,'log_mass']),
+                                     clade = factor(as.integer(.model$X[,'cladeBat']), 
+                                                    levels = c(0,1), 
+                                                    labels = c('Rodent', 'Bat'))) %>%
+                       mutate_at(vars(log_mass, estimate), exp),
+                   size = 2) +
+        geom_line() +
+        theme(legend.position = 'none', legend.title = element_blank()) +
+        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2)) +
+        scale_color_manual(values = c('#9ecae1', '#de2d26'))
+    
+    if (!is.null(y_labels)) {
+        .p <- .p +
+            scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks, 
+                               labels = y_labels, limits = y_limits)
+    } else {
+        .p <- .p +
+            scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks,
+                               limits = y_limits)
+    }
+    
+    .p <- add_title(.p, plot_title)
+    
     return(.p)
 }
 ```
@@ -160,29 +167,37 @@ taxon_only_plot <- function(.model, y_axis_title, title = NULL) {
 Creating plot objects
 ---------------------
 
+For all the plots below...
+
+1.  Y-axes are on the log scale.
+2.  Bars represent model predictions at mean log(body mass) among all species.
+
 ``` r
 # Figure 1A
-fig1a <- taxon_only_plot(models$spp$int_length_mass, 
-                         expression(atop("Intestinal length / body" ~ mass^{0.4},
-                                         "(" * cm / g^{0.4} * ")")),
-                         'A')
+fig1a <- clade_only_plot(models$spp$log_intestinal_length,
+                         "Intestinal length (cm)", 
+                         y_breaks = 15 * 2^(0:2), 
+                         plot_title = 'A') +
+    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1),
+          axis.title.x = element_blank(), axis.text.x = element_blank())
 # Figure 1B
-fig1b <- taxon_only_plot(models$spp$nsa_mass,
-                         expression(atop("NSA / body" ~ mass^{0.75},
-                                         "(" * cm^2 / g^{0.75} * ")")),
-                         'B')
+fig1b <- clade_only_plot(models$spp$log_nsa,
+                         expression("NSA (" * cm^2 * ")"), 
+                         y_breaks = 5 * 2^(0:3), 
+                         plot_title = 'B')
 # Figure 4
-fig4 <- taxon_only_plot(models$spp$vill_area_mass, 
-                        expression(atop("Villous surface area / body" ~ mass^{0.75},
-                                        "(" * cm^2 / g^{0.75} * ")")))
+fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
+                        expression("Villous surface area (" * cm^2 * ")"),
+                        y_breaks = 50 * 3^(0:2)) +
+    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
 
 # Figure 6
-fig6 <- taxon_only_plot(models$spp$log_total_enterocytes,
-                        expression("Total enterocytes (" %*% 10^9 * ")")) +
-    theme(axis.title.y = element_text(margin = margin(0, 5.5, 0, 0))) +
-    scale_y_continuous(breaks = log(200e6 * 2^(0:3)), labels = 0.2 * 2^(0:3))
-# Mention that bars represent model predictions at mean log(body mass) among all species
-# Mention that y is on the log scale
+fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
+                        expression("Total enterocytes (" %*% 10^9 * ")"),
+                        # CHANGING UNITS HERE (from enterocytes to 
+                        # 1e9 enterocytes:
+                        y_breaks = 200e6 * 2^(0:3), y_labels = 0.2 * 2^(0:3)) +
+    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
 ```
 
 Individual plots for models by species and intestinal segment
@@ -191,181 +206,250 @@ Individual plots for models by species and intestinal segment
 Objects to create base plots
 ----------------------------
 
+Making data frame of confidence intervals. (Nesting by parameter, not position, bc the former is how they'll be plotted.)
+
 ``` r
-# Making data frame of confidence intervals
-# (Nesting by parameter, not position, bc the former is how they'll be plotted.)
 pos_ci <- lapply(names(models$pos$prox), 
                  function(n) {
-                     bind_rows(list(mod_ci(models$pos$prox[[n]]),
-                                    mod_ci(models$pos$med[[n]]),
-                                    mod_ci(models$pos$dist[[n]])))
+                     bind_rows(list(predict_ci(models$pos$prox[[n]]),
+                                    predict_ci(models$pos$med[[n]]),
+                                    predict_ci(models$pos$dist[[n]])))
                  }) %>% 
     bind_rows %>% 
     mutate(pos = factor(pos, levels = c('prox', 'med', 'dist'), 
                         labels = c('Proximal', 'Medial', 'Distal')))
+```
 
-# Table of y-axis names for each parameter
-plot_names <- read_csv('og,new
-log_intestinal_diameter,"Intestinal ~ diameter ~ \'(cm)\'"
-villus_height,"Villus ~ height ~ \'(mm)\'"
-villus_width,"Villus ~ width ~ \'(mm)\'"
-crypt_width,"Crypt ~ width ~ \'(mm)\'"
-sef,"Surface ~ enlargement ~ factor ~ \'(SEF)\'"
-enterocyte_diameter,"Enterocyte ~ diameter ~ \'(\u03BCm)\'"
-log_enterocyte_density,"Enterocyte ~ density ~ \'(\' %*% 10^6 * \')\'"
-')
+Table of y-axis names for each parameter:
 
-spp_pos_plot <- function(.measure) {
-    .p <- pos_ci %>%
-        filter(measure == .measure) %>% 
-        mutate(pos = as.numeric(pos)) %>% 
-        group_by(taxon) %>% 
-        mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
-        ungroup %>% 
-        ggplot(aes(pos, group = taxon)) + 
-        geom_point(data = data$pos %>% 
-                       filter(measure == .measure) %>% 
-                       mutate(pos = as.numeric(pos)) %>% 
-                       group_by(taxon) %>% 
-                       mutate(pos = pos + ifelse(taxon == 'Bat', 0.2, -0.2)) %>% 
-                       ungroup, 
-                   aes(y = value, shape = taxon),
-                   color = 'black', size = 2, fill = 'gray60',
-                   position = position_jitter(0.075, 0)) +
-        geom_errorbar(aes(ymin = low, ymax = high), width = 0.1, size = 0.5) +
-        geom_segment(aes(y = estimate, yend = estimate,
-                         x = pos - 0.1, xend = pos + 0.1), 
-                     size = 0.5) +
-        theme(legend.position = 'none', legend.margin = margin(0,0,0,0),
-              axis.title.x = element_blank(), axis.ticks.x = element_blank(), 
-              axis.text.x = element_blank(), legend.title = element_blank()) +
-        scale_shape_manual(values = c(1, 21)) +
-        ylab(eval(parse(text = plot_names[plot_names$og == .measure,]$new))) +
-        scale_x_continuous(breaks = 1:3, 
-                           labels = c('Proximal', 'Medial', 'Distal'))
+``` r
+plot_names <- rbind(c("log_intestinal_diameter", "Intestinal ~ diameter ~ '(cm)'"),
+                    c("log_villus_height", "Villus ~ height ~ '(mm)'"),
+                    c("villus_width", "Villus ~ width ~ '(mm)'"),
+                    c("crypt_width", "Crypt ~ width ~ '(mm)'"),
+                    c("log_sef", "Surface ~ enlargement ~ factor ~ '(SEF)'"),
+                    c("enterocyte_diameter", "Enterocyte ~ diameter ~ '(\u03BCm)'"),
+                    c("log_enterocyte_density", 
+                      "Enterocyte ~ density  %*% 10^{-6} ~ '(' * cm^{-2} * ')'")) %>% 
+    as_tibble %>% 
+    rename(og = V1, new = V2)
+```
+
+Function to create each plot depending on the input measurement name (`.measure`), custom y-axis break points (`y_breaks`) and labels (`y_labels`), and plot title (`plot_title`).
+
+``` r
+clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(), 
+                           y_labels = ggplot2::waiver(), 
+                           plot_title = NULL) {
     
-    return(.p)
-}
+    predict_df <- lapply(c('prox', 'med', 'dist'), 
+                         function(seg_) {
+                             df_ <- predict_ci(models$pos[[seg_]][[.measure]])
+                             # Adding log_mass to models that don't include it
+                             if (nrow(df_) == 2) {
+                                 lm_ <- data$pos %>% 
+                                     filter(grepl(seg_, pos, ignore.case = TRUE),
+                                            measure == .measure)
+                                 lm_ <- sapply(c('Bat', 'Rodent'),
+                                               function(c_) {
+                                                   range(lm_$log_mass[lm_$clade == c_])
+                                               })
+                                 df_ <- bind_rows(df_, df_) %>% 
+                                     mutate(log_mass = c(t(lm_)),
+                                            signif = 'no')
+                             } else {
+                                 df_ <- df_ %>% 
+                                     mutate(signif = 'yes')
+                             }
+                             return(df_)
+                         }) %>% 
+        bind_rows %>% 
+        mutate(signif = factor(signif, levels = c('no', 'yes')),
+               pos = factor(pos, levels = c('prox', 'med', 'dist'), 
+                            labels = c('Proximal', 'Medial', 'Distal')))
+    
+    y_logged <- grepl('log', .measure)
 
+    if (y_logged) {
+        predict_df <- predict_df %>% 
+            mutate_at(vars(log_mass, estimate, low, high), exp)
+        raw_data <- data$pos %>% 
+            filter(measure == .measure) %>% 
+            mutate_at(vars(log_mass, value), exp)
+    } else {
+        predict_df <- predict_df %>% 
+            mutate_at(vars(log_mass), exp)
+        raw_data <- data$pos %>% 
+            filter(measure == .measure) %>% 
+            mutate_at(vars(log_mass), exp)
+    }
+    
+    if (is(y_breaks, "waiver") & y_logged) {
+        y_breaks <- predict_df %>% 
+            summarize(min = min(low), max = max(high)) %>% 
+            {seq(.$min, .$max, length.out = 4)} %>% 
+            signif(digits = 3)
+    }
 
-add_title <- function(.p, .title) {
-    if (.p$labels$x == 'pos') {
-        suppressMessages({
-            .p <- .p + 
-                scale_x_continuous(breaks = 1:3, limits = c(0.4, 3.43),
-                                   labels = c('Proximal', 'Medial', 'Distal'))
-        })
-    }
-    x_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$x.range
-    y_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$y.range
-    if (!is.null(.p$coordinates$trans$x)) {
-        x_range <- .p$coordinates$trans$x$inverse(x_range)
-    }
-    if (!is.null(.p$coordinates$trans$y)) {
-        y_range <- .p$coordinates$trans$y$inverse(y_range)
-    }
-    min_x <- min(x_range) + 0.02 * diff(x_range)
-    max_y <- max(y_range) - 0.02 * diff(y_range)
-    .p <- .p + 
-        geom_text(data = NULL, label = .title, 
-                  x = min_x, y = max_y, hjust = 0, vjust = 1, 
-                  size = 14 * (25.4/72), fontface = 'plain')
-    return(.p)
+    y_trans <- ifelse(y_logged, "log", "identity")
+    
+    y_axis_title <- eval(parse(text = plot_names[plot_names$og == .measure,]$new))
+    
+    .p <- predict_df %>%
+        ggplot(aes(log_mass, estimate, color = clade)) +
+        geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
+                    fill = 'gray80', color = NA, alpha = 0.5) + 
+        geom_line(aes(linetype = signif)) +
+        geom_point(data = raw_data, aes(y = value), size = 2) +
+        facet_wrap(~ pos) +
+        scale_linetype_manual(values = c(2, 1), guide = FALSE, drop = FALSE) +
+        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2)) +
+        scale_y_continuous(y_axis_title, trans = y_trans, breaks = y_breaks, 
+                           labels = y_labels) +
+        scale_color_manual(values = c('#9ecae1', '#de2d26')) +
+        theme(legend.position = 'none', 
+              axis.line = element_line(colour = "black", size = 0.5))
+    
+    .p <- add_title(.p, .title = plot_title, .mult = list(x = 3, y = 1),
+                    .data = data_frame(pos = sort(unique(predict_df$pos))[1]))
+    
+    return (.p)
 }
 ```
 
 Creating plot objects
 ---------------------
 
-``` r
-# Plots for each parameter.
-# I'm avoiding facets bc they make `ggplotGrob`s annoying to combine
-pos_plots <- lapply(unique(data$pos$measure), spp_pos_plot)
-names(pos_plots) <- unique(data$pos$measure)
+X-axis is on log scale for all plots.
 
+Y-axis is on log scale for all plots *except* the following:
+
+-   fig2b
+-   fig2c
+-   fig5a
+
+``` r
 # Figure 1c
-fig1c <- {pos_plots$log_intestinal_diameter +
-        theme(legend.position = 'bottom', 
-              axis.text.x = element_text(color = 'black', size = 10, 
-                                         margin = margin(6))) +
-        scale_y_continuous(breaks = log({0.4*1.5^(0:3)}), 
-                           labels = {0.4*1.5^(0:3)})} %>% 
-    add_title('C')
-# Mention that bars represent model predictions at mean log(body mass) among all species
-# Mention that y is on the log scale
+fig1c <- clade_pos_plot('log_intestinal_diameter', y_breaks = 0.3 * 2^(0:2),
+                        plot_title = 'C')
 
 # Figure 2a
-fig2a <- {pos_plots$villus_height +
-        theme(legend.position = 'top')} %>% 
-    add_title('A')
-# Mention that bars represent model predictions at mean log(body mass) among all species
+fig2a <- clade_pos_plot('log_villus_height', y_breaks = 0.2 * 2 ^(0:2),
+                        plot_title = 'A') +
+        theme(legend.position = 'top', legend.margin = margin(0,0,0,0),
+              axis.text.x = element_blank(), axis.title.x = element_blank())
 
 # Figure 2b
-fig2b <- pos_plots$villus_width %>% 
-    add_title('B')
+fig2b <- clade_pos_plot('villus_width', y_breaks = seq(0.04, 0.12, 0.04),
+                        plot_title = 'B') +
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+          strip.background = element_blank(), strip.text = element_blank())
 
 # Figure 2c
-fig2c <- {pos_plots$crypt_width +
-        theme(axis.text.x = element_text(color = 'black', size = 10, 
-                                         margin = margin(6)))} %>% 
-    add_title("C")
+fig2c <- clade_pos_plot('crypt_width', y_breaks = c(0.02, 0.04),
+                        plot_title = 'C') + 
+    theme(strip.background = element_blank(), strip.text = element_blank())
 
 # figure 3
-fig3 <- pos_plots$sef +
-    theme(legend.position = 'top', 
-          axis.text.x = element_text(color = 'black', size = 10, 
-                                     margin = margin(6)))
+fig3 <- clade_pos_plot('log_sef', y_breaks = 5 * 2^(0:2)) +
+    theme(legend.position = 'top')
 
 # Figure 5a
-fig5a <- {pos_plots$enterocyte_diameter +
-        scale_y_continuous(breaks = seq(2e-3, 10e-3, 2e-3), labels = seq(2, 10, 2)) +
-        theme(legend.position = 'top')} %>% 
-    add_title('A')
+fig5a <- clade_pos_plot('enterocyte_diameter',
+               # CHANGING UNITS HERE (from mm to µm):
+               y_breaks = seq(6e-3, 10e-3, 2e-3), y_labels = seq(6, 10, 2),
+               plot_title = 'A') +
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
 
 # Figure 5b
-fig5b <- {pos_plots$log_enterocyte_density +
-        scale_y_continuous(breaks = log(8e6 * 3^(0:2)), labels = 8 * 3^(0:2)) +
-        theme(axis.text.x = element_text(color = 'black', size = 10, 
-                                         margin = margin(6)))} %>% 
-    add_title('B')
-# Mention that y is on the log scale
+fig5b <- clade_pos_plot('log_enterocyte_density',
+               # CHANGING UNITS HERE (from enterocytes / cm^2 to 
+               # 1e6 enterocytes / cm^2):
+               y_breaks = 8e6 * 3^(0:2), y_labels = 8 * 3^(0:2),
+               plot_title = 'B') +
+    theme(strip.background = element_blank(), strip.text = element_blank())
 ```
 
 Individual plots for clearance and absorption
 =============================================
 
-``` r
-fig7a <- data$clear %>%
-    mutate(sef = exp(log_sef), clear = exp(log_clear),
-           spp_type = interaction(diet, taxon) %>% 
-               recode_factor(`Carb.Bat` =       "Bat, carb", 
-                             `Protein.Bat` =    "Bat, protein",
-                             `Carb.Rodent` =    "Rodent, carb", 
-                             `Protein.Rodent` = "Rodent, protein")) %>% 
-    ggplot(aes(sef, clear, shape = spp_type)) +
-    geom_point(color = 'black', size = 2, fill = 'gray60') +
-    guides(shape = guide_legend('Taxon, diet:', nrow = 4)) +
-    theme(legend.position = c(0.01, 0.875),
-          legend.title = element_text(size = 10, face = 'italic'),
-          legend.title.align = 0,
-          legend.justification = c(0, 1),
-          legend.margin = margin(0,0,0,0),
-          legend.key.size = unit(0.75, 'lines')) +
-    scale_shape_manual(values = c(21, 25, 1, 6)) +
-    scale_x_continuous("Surface enlagement factor (SEF)", 
-                       trans = 'log', breaks = c(8, 12, 18)) +
-    scale_y_continuous(expression("L-arabinose clearance (\u03BC" * l ~ min^{-1} ~ 
-                                      cm^{-2} * ")"),
-                       trans = 'log', breaks = c(1, 3, 9))
-fig7a <- fig7a %>% 
-    add_title('A')
-# Mention that both axes are on the log scale
+All axes are on the log scale for all plots.
 
-fig7b <- taxon_only_plot(models$absorp, 
-                         expression(atop(
-                             "Fractional absorption /",
-                             "total intestinal surface (cm"^{-2} ~ g^{0.75} * ")")),
-                         "B")
+``` r
+clear_label <- bquote(.("L-arabinose clearance (\u03BC") * 
+                          l ~ min^{-1} ~ cm^{-2} * ")")
+absorp_label <- bquote(.("Absorption") %*% 10^{3} ~ .("/ ") ~
+                                .("intest. area (") * cm^{-2} * .(")"))
+
+fig7a <- data$clear %>%
+    mutate(sef = exp(log_sef), clear = exp(log_clear)) %>% 
+    ggplot(aes(sef, clear, shape = diet, color = clade)) +
+    geom_point(size = 3, fill = 'gray60') +
+    theme(legend.position = 'top',
+          legend.title = element_text(size = 10, face = 'bold.italic'),
+          legend.margin = margin(0,0,4,0),
+          legend.justification = c(1, 0),
+          legend.key.size = unit(0.75, 'lines')) +
+    guides(shape = 'none', color = guide_legend('Clade:')) +
+    scale_shape_manual(values = c(16, 17)) +
+    scale_color_manual(values = c('#9ecae1', '#de2d26')) +
+    scale_x_continuous("Surface enlagement factor (SEF)", 
+                       trans = 'log', breaks = 8 * 1.5^(0:2)) +
+    scale_y_continuous(clear_label,
+                       trans = 'log', breaks = 1 * 3^(0:2))
+fig7a <- fig7a %>%
+    add_title('A')
+
+
+fig7b <- data$clear %>%
+    filter(!is.na(log_enterocyte_density)) %>% 
+    mutate_at(vars(log_enterocyte_density, log_clear), exp) %>% 
+    ggplot(aes(log_enterocyte_density, log_clear, shape = diet, color = clade)) +
+    geom_point(size = 3, fill = 'gray60') +
+    theme(legend.position = 'top',
+          legend.title = element_text(size = 10, face = 'bold.italic'),
+          legend.margin = margin(0,0,4,0),
+          legend.justification = c(-0.05, 0),
+          legend.key.size = unit(0.75, 'lines'),
+          axis.title.y = element_blank(), axis.text.y = element_blank()) +
+    guides(shape = guide_legend('Diet:'), color = 'none') +
+    scale_shape_manual(values = c(16, 17)) +
+    scale_color_manual(values = c('#9ecae1', '#de2d26')) +
+    scale_x_continuous(eval(parse(
+        text = plot_names[plot_names$og == 'log_enterocyte_density',]$new)), 
+                       trans = 'log', breaks = 8e6 * 3^(0:2), labels = 8 * 3^(0:2)) +
+    scale_y_continuous(clear_label,
+                       trans = 'log', breaks = 1 * 3^(0:2))
+fig7b <- fig7b %>% 
+    add_title('B')
+
+
+fig7c <- clade_only_plot(models$absorp,
+                         y_axis_title = absorp_label,
+                         plot_title = "C", 
+                         # CHANGING UNITS HERE:
+                         y_breaks = 0.001 * 4^(0:2), y_labels = 1 * 4^(0:2),
+                         y_limits = c(7e-4, 0.0172))
+
+
+fig7d <- data$absorp %>%
+    mutate(diet = sapply(species, function(s) data$spp$diet[data$spp$species == s]),
+           diet = factor(ifelse(diet == "Protein", paste(diet), "Carb"),
+                         levels = c('Carb', 'Protein'))) %>% 
+    mutate_at(vars(log_total_enterocytes, log_absorp), exp) %>% 
+    ggplot(aes(log_total_enterocytes, log_absorp, shape = diet, color = clade)) +
+    geom_point(size = 3, fill = 'gray60') +
+    theme(legend.position = 'none', 
+          axis.title.y = element_blank(), axis.text.y = element_blank()) +
+    scale_shape_manual(values = c(16, 17)) +
+    scale_color_manual(values = c('#9ecae1', '#de2d26')) +
+    scale_x_continuous(expression("Total enterocytes (" %*% 10^9 * ")"),
+                       trans = 'log', breaks = 200e6 * 2^(0:3), labels = 0.2 * 2^(0:3)) +
+    scale_y_continuous(absorp_label, trans = 'log', limits = c(7e-4, 0.0172),
+                       # CHANGING UNITS HERE:
+                       breaks = 0.001 * 4^(0:2), labels = 1 * 4^(0:2))
+fig7d <- fig7d %>% 
+    add_title('D')
 ```
 
 Creating and saving final plots
@@ -378,31 +462,50 @@ Function to combine plots
 # Combining multiple figures using the naming scheme `figX` where `X` is the 
 # figure number I'm interested in plotting
 # It also works for single figures.
-one_fig <- function(fig_num, which_size = 'first') {
-    grob_list <- c(lapply(ls(envir = .GlobalEnv)[grepl(paste0('^fig', fig_num), 
-                                                       ls(envir = .GlobalEnv))], 
-                          function(n) ggplotGrob(eval(parse(text = n)))),
-                   size = which_size)
-    grid.draw(do.call(rbind, grob_list))
+one_fig <- function(fig_num, fig1_heights = c(7.9, 9, 10)) {
+    grob_list <- lapply(ls(envir = .GlobalEnv)[grepl(paste0('^fig', fig_num), 
+                                                     ls(envir = .GlobalEnv))], 
+                        function(n) {
+                            ggplotGrob(eval(parse(text = n)))
+                        })
+    if (fig_num == 1) {
+        grid.draw(arrangeGrob(grobs = grob_list, ncol = 1, nrow = length(grob_list), 
+                              heights = fig1_heights))
+    } else if (fig_num %in% c(2, 5)) {
+        grob_list <- lapply(grob_list, 
+               function(gg) {
+                   colnames(gg) <- paste0(seq_len(ncol(gg)))
+                   return(gg)
+               })
+        grid.draw(do.call(gtable_rbind, grob_list))
+    } else if (fig_num == 7) {
+        grid.draw(rbind(do.call(cbind, c(grob_list[1:2], size = 'last')),
+                        do.call(cbind, c(grob_list[3:4], size = 'last')),
+                        size = 'last'))
+    } else {
+        grid.draw(grob_list[[1]])
+    }
+    invisible()
 }
+
 # Employs the above function, plus saves the output
-save_fig <- function(fig_num, which_size = 'first', .seed = NULL, ...) {
+save_fig <- function(fig_num, fig1_heights = c(7.9, 9, 10), .seed = NULL, ...) {
     file_name <- sprintf('figs/fig%02d.pdf', fig_num)
     if (!is.null(.seed)) set.seed(.seed)
     quartz(type = 'pdf', file = file_name, family = 'Helvetica', ...)
-    one_fig(fig_num, which_size)
+    one_fig(fig_num, fig1_heights)
     invisible(dev.off())
 }
 ```
 
 ``` r
 save_fig(1, width = 3.875, height = 3.125 * 3, .seed = 1)
-save_fig(2, 'last', width = 3.875, height = 3.125 * 3, .seed = 2)
+save_fig(2, width = 3.875, height = 3.125 * 3, .seed = 2)
 save_fig(3, width = 3.875, height = 3.125, .seed = 3)
 save_fig(4, width = 3.875, height = 3.125, .seed = 4)
 save_fig(5, width = 3.875, height = 3.125 * 2, .seed = 5)
 save_fig(6, width = 3.875, height = 3.125, .seed = 6)
-save_fig(7, 'last', width = 3.875, height = 3.125 * 2, .seed = 7)
+save_fig(7, width = 3.125 * 2, height = 3.125 * 2, .seed = 7)
 ```
 
 Session info
@@ -419,60 +522,64 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-10-25
+    ##  date     2017-12-07
 
     ## Packages -----------------------------------------------------------------
 
-    ##  package    * version date       source        
-    ##  ape        * 4.1     2017-02-14 CRAN (R 3.4.0)
-    ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports    1.1.1   2017-09-25 CRAN (R 3.4.2)
-    ##  base       * 3.4.2   2017-10-04 local         
-    ##  bindr        0.1     2016-11-13 CRAN (R 3.4.0)
-    ##  bindrcpp   * 0.2     2017-06-17 CRAN (R 3.4.0)
-    ##  colorspace   1.3-2   2016-12-14 CRAN (R 3.4.0)
-    ##  compiler     3.4.2   2017-10-04 local         
-    ##  datasets   * 3.4.2   2017-10-04 local         
-    ##  devtools     1.13.3  2017-08-02 CRAN (R 3.4.1)
-    ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
-    ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
-    ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  ggplot2    * 2.2.1   2016-12-30 CRAN (R 3.4.0)
-    ##  glue         1.1.1   2017-06-21 CRAN (R 3.4.0)
-    ##  graphics   * 3.4.2   2017-10-04 local         
-    ##  grDevices  * 3.4.2   2017-10-04 local         
-    ##  grid       * 3.4.2   2017-10-04 local         
-    ##  gtable       0.2.0   2016-02-26 CRAN (R 3.4.0)
-    ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
-    ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
-    ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)
-    ##  labeling     0.3     2014-08-23 CRAN (R 3.4.0)
-    ##  lattice      0.20-35 2017-03-25 CRAN (R 3.4.2)
-    ##  lazyeval     0.2.0   2016-06-12 CRAN (R 3.4.0)
-    ##  magrittr     1.5     2014-11-22 CRAN (R 3.4.0)
-    ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods    * 3.4.2   2017-10-04 local         
-    ##  munsell      0.4.3   2016-02-13 CRAN (R 3.4.0)
-    ##  nlme         3.1-131 2017-02-06 CRAN (R 3.4.2)
-    ##  parallel     3.4.2   2017-10-04 local         
-    ##  phylolm    * 2.5     2016-10-17 CRAN (R 3.4.0)
-    ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  plyr         1.8.4   2016-06-08 CRAN (R 3.4.0)
-    ##  purrr      * 0.2.4   2017-10-18 CRAN (R 3.4.2)
-    ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
-    ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
-    ##  rlang        0.1.2   2017-08-09 CRAN (R 3.4.1)
-    ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
-    ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
-    ##  scales       0.5.0   2017-08-24 CRAN (R 3.4.1)
-    ##  stats      * 3.4.2   2017-10-04 local         
-    ##  stringi      1.1.5   2017-04-07 CRAN (R 3.4.0)
-    ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
-    ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
-    ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
-    ##  tidyselect   0.2.2   2017-10-10 CRAN (R 3.4.2)
-    ##  tools        3.4.2   2017-10-04 local         
-    ##  utils      * 3.4.2   2017-10-04 local         
-    ##  withr        2.0.0   2017-07-28 CRAN (R 3.4.1)
-    ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
+    ##  package     * version date       source        
+    ##  ape         * 5.0     2017-10-30 CRAN (R 3.4.2)
+    ##  assertthat    0.2.0   2017-04-11 CRAN (R 3.4.0)
+    ##  backports     1.1.1   2017-09-25 CRAN (R 3.4.2)
+    ##  base        * 3.4.2   2017-10-04 local         
+    ##  bindr         0.1     2016-11-13 CRAN (R 3.4.0)
+    ##  bindrcpp    * 0.2     2017-06-17 CRAN (R 3.4.0)
+    ##  colorspace    1.3-2   2016-12-14 CRAN (R 3.4.0)
+    ##  commonmark    1.4     2017-09-01 CRAN (R 3.4.1)
+    ##  compiler      3.4.2   2017-10-04 local         
+    ##  corphyloCpp * 1.0     <NA>       local         
+    ##  datasets    * 3.4.2   2017-10-04 local         
+    ##  devtools      1.13.3  2017-08-02 CRAN (R 3.4.1)
+    ##  digest        0.6.12  2017-01-27 CRAN (R 3.4.0)
+    ##  dplyr       * 0.7.4   2017-09-28 CRAN (R 3.4.2)
+    ##  evaluate      0.10.1  2017-06-24 CRAN (R 3.4.1)
+    ##  ggplot2     * 2.2.1   2016-12-30 CRAN (R 3.4.0)
+    ##  glue          1.2.0   2017-10-29 CRAN (R 3.4.2)
+    ##  graphics    * 3.4.2   2017-10-04 local         
+    ##  grDevices   * 3.4.2   2017-10-04 local         
+    ##  grid        * 3.4.2   2017-10-04 local         
+    ##  gridExtra   * 2.3     2017-09-09 CRAN (R 3.4.1)
+    ##  gtable        0.2.0   2016-02-26 CRAN (R 3.4.0)
+    ##  hms           0.3     2016-11-22 CRAN (R 3.4.0)
+    ##  htmltools     0.3.6   2017-04-28 cran (@0.3.6) 
+    ##  knitr         1.17    2017-08-10 CRAN (R 3.4.1)
+    ##  lattice       0.20-35 2017-03-25 CRAN (R 3.4.2)
+    ##  lazyeval      0.2.1   2017-10-29 CRAN (R 3.4.2)
+    ##  magrittr      1.5     2014-11-22 CRAN (R 3.4.0)
+    ##  memoise       1.1.0   2017-04-21 CRAN (R 3.4.0)
+    ##  methods     * 3.4.2   2017-10-04 local         
+    ##  munsell       0.4.3   2016-02-13 CRAN (R 3.4.0)
+    ##  nlme          3.1-131 2017-02-06 CRAN (R 3.4.2)
+    ##  parallel      3.4.2   2017-10-04 local         
+    ##  phylolm     * 2.5     2016-10-17 CRAN (R 3.4.0)
+    ##  pkgconfig     2.0.1   2017-03-21 CRAN (R 3.4.0)
+    ##  plyr          1.8.4   2016-06-08 CRAN (R 3.4.0)
+    ##  purrr       * 0.2.4   2017-10-18 CRAN (R 3.4.2)
+    ##  R6            2.2.2   2017-06-17 CRAN (R 3.4.0)
+    ##  Rcpp          0.12.13 2017-09-28 CRAN (R 3.4.2)
+    ##  readr       * 1.1.1   2017-05-16 CRAN (R 3.4.0)
+    ##  rlang         0.1.4   2017-11-05 CRAN (R 3.4.2)
+    ##  rmarkdown     1.6     2017-06-15 CRAN (R 3.4.0)
+    ##  roxygen2      6.0.1   2017-02-06 CRAN (R 3.4.0)
+    ##  rprojroot     1.2     2017-01-16 cran (@1.2)   
+    ##  scales        0.5.0   2017-08-24 CRAN (R 3.4.1)
+    ##  stats       * 3.4.2   2017-10-04 local         
+    ##  stringi       1.1.5   2017-04-07 CRAN (R 3.4.0)
+    ##  stringr       1.2.0   2017-02-18 CRAN (R 3.4.0)
+    ##  tibble        1.3.4   2017-08-22 CRAN (R 3.4.1)
+    ##  tidyr       * 0.7.2   2017-10-16 CRAN (R 3.4.2)
+    ##  tidyselect    0.2.3   2017-11-06 CRAN (R 3.4.2)
+    ##  tools         3.4.2   2017-10-04 local         
+    ##  utils       * 3.4.2   2017-10-04 local         
+    ##  withr         2.1.0   2017-11-01 CRAN (R 3.4.2)
+    ##  xml2          1.1.1   2017-01-24 CRAN (R 3.4.0)
+    ##  yaml          2.1.14  2016-11-12 cran (@2.1.14)
