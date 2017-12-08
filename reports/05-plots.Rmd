@@ -59,13 +59,21 @@ theme_set(theme_classic() %+replace%
 # Loading model data
 
 
-```{r code}
+`phylolm` objects saved from [`04-phylo_regressions`](04-phylo_regressions.md):
+
+```{r load_models}
 models <- list(absorp = read_rds('output/models_absorp.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
 # I'm not plotting this one here
 models$pos$prox$crypt_width_pagel <- NULL
+```
 
+Data frames used for each model fit:
+
+> See [`../R/get_data.R`](../R/get_data.R) for what `get_df` does.
+
+```{r load_data}
 data <- list(absorp = get_df('absorp') %>% as_tibble,
              pos = lapply(c('prox','med', 'dist'), 
                           function(p) {get_df(.df = 'pos', .pos = p) %>% 
@@ -128,30 +136,42 @@ add_title <- function(.p, .title, .mult = list(x = 1, y = 1), .data = NULL) {
 ## Function to create base plots
 
 This creates the base plots for those models that have only clade on the x-axis
-(i.e., those organized by species only---not by intestinal segment).
+(i.e., those organized by species only—not by intestinal segment).
 All these models include log(mass) as a covariate so are plotted with log(mass)
 on the x-axis.
 
+
+Function to create each plot depending on the `phylolm` model (`.model`),
+y-axis title (`y_axis_title`),
+plot title (`plot_title`),
+y-axis break points (`y_breaks`),
+y-axis labels (`y_labels`),
+and y-axis limits (`y_limits`).
+Only the first two are required.
+
 ```{r plots_spp_only_base}
-clade_only_plot <- function(.model, y_axis_title, y_breaks, plot_title = NULL, 
-                            y_labels = NULL, y_limits = NULL) {
-    
-    if (missing(y_breaks)) {
-        y_breaks <- predict_ci(.model) %>%
-            mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
-            summarize(min = min(low), max = max(high)) %>% 
-            {seq(.$min, .$max, length.out = 4)}
-    }
+clade_only_plot <- function(.model, 
+                            y_axis_title, 
+                            plot_title = NULL, 
+                            y_breaks = ggplot2::waiver(), 
+                            y_labels = ggplot2::waiver(), 
+                            y_limits = NULL) {
     
     if (!'log_mass' %in% colnames(.model$X)) {
         stop("Model must include log(mass) as a covariate")
     }
     y_name <- {paste(.model$formula) %>% discard(~ grepl('~', .x))}[1]
+    # Base plot
     .p <- predict_ci(.model) %>%
+        # Exponentiate variables for plotting so we can more transparently
+        # provide axis labels of the non-transformed numbers.
+        # The same is done below when plotting the raw data.
         mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
         ggplot(aes(log_mass, estimate, color = clade)) +
+        # 95% CI envelopes
         geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
                     fill = 'gray80', color = NA, alpha = 0.5) +
+        # Raw data points
         geom_point(data = data_frame(estimate = as.numeric(.model$y), 
                                      log_mass = as.numeric(.model$X[,'log_mass']),
                                      clade = factor(as.integer(.model$X[,'cladeBat']), 
@@ -159,21 +179,17 @@ clade_only_plot <- function(.model, y_axis_title, y_breaks, plot_title = NULL,
                                                     labels = c('Rodent', 'Bat'))) %>%
                        mutate_at(vars(log_mass, estimate), exp),
                    size = 2) +
+        # Regression fit
         geom_line() +
         theme(legend.position = 'none', legend.title = element_blank()) +
-        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2)) +
+        # All these plots include log(mass) on the x-axis so I'm including this here.
+        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2),
+                           limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
+        scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks, 
+                           labels = y_labels, limits = y_limits) +
         scale_color_manual(values = c('#9ecae1', '#de2d26'))
     
-    if (!is.null(y_labels)) {
-        .p <- .p +
-            scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks, 
-                               labels = y_labels, limits = y_limits)
-    } else {
-        .p <- .p +
-            scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks,
-                               limits = y_limits)
-    }
-    
+    # Add title if one is provided
     .p <- add_title(.p, plot_title)
     
     return(.p)
@@ -184,8 +200,8 @@ clade_only_plot <- function(.model, y_axis_title, y_breaks, plot_title = NULL,
 
 For all the plots below...
 
-1. Y-axes are on the log scale.
-2. Bars represent model predictions at mean log(body mass) among all species.
+1. Both axes are on the log scale.
+2. Envelopes represent 95% CI for model predictions via parametric bootstrapping.
 
 
 ```{r plots_spp_only}
@@ -209,7 +225,7 @@ fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
 
 # Figure 6
 fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
-                        expression("Total enterocytes (" %*% 10^9 * ")"),
+                        expression("Total enterocytes" %*% 10^{-9}),
                         # CHANGING UNITS HERE (from enterocytes to 
                         # 1e9 enterocytes:
                         y_breaks = 200e6 * 2^(0:3), y_labels = 0.2 * 2^(0:3)) +
@@ -262,10 +278,11 @@ custom y-axis break points (`y_breaks`) and labels (`y_labels`),
 and plot title (`plot_title`).
 
 ```{r plots_seg_fxn}
-clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(), 
+clade_pos_plot <- function(.measure, 
+                           y_breaks = ggplot2::waiver(), 
                            y_labels = ggplot2::waiver(), 
                            plot_title = NULL) {
-    
+    # Getting model-prediction data frame for all three intestinal segments
     predict_df <- lapply(c('prox', 'med', 'dist'), 
                          function(seg_) {
                              df_ <- predict_ci(models$pos[[seg_]][[.measure]])
@@ -280,6 +297,8 @@ clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(),
                                                })
                                  df_ <- bind_rows(df_, df_) %>% 
                                      mutate(log_mass = c(t(lm_)),
+                                            # signif = whether log(mass) was included 
+                                            # in model (bc its P < 0.05)
                                             signif = 'no')
                              } else {
                                  df_ <- df_ %>% 
@@ -292,8 +311,12 @@ clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(),
                pos = factor(pos, levels = c('prox', 'med', 'dist'), 
                             labels = c('Proximal', 'Medial', 'Distal')))
     
+    # Is the y-axis log-transformed?
     y_logged <- grepl('log', .measure)
 
+    # Exponentiating log(mass) so it's more transparent to create
+    # axis labels on the non-transformed scale.
+    # Doing this also for y variable if y_logged == TRUE
     if (y_logged) {
         predict_df <- predict_df %>% 
             mutate_at(vars(log_mass, estimate, low, high), exp)
@@ -308,6 +331,7 @@ clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(),
             mutate_at(vars(log_mass), exp)
     }
     
+    # Provide y-axis breaks if none provided
     if (is(y_breaks, "waiver") & y_logged) {
         y_breaks <- predict_df %>% 
             summarize(min = min(low), max = max(high)) %>% 
@@ -315,8 +339,10 @@ clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(),
             signif(digits = 3)
     }
 
+    # y-axis transformation, depending on whether it's logged
     y_trans <- ifelse(y_logged, "log", "identity")
     
+    # Title from `plot_names` data frame
     y_axis_title <- eval(parse(text = plot_names[plot_names$og == .measure,]$new))
     
     .p <- predict_df %>%
@@ -327,13 +353,17 @@ clade_pos_plot <- function(.measure, y_breaks = ggplot2::waiver(),
         geom_point(data = raw_data, aes(y = value), size = 2) +
         facet_wrap(~ pos) +
         scale_linetype_manual(values = c(2, 1), guide = FALSE, drop = FALSE) +
-        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2)) +
+        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2),
+                           limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
         scale_y_continuous(y_axis_title, trans = y_trans, breaks = y_breaks, 
                            labels = y_labels) +
         scale_color_manual(values = c('#9ecae1', '#de2d26')) +
         theme(legend.position = 'none', 
               axis.line = element_line(colour = "black", size = 0.5))
     
+    # Add title if it's provided.
+    # .mult is set to 3 for the x-axis to compensate for 3 facets
+    # .data is provided to make sure it only shows up in the first facet
     .p <- add_title(.p, .title = plot_title, .mult = list(x = 3, y = 1),
                     .data = data_frame(pos = sort(unique(predict_df$pos))[1]))
     
@@ -443,7 +473,7 @@ fig7b <- data$clear %>%
     scale_color_manual(values = c('#9ecae1', '#de2d26')) +
     scale_x_continuous(eval(parse(
         text = plot_names[plot_names$og == 'log_enterocyte_density',]$new)), 
-                       trans = 'log', breaks = 8e6 * 3^(0:2), labels = 8 * 3^(0:2)) +
+                       trans = 'log', breaks = 1e7 * 3^(0:2), labels = 1e1 * 3^(0:2)) +
     scale_y_continuous(clear_label,
                        trans = 'log', breaks = 1 * 3^(0:2))
 fig7b <- fig7b %>% 
@@ -455,7 +485,8 @@ fig7c <- clade_only_plot(models$absorp,
                          plot_title = "C", 
                          # CHANGING UNITS HERE:
                          y_breaks = 0.001 * 4^(0:2), y_labels = 1 * 4^(0:2),
-                         y_limits = c(7e-4, 0.0172))
+                         y_limits = c(7e-4, 0.02))
+
 
 
 fig7d <- data$absorp %>%
@@ -469,7 +500,7 @@ fig7d <- data$absorp %>%
           axis.title.y = element_blank(), axis.text.y = element_blank()) +
     scale_shape_manual(values = c(16, 17)) +
     scale_color_manual(values = c('#9ecae1', '#de2d26')) +
-    scale_x_continuous(expression("Total enterocytes (" %*% 10^9 * ")"),
+    scale_x_continuous(expression("Total enterocytes" %*% 10^{-9}),
                        trans = 'log', breaks = 200e6 * 2^(0:3), labels = 0.2 * 2^(0:3)) +
     scale_y_continuous(absorp_label, trans = 'log', limits = c(7e-4, 0.0172),
                        # CHANGING UNITS HERE:
