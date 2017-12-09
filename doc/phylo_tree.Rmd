@@ -1,14 +1,8 @@
----
-title: "Visualizing phylogenetic tree"
-author: "Lucas Nell"
-date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
-output: github_document
----
 
-```{r setup, include = FALSE, cache = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = normalizePath(".."))
-```
+
+<!---
+This document talks about and produces a phylogenetic tree for the supplemental info.
+-->
 
 ```{r packages_data, echo = FALSE}
 suppressPackageStartupMessages({
@@ -16,65 +10,64 @@ suppressPackageStartupMessages({
     library(dplyr)
     library(ggplot2)
     library(ggtree)
+    library(ggimage)
 })
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
-sp_df <- get_df('spp')
-tr <- get_tr('spp')
+morph_df <- get_df('spp')
+tr <- get_tr('spp') # <-- full tree
+absorp_df <- get_df('absorp')
+clear_df <- get_df('clear')
+
+# Data frame of which datasets each species is in:
+data_df <- morph_df %>%
+    distinct(species) %>% 
+    mutate(`morph.` = TRUE, 
+           `absorp.` = species %in% absorp_df$species,
+           `clear.` = species %in% clear_df$species)
+rownames(data_df) <- data_df$species
+data_df <- data_df[, -1]
+# Useful if you keep getting `polygon edge not found` error
+# From here: http://disq.us/t/24rt791
+# options("device" = "quartz"); graphics.off()
 ```
 
 
 
 
-
-# Visualizing tree
-
-Here is how I created the phylogenetic tree.
-
-
-```{r phylo_plot}
-# Commented areas are for when I was basing tip points on `sp_df` data frame values
+```{r phylo_plot, echo = FALSE, fig.cap = "Phylogeny of species used in these analyses. Boxes on the right indicate whether the species was used in morphometric (\"morph.\"), absorption (\"absorp.\"), or clearance (\"clear.\") analyses. Gray boxes indicate a species was absent."}
 x_end <- 32
 gg_tr <- ggtree(tr)
 gg_tr$data$x <- gg_tr$data$x - max(gg_tr$data$x)
-phylo <- gg_tr + #%<+% {sp_df %>% select(species, everything())} +
-    theme_tree2(axis.title.x = element_text(size = 14),
-                legend.position = c(0.25, 0.75), legend.box = 'horizontal',
-                legend.background = element_rect(color = NA, fill = NA)) +
-    geom_tiplab(aes(x = x + 3), size = 2, fontface = 'bold.italic') +
-    geom_tippoint(aes(x = x)) +  # , size = log_mass, color = diet)) +
-    geom_text(data = data_frame(x = rep(x_end + 1, 2), y = c(14, 5), 
-                                label = c('Rodents', 'Bats')), 
-              aes(label = label), angle = -90, vjust = 0, size = 6) +
-    geom_segment(data = data_frame(x = rep(x_end, 2), xend = rep(x_end, 2), 
-                                   y = c(1, 10), yend = c(9, 18)), 
-              aes(xend = xend, yend = yend)) +
-    scale_x_continuous('Time (mya)', limits = c(-100, x_end + 2),
-                       breaks = seq(-100, 0, 25), labels = seq(100, 0, -25))# +
-    # scale_color_manual('Diet', values = c('#e66101','#fdb863','#b2abd2','#5e3c99'),
-    #                      guide = guide_legend(direction = "vertical",
-    #                                             title.position = 'top', 
-    #                                             title.hjust = 0.5)) +
-    # scale_size_continuous('log(mass)', 
-    #                      guide = guide_legend(direction = "horizontal",
-    #                                           title.position = 'top', 
-    #                                           title.hjust = 0.5))
-```
-
-
-Saving this figure.
-
-```{r save_phylo, eval = FALSE}
-ggsave('figs/phylo.pdf', phylo, width = 6, height = 4)
-```
-
-
-
-
-# Session info
-
-This outlines the package versions I used for this script.
-
-```{r session_info, echo = FALSE}
-devtools::session_info()
+gg_tr <- gg_tr + #%<+% {sp_df %>% select(species, everything())} +
+    theme_tree2(axis.title.x = element_blank(),
+                axis.text.x = element_blank(),
+                axis.ticks.x = element_blank(),
+                plot.margin = margin(0,0,0,0)) +
+    geom_tiplab(aes(x = x + 2), size = 3, fontface = 'bold.italic')# +
+    # geom_tippoint(aes(x = x))
+suppressMessages(
+    gg_tr <- gheatmap(gg_tr, data_df, offset = 38, width = 0.2, font.size = 2.5, 
+                      colnames_position ='bottom', colnames_angle = -30, 
+                      colnames_offset_y = -0.25, colnames_offset_x = 2) +
+        scale_fill_manual(breaks = c(TRUE, FALSE),  values = c("gray50", "dodgerblue"),
+                          guide = FALSE) + 
+        geom_treescale(x = -90, y = 15, offset = 0.5, width = 10)
+    # scale_x_continuous('Time (mya)', limits = c(-100, x_end + 25),
+    #                breaks = seq(-100, 0, 25), labels = seq(100, 0, -25)) +
+    # scale_y_continuous(limits = c(-5, 30))
+)
+gg_tr + 
+    # Bat image
+    geom_phylopic(image = "18bfd2fc-f184-4c3a-b511-796aafcc70f6",
+                           color = "firebrick", 
+                           data = NULL, inherit.aes = FALSE,
+                           x = -73, y = 6,
+                           alpha = 0.01, height = 622, by = 'height', size = 0.25) +
+    # Rodent image
+    geom_phylopic(image = "13ddd312-92ad-4873-9d65-4732b86cfbbd",
+                           color = "steelblue", 
+                           data = NULL, inherit.aes = FALSE,
+                           x = -60, y = 13,
+                           alpha = 0.01, height = 551, size = 0.25)
 ```
 
