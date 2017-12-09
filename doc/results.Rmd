@@ -1,18 +1,5 @@
---- 
-title: "phylolm results" 
-author: "Lucas Nell" 
-date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`" 
-output: 
-  github_document: 
-    toc: true 
-    toc_depth: 1 
---- 
- 
-```{r setup, include = FALSE, cache = FALSE} 
-knitr::opts_chunk$set(echo = FALSE) 
-knitr::opts_knit$set(root.dir = normalizePath(".."))
-``` 
- 
+
+
  
 This script displays results from analyses using
 [`phylolm::phylolm`](https://doi.org/10.1093/sysbio/syu005) and 
@@ -35,7 +22,7 @@ that separate analyses were performed for each `parameter`.
 
 
  
-```{r libraries}
+```{r libraries, echo = FALSE}
 # Packages needed for this script 
 suppressPackageStartupMessages({
     library(readr)
@@ -58,8 +45,8 @@ invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ``` 
  
  
-```{r parse_output} 
-summ_df <- read_csv('output/models_summaries.csv', col_types = 'cccdddd') %>%
+```{r parse_output, echo = FALSE} 
+summ_df <- read_csv('output/models_summaries.csv', col_types = 'ccccdddd') %>%
     mutate(X = ifelse(X == 'cladeBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
     rename(estimate = value) %>%
@@ -80,7 +67,7 @@ cp_mods <- read_rds('output/models_corphylo.rds')
 ``` 
  
 
-# `phylolm` estimates
+## `phylolm` estimates
 
 Below, the `parameter` column names coefficients (i.e., X variables), except for
 when `parameter == "lambda"`.
@@ -88,7 +75,7 @@ When `parameter == "lambda"`, this refers to the phylogenetic correlation parame
 (Pagel's lambda).
 
 
-## Positions combined 
+### Positions combined 
  
 ```{r spp_summs} 
 knitr::kable(filter(summ_df, pos == 'all', model == 'phylolm')$data[[1]] %>% 
@@ -97,7 +84,7 @@ knitr::kable(filter(summ_df, pos == 'all', model == 'phylolm')$data[[1]] %>%
 ``` 
  
  
-## Proximal 
+### Proximal 
  
 ```{r prox_summs} 
 knitr::kable(filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>% 
@@ -106,7 +93,7 @@ knitr::kable(filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>%
 ``` 
  
  
-## Medial 
+### Medial 
  
 ```{r med_summs} 
 knitr::kable(filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
@@ -115,7 +102,7 @@ knitr::kable(filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>%
 ``` 
  
  
-## Distal 
+### Distal 
  
 ```{r dist_summs} 
 knitr::kable(filter(summ_df, pos == 'dist', model == 'phylolm')$data[[1]] %>% 
@@ -124,7 +111,7 @@ knitr::kable(filter(summ_df, pos == 'dist', model == 'phylolm')$data[[1]] %>%
 ``` 
 
 
-# `corphylo` estimates
+## `corphylo` estimates
 
 Below, when `parameter != "d"`, that row refers to the correlation between the
 `Y` and `parameter` variables. There are no real X and Y variables here.
@@ -132,20 +119,20 @@ Below, when `parameter != "d"`, that row refers to the correlation between the
 When `parameter == "d"`, this row refers to the phylogenetic signal from an 
 Ornstein-Uhlenbeck process for variable `Y`.
 
-# `Clearance` and `SEF`
+### `Clearance` and `SEF`
 
 ```{r clear_sef_kable}
 knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][1:3,])
 ```
 
-# `Clearance` and `log_enterocyte_density`
+### `Clearance` and `log_enterocyte_density`
 
 ```{r clear_ed_kable}
 knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][4:6,])
 ```
 
 
-# `Absorption` and `log_total_enterocytes`
+### `Absorption` and `log_total_enterocytes`
 
 ```{r absorp_te_kable}
 knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][7:9,])
@@ -155,10 +142,10 @@ knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][7:9,])
 
 
 
-# Influential values
+## Influential values
 
 
-## Jackknifing
+### Jackknifing
 
 In the `phylolm` model for `log_intestinal_length ~ clade`, one point is very
 influential to the results, which makes me less confident in the conclusions from the
@@ -218,26 +205,34 @@ add_title <- function(.p, .title) {
                   size = 14 * (25.4/72), fontface = 'plain', color = 'black')
     return(.p)
 }
-
+estimate = 'cladeBat'
 
 infl_plots <- function(estimate, guide_area = TRUE, guide_color = TRUE, title_ = NULL) {
 
     p <- get_df('spp') %>%
+        # Exponentiate variables for plotting so we can more transparently
+        # provide axis labels of the non-transformed numbers.
+        # The same is done below when plotting the raw data.
+        mutate_at(vars(log_mass, log_intestinal_length), exp) %>%
         mutate(influence = get_infl(species, estimate)) %>% 
         ggplot(aes(log_mass, log_intestinal_length, color = clade, size = influence)) +
         geom_point() +
-        xlab('log(body mass [g])') +
-        ylab('log(intestinal length [cm])') +
-        theme(axis.title = element_blank(), plot.title = element_text(size = 12))
+        # All these plots include log(mass) on the x-axis so I'm including this here.
+        scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2),
+                           limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
+        scale_y_continuous('Intestinal length (cm)', trans = 'log', breaks = 10*2^(0:2)) +
+        # xlab('log(body mass [g])') +
+        # ylab('log(intestinal length [cm])') +
+        theme(plot.title = element_text(size = 12))
     if (guide_area) {
         p <- p + scale_size_area(breaks = c(0.5, 1.0), max_size = 4)
     } else {
         p <- p + scale_size_area(breaks = c(0.5, 1.0), max_size = 4, guide = FALSE)
     }
     if (guide_color) {
-        p <- p + scale_color_manual(values = c('firebrick2', 'dodgerblue'))
+        p <- p + scale_color_manual(values = c('#9ecae1', '#de2d26'))
     } else {
-        p <- p + scale_color_manual(values = c('firebrick2', 'dodgerblue'), guide = FALSE)
+        p <- p + scale_color_manual(values = c('#9ecae1', '#de2d26'), guide = FALSE)
     }
     if (!is.null(title_)) {
         p <- add_title(p, title_)
@@ -247,15 +242,18 @@ infl_plots <- function(estimate, guide_area = TRUE, guide_color = TRUE, title_ =
 
 # Plotting influence on `cladeBat` onto plot of log_intestinal_length ~ log_mass
 infl_clade <- infl_plots('cladeBat', guide_area = FALSE, guide_color = FALSE, 'A') +
-    ggtitle('clade')
+    ggtitle('clade') +
+    theme(axis.title = element_blank())
 
 # Plotting influence on `log_mass` onto plot of log_intestinal_length ~ log_mass
 infl_mass <- infl_plots('log_mass', TRUE, TRUE, 'B') +
-    ggtitle('log(mass)')
+    ggtitle('log(mass)') +
+    theme(axis.title = element_blank())
 
 # Plotting influence on `(Intercept)` onto plot of log_intestinal_length ~ log_mass
 infl_int <- infl_plots('intercept', FALSE, FALSE, 'C') +
-    ggtitle('intercept')
+    ggtitle('intercept') +
+    theme(axis.title = element_blank())
 
 # To extract the legend from a ggplot object
 g_legend <- function(a.gplot){
@@ -268,30 +266,35 @@ g_legend <- function(a.gplot){
 .legend <- g_legend(infl_mass)
 
 .ylab <- ggplot(data_frame(x = 0, y = 0), aes(x, y)) +
-    geom_text(label = 'log(intestinal length [cm])', angle = 90) +
+    geom_text(label = 'Intestinal length (cm)', angle = 90) +
     theme_void()
 .xlab <- ggplot(data_frame(x = 0, y = 0), aes(x, y)) +
-    geom_text(label = 'log(mass [g])') +
+    geom_text(label = 'Body mass (g)') +
     theme_void()
 .void <- ggplot() + geom_blank()
+
 
 grobs <- grid.arrange(.void, ggplotGrob(infl_clade), .void,
                       .ylab, ggplotGrob(infl_mass + theme(legend.position = 'none')), .legend,
                       .void, ggplotGrob(infl_int), .void,
                       .void, .xlab, .void,
-                      ncol = 3, nrow = 4, widths = c(1/10, 7/10, 2/10), 
+                      ncol = 3, nrow = 4, widths = c(1/10, 7/10, 2/10),
                       heights = c(1, 1, 1, 1/10))
 
-quartz(type = 'pdf', file = "figs/influence.pdf", family = 'Helvetica', 
-       width = 4, height = 8)
-grid.draw(grobs)
-invisible(dev.off())
+# quartz(type = 'pdf', file = "figs/influence.pdf", family = 'Helvetica', 
+#        width = 4, height = 8)
+# grid.draw(grobs)
+# invisible(dev.off())
 ```
 
-![influence figure](figs/influence.pdf "Plot of influence values")
+```{r draw_influence, fig.height = 7, fig.width = 4, fig.cap = "Plot of influence values for regression of intestinal length on clade and body mass. Point sizes are proportional to their influence (normalized to be in the range [0,1]) on the maximum likelihood estimate for (A) clade, (B) body mass, and (C) intercept."}
+grid.draw(grobs)
+```
 
 
-## Re-running model without influential point
+
+
+### Re-running model without influential point
 
 Below is the model summary including all values.
 
@@ -312,17 +315,18 @@ spp_tr <- get_tr('spp')
 z <- phylolm(log_intestinal_length ~ clade + log_mass, model = 'lambda',
         data = .df, boot = 2000, phy = .tr)
 z %>% summary
-pval(z, 'cladeBat')
-pval(plm_mods$spp$log_intestinal_length, 'cladeBat')
 ```
 
 
 We can see that we're much less sure about mass's influence on intestinal length when
 we remove that one point.
+Fortunately it does not change our conclusions regarding the influence of clade
+(P-value for $\beta_{\text{clade}}$ with influential point:
+`r sprintf("%.4g", pval(plm_mods$spp$log_intestinal_length, 'cladeBat'))`;
+P without it: `r sprintf("%.4g", pval(z, 'cladeBat'))`).
 
 
-
-# Percent differences
+## Percent differences
 
 This is for the percent differences in the discussion and abstract.
 
@@ -332,7 +336,9 @@ If the variable was log-transformed (all those below were), then I exponentiated
 both rodent and bat estimates before computing the proportional, then percentage, 
 difference.
 
-```{r percent_diff, echo = TRUE}
+> Negative values mean bats had lower values.
+
+```{r percent_diff}
 perc_diff <- function(.mod) {
     
     # Detect log-transform from formula
@@ -350,13 +356,13 @@ perc_diff <- function(.mod) {
 }
 ```
 
-## NSA
-```{r percent_diff_nsa, echo = TRUE}
+### NSA
+```{r percent_diff_nsa}
 cat(sprintf('%.4g %%\n', perc_diff(plm_mods$spp$log_nsa)))
 ```
 
-## SEF
-```{r percent_diff_sef, echo = TRUE}
+### SEF
+```{r percent_diff_sef}
 cat(sprintf('%.4g %%\n', mean(c(
     perc_diff(plm_mods$pos$prox$log_sef),
     perc_diff(plm_mods$pos$med$log_sef),
@@ -364,8 +370,9 @@ cat(sprintf('%.4g %%\n', mean(c(
 ))))
 ```
 
-## Enterocyte density
-```{r percent_diff_ent_dens, echo = TRUE}
+
+### Enterocyte density
+```{r percent_diff_ent_dens}
 cat(sprintf('%.4g %%\n', mean(c(
     perc_diff(plm_mods$pos$prox$log_enterocyte_density), 
     perc_diff(plm_mods$pos$med$log_enterocyte_density), 
@@ -376,8 +383,7 @@ cat(sprintf('%.4g %%\n', mean(c(
 
 
 
-
-# SEF on Clade and log(Mass)
+## SEF on Clade and log(Mass)
 
 This is to determine whether there's an effect of body mass on SEF. It appears there
 is not.

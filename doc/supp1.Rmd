@@ -49,13 +49,24 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, dev = 'quartz_pdf')
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
 
 
+# Phylogeny
 
-# Testing
+```{r phylogeny-main, child = 'phylo_tree.Rmd'}
+```
+
+
+# Results
+
+```{r results-main, child = 'results.Rmd'}
+```
+
+
+# Testing References
 
 I wish now to test my citation manager [@Nell:2016cg; @KahlJr:1964ju].
 
