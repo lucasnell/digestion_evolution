@@ -1,0 +1,394 @@
+
+
+
+
+
+# Retrieve data
+
+For more information on the functions `get_df` and `get_tr` below (plus `filter_tr` 
+and `cp_mat` used later), see [`R/get_data.R`](R/get_data.R).
+
+Note that absorption and clearance data need standard errors as well as means.
+
+```{r get_data}
+# Tree for all morphometric and diet analyses
+tr <- get_tr('spp')
+# Morphometrics by species
+spp_df <- get_df('spp')
+# Morphometrics by species and segment
+seg_types <- c('prox', 'med', 'dist')
+pos_df_list <- lapply(seg_types, get_df, .df = 'pos')
+names(pos_df_list) <- seg_types
+# Absorption by species
+absorp_df <- get_df('absorp')
+absorp_se_df <- get_df('absorp', .stat = 'se')
+absorp_tr <- get_tr('absorp')
+# Clearance by species
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')
+clear_tr <- get_tr('clear')
+```
+
+
+
+# `phylolm`
+
+The following sections are regressions using `phylolm::phylolm`.
+
+## `SEF` on `Diet`
+
+`phylolm` call:
+
+```{r sef_diet, eval = FALSE}
+set.seed(581120)
+diet_fit <- phylolm(log_sef ~ diet, data = spp_df, phy = tr,
+                    model = 'lambda', boot = 2000)
+```
+
+Saving output:
+
+```{r save_diet, eval = FALSE, purl = FALSE}
+readr::write_rds(diet_fit, 'output/models_diet.rds')
+```
+```{r sef_diet_load, echo = FALSE, purl = FALSE}
+diet_fit <- readr::read_rds('output/models_diet.rds')
+```
+
+
+
+## `Absorption` on `Clade`
+
+"Absorption" here means `Fractional absorption / (total intestinal surface)`,
+where `total intestinal surface = NSA * SEF`
+
+`phylolm` call:
+
+```{r absorp_clade, eval = FALSE}
+set.seed(454094511)
+absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
+    phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
+            model = 'lambda', boot = 2000)
+)
+```
+
+
+Saving output:
+
+```{r save_absorp, eval = FALSE, purl = FALSE}
+readr::write_rds(absorp_fit, 'output/models_absorp.rds')
+```
+
+```{r absorp_load, echo = FALSE, purl = FALSE}
+absorp_fit <- readr::read_rds('output/models_absorp.rds')
+```
+
+
+
+
+## `Morphometrics` on `Clade`
+
+List of `Morphometrics`:
+
+- Intestinal length
+- NSA
+- Villus surface area
+- Total number of enterocytes (log-transformed)
+    * Calculated as such: `log(NSA * enterocyte_density)`
+
+> log(body mass) as covariate for all
+
+These are the column names for the above parameters:
+```{r sp_analyses_cols}
+spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
+            "log_total_enterocytes")
+```
+
+
+`phylolm` calls:
+
+
+```{r sp_analyses, eval = FALSE}
+# (takes ~7.5 min)
+set.seed(88754829)
+spp_fits <- lapply(
+    spp_ys,
+    function(y_) {
+        f <- paste(y_, '~ clade + log_mass')
+        suppressWarnings(
+            do.call("phylolm", list(as.formula(f), data = as.name("spp_df"),
+                                    phy = as.name("tr"), model = 'lambda',
+                                    boot = 2000))
+        )
+    })
+names(spp_fits) <- spp_ys
+```
+
+Saving output:
+
+```{r save_spp, eval = FALSE, purl = FALSE}
+readr::write_rds(spp_fits, 'output/models_spp.rds')
+```
+```{r spp_load, echo = FALSE, purl = FALSE}
+spp_fits <- readr::read_rds('output/models_spp.rds')
+```
+
+
+
+
+## `Morphometrics` on `Clade`, separately by segment
+
+
+(Segment = proximal, medial, or distal)
+
+List of `Y`s:
+
+- Intestinal diameter (log-transformed, body mass as covariate)
+- Villus height (body mass as covariate)
+- Villus width
+- Crypt width
+- Surface enlargement factor (SEF)
+- Enterocyte diameter
+- Enterocytes per cm^2 NSA (log-transformed)
+
+
+Below are the column names for these parameters and all the segment types.
+
+```{r pos_ys}
+pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
+            'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
+seg_types <- c('prox', 'med', 'dist')
+```
+
+
+Below is a data frame including whether or not to include `log_mass` as a covariate.
+This determination was based on whether `log_mass` had a significant effect when it was
+included in the model, where p-values were based on parametric bootstrapping 
+(see [`docs/03-include_mass`](docs/03-include_mass.md)).
+
+```{r pos_log_mass_include}
+include_mass <- read_csv('output/include_mass_pos.csv', col_types = 'ccl')
+include_mass
+```
+
+
+`phylolm` call:
+
+```{r pos_analyses, eval = FALSE}
+# (takes ~32 min)
+set.seed(25413535)
+pos_fits <- lapply(
+    seg_types,
+    function(pos_) {
+        # Assigning to obj named <pos_>_df so that the call identifies the position
+        assign(paste0(pos_, '_df'), get_df('pos', .pos = pos_))
+        lapply(
+            pos_ys,
+            function(y_) {
+                f <- paste(y_, ' ~ clade')
+                # Whether to include log_mass covariate
+                imc <- {include_mass %>% filter(pos == pos_, y == y_)}$include
+                if (imc[1]) f <- paste(f, '+ log_mass')
+                arg_list <- list(
+                    as.formula(f),
+                    data = as.name(paste0(pos_, "_df")),
+                    phy = as.name("tr"), model = 'lambda')
+                # Some models don't find the peak likelihood unless specifying a
+                # starting value of 0.1.
+                LL_nostart <- suppressWarnings(do.call("phylolm", arg_list))$logLik
+                LL_wstart <- suppressWarnings(do.call(
+                    "phylolm", c(arg_list, starting.value = 0.1)))$logLik
+                if (LL_wstart > LL_nostart) {
+                    arg_list <- c(arg_list, starting.value = 0.1)
+                }
+                arg_list <- c(arg_list, boot = 2000)
+                # Now create the final phylolm object
+                suppressWarnings(do.call("phylolm", arg_list))
+            })
+    })
+names(pos_fits) <- seg_types
+for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
+```
+
+
+The model for `crypt_width ~ clade` in the proximal segment has a higher log likelihood
+at a very high phylogenetic signal (`logLik = 68.14` at `lambda = 0.993`) than at 
+very low signal (`logLik = 66.88` at `lambda = 1e-7`).
+However, this model is sensitive to starting values, which suggests multiple peaks in
+the likelihood profile.
+Moreover, the models for the other segments show very low phylogenetic signal 
+(`1e-7` for both), and this model re-run with the Ornstein-Uhlenbeck model for
+phylogenetic error ("OU"; `OUfixedRoot` in `phylolm`) has a higher log likelihood and
+shows a much lower phylogenetic signal (`logLik = 68.54` and `alpha = 0.0156`).
+Thus the model likely had convergence issues using Pagel's lambda, so I'm 
+replacing the original model with one using the OU error model below.
+I'm saving the original one to report it, too.
+
+```{r pos_analyses_crypt_width_prox, eval = FALSE}
+pos_fits$prox$crypt_width_pagel <- pos_fits$prox$crypt_width
+prox_df <- get_df('pos', .pos = 'prox')
+set.seed(1340481016)
+pos_fits$prox$crypt_width <- update(pos_fits$prox$crypt_width, 
+                                       model = "OUfixedRoot")
+```
+
+
+Saving output:
+
+```{r save_pos, eval = FALSE, purl = FALSE}
+readr::write_rds(pos_fits, 'output/models_pos.rds')
+```
+```{r pos_load, echo = FALSE, purl = FALSE}
+pos_fits <- readr::read_rds('output/models_pos.rds')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+# `corphylo`
+
+From the original manuscript: 
+
+> ... we used reduced major axis regression (model II regression)... because both 
+> variables [X and Y] were subject to error
+
+Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` 
+that can conduct parametric bootstrapping.
+P-values are calculated using these bootstrap replicates.
+
+I used the same P-values to determine that I do not need to use `log_mass` as
+an independent variable for any of these fits
+(see [`docs/03-include_mass`](docs/03-include_mass.md) for more info).
+
+All variables under this section are log-transformed.
+
+
+```{r corphylo_load, echo = FALSE}
+# Load all corphylo objects
+cp_list <- readr::read_rds('output/models_corphylo.rds')
+clear_sef <- cp_list$clear_sef
+clear_ed <- cp_list$clear_ed
+absorp_te <- cp_list$absorp_te
+rm(cp_list)
+```
+
+
+## `Clearance` and `SEF`
+
+Clearance = "paracellular probe L-arabinose clearance"
+
+
+```{r clear_sef, eval = FALSE}
+clear_df <- get_df('clear')
+clear_se_df <- get_df('clear', .stat = 'se')
+clear_tr <- get_tr('clear')
+
+Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
+MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
+
+set.seed(1844365955)
+clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, 
+                          boot = 2000, n_cores = 4)
+```
+
+
+
+## `Clearance` and `log_enterocyte_density`
+
+> One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which
+> is why I'm removing that row below.
+
+```{r clear_ed, eval = FALSE}
+Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
+Xmat <- Xmat[!is.na(rowSums(Xmat)),]
+
+MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
+MEmat <- MEmat[!is.na(rowSums(MEmat)),]
+
+clear_ed_tr <- filter_tr(clear_tr, rownames(Xmat))
+
+set.seed(1442148819)
+clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, 
+                         boot = 2000, n_cores = 4)
+```
+
+
+
+## `Absorption` and `log_total_enterocytes`
+
+
+```{r absorp_te, eval = FALSE}
+Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
+
+set.seed(2016097648)
+absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, 
+                          boot = 2000, n_cores = 4)
+```
+
+
+## Saving `corphylo` objects
+
+I'm saving all these objects together.
+
+```{r save_corphylo, eval = FALSE}
+readr::write_rds(list(clear_sef = clear_sef, clear_ed = clear_ed, 
+                      absorp_te = absorp_te), 
+                 'output/models_corphylo.rds')
+```
+
+
+
+
+
+# Assembling all output into one table
+
+
+I ran `summ_df` on all models (both `phylolm` and `corphylo`) above.
+This function summarizes both of these object classes into a single data frame.
+See [`R/model_summaries.R`](R/model_summaries.R) for more info.
+
+```{r mod_summaries, purl = FALSE}
+summ_df(pos_fits$prox$crypt_width_pagel)
+summ_df(pos_fits$prox$crypt_width)
+
+mod_summaries <- bind_rows(
+    list(
+        summ_df(diet_fit),
+        summ_df(absorp_fit),
+        bind_rows(lapply(spp_fits, summ_df)),
+        bind_rows(
+            lapply(names(pos_fits), function(p) {
+                bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
+            })),
+        summ_df(clear_sef, .corr_pars = c('log_sef', 'log_clear')),
+        summ_df(clear_ed, .corr_pars = c('log_enterocyte_density', 'log_clear')),
+        summ_df(absorp_te, .corr_pars = c('absorp', 'log_total_enterocytes'))
+        ))
+```
+
+
+I lastly write this summary to a csv file.
+
+
+```{r write_summaries, purl = FALSE}
+write_csv(mod_summaries, 'output/models_summaries.csv')
+```
+
+
+
+
+# Session info
+
+This outlines the package versions I used for these analyses.
+
+```{r session_info, echo = FALSE, purl = FALSE}
+devtools::session_info()
+```
