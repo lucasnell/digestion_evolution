@@ -1,28 +1,60 @@
+---
+title: 'Electronic Supplementary Material: Supplemental Methods and Results'
+subtitle: "``Morphometric bases for intestinal paracellular absorption in bats and rodents''"
+date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
+fontsize: 12pt
+csl: "ecology.csl"
+bibliography: "references.bib"
+geometry: margin=1in,letterpaper
+documentclass: article
+tables: true
+graphics: true
+colorlinks: true
+output:
+    bookdown::pdf_document2:
+        fig_caption: yes
+        number_sections: yes
+        template: template.tex
+        toc: yes
+        toc_depth: 2
+---
 
-
+```{r setup, include=FALSE, cache = FALSE}
+suppressPackageStartupMessages({
+    library(knitr)
+    library(knitcitations)
+    library(bookdown)
+})
+opts_chunk$set(echo = FALSE, cache = FALSE, dev = 'quartz_pdf', fig.pos = 'h')
+opts_knit$set(root.dir = normalizePath(".."))
+knit_theme$set(knit_theme$get("acid"))
+cleanbib()
+options("citation_format" = "pandoc")
+```
  
-This script displays results from analyses using
-[`phylolm::phylolm`](https://doi.org/10.1093/sysbio/syu005) and 
-a modified version of [`ape::corphylo`](https://CRAN.R-project.org/package=ape)
-(methods paper link 
-[here](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2435.2009.01596.x/full)).
+This section displays all results from analyses using
+`phylolm::phylolm` `r citep(citation("phylolm"))` and 
+a modified version of `ape::corphylo`
+`r citep(list(citation("ape"), "10.1111/j.1365-2435.2009.01596.x"))`
+that provides parametric bootstrapping.
 
-The `parameter` column indicates which variable (either an X variable or phylogenetic 
-signal) that row's numbers refer to.
-Column `estimate` is the maximum likelihood estimate for the specified `parameter`, 
-while `lower` and `upper` are lower and upper bounds of the 95% confidence interval
-for the coefficient estimate, obtained by parametric bootstrapping.
-`P` is the p-value for an estimate not equal to zero; this is obtained by the same 
-bootstrapping as for the CI.
-I do not present P-values for phylogenetic signals because they were bound
+In the tables below, the "parameter" column indicates which variable (either an X 
+variable or phylogenetic signal parameter) that row's numbers refer to.
+Column "estimate" is the maximum likelihood estimate for the specified parameter, 
+while columns "lower" and "upper" are lower and upper bounds of the 95% confidence 
+interval for the coefficient estimate.
+"P" is the p-value for an estimate not being equal to zero.
+Both p-values and CIs were obtained by parametric bootstrapping of the `phylolm` model.
+We do not present P-values for phylogenetic signals because they were bound
 above zero by the models; thus confidence intervals are more informative.
 
-Within a given table, multiple `parameter` values for a given `Y` never indicate 
-that separate analyses were performed for each `parameter`.
+Within a given table, multiple parameter-column values for a given Y do not indicate 
+that separate analyses were performed for each parameter, merely that both 
+were included in the same model.
 
 
  
-```{r libraries, echo = FALSE}
+```{r libraries, echo = FALSE, cache = FALSE}
 # Packages needed for this script 
 suppressPackageStartupMessages({
     library(readr)
@@ -42,10 +74,33 @@ theme_set(theme_classic())
 suppressMessages(devtools::load_all('corphyloCpp'))
 # Sourcing scripts from R directory
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
+
+# Function to print data frames for LaTeX output using booktabs package
+pretty_df <- function(df_, caption = NULL) {
+    kable_obj <- knitr::kable(df_, format = 'latex', booktabs = TRUE, caption = caption)
+    kable_str <- unlist(str_split(kable_obj, '\n'))
+    kable_str <- kable_str[kable_str != "\\addlinespace"]
+    for (i in 1:(length(kable_str)-1)) {
+        kable_str[i] <- gsub("textbackslash\\{\\}", "", kable_str[i])
+        kable_str[i] <- gsub("\\\\textasciicircum\\{\\}", "\\^", kable_str[i])
+        kable_str[i] <- gsub("\\\\\\$", "$", kable_str[i])
+        kable_str[i] <- gsub("\\\\\\{", "{", kable_str[i])
+        kable_str[i] <- gsub("\\\\\\}", "}", kable_str[i])
+        kable_str[i] <- gsub("beta\\\\_", "beta_", kable_str[i])
+        # kable_str[i] <- gsub("\\\\_", "beta_", kable_str[i])
+        if (grepl('^ &', kable_str[i]) & !grepl('^ &', kable_str[(i+1)]) & 
+            !grepl('^\\\\bottomrule', kable_str[(i+1)])) {
+            kable_str[i] <- str_c(kable_str[i], "\n", "\\addlinespace")
+        }
+    }
+    new_kable_str <- str_c(kable_str, collapse = '\n')
+    kable_obj[1] <- new_kable_str
+    return(kable_obj)
+}
 ``` 
  
  
-```{r parse_output, echo = FALSE} 
+```{r parse-output, echo = FALSE} 
 summ_df <- read_csv('output/models_summaries.csv', col_types = 'ccccdddd') %>%
     mutate(X = ifelse(X == 'cladeBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
@@ -56,7 +111,13 @@ summ_df <- read_csv('output/models_summaries.csv', col_types = 'ccccdddd') %>%
                                Y %in% c('absorp', 'log_clear')) & 
                               !X %in% c('clade', 'lambda', 'log_mass'), 
                           'corphylo','phylolm'),
-           P = ifelse(X %in% c('lambda', 'd'), "–", P)) %>% 
+           P = ifelse(X %in% c('lambda', 'd', 'alpha'), "–", P),
+           # Explicitly ordering parameters:
+           X = factor(X, 
+                      levels = c("clade", "log_mass", 
+                                 "dietOmnivorous", "dietProtein", 
+                                 "log_clear", "log_total_enterocytes", 
+                                 "lambda", "alpha", "d"))) %>% 
     rename(parameter = X) %>% 
     nest(-model, -pos)
 plm_mods <- list(absorp = read_rds('output/models_absorp.rds'),
@@ -69,73 +130,90 @@ cp_mods <- read_rds('output/models_corphylo.rds')
 
 ## `phylolm` estimates
 
-Below, the `parameter` column names coefficients (i.e., X variables), except for
-when `parameter == "lambda"`.
-When `parameter == "lambda"`, this refers to the phylogenetic correlation parameter
-(Pagel's lambda).
+Tables \ref{tab:spp-summs}--\ref{tab:dist-summs} summarize the coefficient estimates
+for all `phylolm` model fits.
+
+The list below describes all possible "parameter" column values:
+
+- log_absorp: fractional absorption
+- log_intestinal_length: intestinal length
+- log_nsa: nominal surface area
+- log_sef: surface enlargement factor
+- log_total_enterocytes: total enterocytes
+- log_vill_surface_area: total villous surface area
+- clade: clade (bat or rodent)
+- log_mass: body mass
+- dietOmnivorous: binary variable whose value is 1 if the species is omnivorous
+- dietProtein: binary variable whose value is 1 if the species is carnivorous
+- lambda: phylogenetic correlation parameter (Pagel's lambda)
 
 
-### Positions combined 
- 
-```{r spp_summs} 
-knitr::kable(filter(summ_df, pos == 'all', model == 'phylolm')$data[[1]] %>% 
+```{r spp-summs} 
+filter(summ_df, pos == 'all', 
+                          model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
-    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)) %>% 
+    pretty_df(., caption = '\\texttt{phylolm} model output for analyses by species only.')
 ``` 
- 
- 
-### Proximal 
- 
-```{r prox_summs} 
-knitr::kable(filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>% 
+
+
+```{r prox-summs} 
+filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
-    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)) %>% 
+    pretty_df(., caption = str_c('\\texttt{phylolm} model output for proximal intestinal ',
+                                 'segment analyses.'))
 ``` 
- 
- 
-### Medial 
- 
-```{r med_summs} 
-knitr::kable(filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
+
+
+```{r med-summs} 
+filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
-    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)) %>% 
+    pretty_df(., caption = str_c('\\texttt{phylolm} model output for medial intestinal ',
+                                 'segment analyses.'))
 ``` 
- 
- 
-### Distal 
- 
-```{r dist_summs} 
-knitr::kable(filter(summ_df, pos == 'dist', model == 'phylolm')$data[[1]] %>% 
+
+
+```{r dist-summs}
+filter(summ_df, pos == 'dist', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
-    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)))
+    mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y)) %>% 
+    pretty_df(., caption = str_c('\\texttt{phylolm} model output for distal intestinal ',
+                                 'segment analyses.'))
 ``` 
+
+
 
 
 ## `corphylo` estimates
 
-Below, when `parameter != "d"`, that row refers to the correlation between the
-`Y` and `parameter` variables. There are no real X and Y variables here.
+Except when the parameter column is "d", rows below refer to the correlation between the
+"Y" and "parameter" variables. There are no real X and Y variables here.
 
-When `parameter == "d"`, this row refers to the phylogenetic signal from an 
-Ornstein-Uhlenbeck process for variable `Y`.
+When the parameter is "d", this row refers to the phylogenetic signal from an 
+Ornstein-Uhlenbeck process for variable "Y".
 
 ### `Clearance` and `SEF`
 
-```{r clear_sef_kable}
-knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][1:3,])
+```{r clear-sef-kable}
+filter(summ_df, model == 'corphylo')$data[[1]][1:3,] %>% 
+    pretty_df(.)
 ```
 
 ### `Clearance` and `log_enterocyte_density`
 
-```{r clear_ed_kable}
-knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][4:6,])
+```{r clear-ed-kable}
+filter(summ_df, model == 'corphylo')$data[[1]][4:6,] %>% 
+    pretty_df(.)
 ```
 
 
 ### `Absorption` and `log_total_enterocytes`
 
-```{r absorp_te_kable}
-knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][7:9,])
+```{r absorp-te-kable}
+filter(summ_df, model == 'corphylo')$data[[1]][7:9,] %>% 
+    pretty_df(.)
 ```
 
 
@@ -150,24 +228,21 @@ knitr::kable(filter(summ_df, model == 'corphylo')$data[[1]][7:9,])
 In the `phylolm` model for `log_intestinal_length ~ clade`, one point is very
 influential to the results, which makes me less confident in the conclusions from the
 full dataset.
-Below I use jackknifing to determine how influential each point is to the `log_mass`
+Below we use jackknifing to determine how influential each point is to the `log_mass`
 and `clade` estimates.
 
-(See `R/model_summaries.R` for the `jack_phylolm` function.)
-
-```{r influence_jack, echo = TRUE}
-# Conducting jackknifing
-int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length, phy = get_tr('spp'))
+```{r influence-jack, cache = TRUE}
+# (See `R/model_summaries.R` for the `jack_phylolm` function.)
+int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length, 
+                         phy = get_tr('spp'))
 ```
 
 
-The plot below shows log(intestinal length) on log(body mass) with point sizes 
-indicating that point's absolute jackknife influence value for the maximum likelihood
-estimate for (A) clade, (B) log(body mass), and (C) intercept.
-Color indicates clade.
+Figure \ref{fig:influence-plots} shows that one species (*Artibeus lituratus*) has
+a disproportionate effect on all three coefficient estimates.
 
 
-```{r influence_plots}
+```{r influence-plots, fig.height = 7, fig.width = 4, fig.cap = "Plot of influence values for regression of intestinal length on clade and body mass. Point sizes are proportional to their influence (normalized to range from 0 to 1) on the maximum likelihood estimate for (A) clade, (B) body mass, and (C) intercept. Color indicates clade."}
 # Keep the same area options for every plot
 area_opts <- scale_size_area(breaks = c(0.5, 1.0), max_size = 4)
 
@@ -205,7 +280,7 @@ add_title <- function(.p, .title) {
                   size = 14 * (25.4/72), fontface = 'plain', color = 'black')
     return(.p)
 }
-estimate = 'cladeBat'
+
 
 infl_plots <- function(estimate, guide_area = TRUE, guide_color = TRUE, title_ = NULL) {
 
@@ -217,7 +292,7 @@ infl_plots <- function(estimate, guide_area = TRUE, guide_color = TRUE, title_ =
         mutate(influence = get_infl(species, estimate)) %>% 
         ggplot(aes(log_mass, log_intestinal_length, color = clade, size = influence)) +
         geom_point() +
-        # All these plots include log(mass) on the x-axis so I'm including this here.
+        # All these plots include log(mass) on the x-axis so we're including this here.
         scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2),
                            limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
         scale_y_continuous('Intestinal length (cm)', trans = 'log', breaks = 10*2^(0:2)) +
@@ -247,7 +322,7 @@ infl_clade <- infl_plots('cladeBat', guide_area = FALSE, guide_color = FALSE, 'A
 
 # Plotting influence on `log_mass` onto plot of log_intestinal_length ~ log_mass
 infl_mass <- infl_plots('log_mass', TRUE, TRUE, 'B') +
-    ggtitle('log(mass)') +
+    ggtitle('body mass') +
     theme(axis.title = element_blank())
 
 # Plotting influence on `(Intercept)` onto plot of log_intestinal_length ~ log_mass
@@ -281,13 +356,6 @@ grobs <- grid.arrange(.void, ggplotGrob(infl_clade), .void,
                       ncol = 3, nrow = 4, widths = c(1/10, 7/10, 2/10),
                       heights = c(1, 1, 1, 1/10))
 
-# quartz(type = 'pdf', file = "figs/influence.pdf", family = 'Helvetica', 
-#        width = 4, height = 8)
-# grid.draw(grobs)
-# invisible(dev.off())
-```
-
-```{r draw_influence, fig.height = 7, fig.width = 4, fig.cap = "Plot of influence values for regression of intestinal length on clade and body mass. Point sizes are proportional to their influence (normalized to be in the range [0,1]) on the maximum likelihood estimate for (A) clade, (B) body mass, and (C) intercept."}
 grid.draw(grobs)
 ```
 
@@ -296,25 +364,65 @@ grid.draw(grobs)
 
 ### Re-running model without influential point
 
-Below is the model summary including all values.
+Below is a summary of the model estimates when including all values.
 
-```{r influence_firstrun}
-plm_mods$spp$log_intestinal_length %>% summary
+```{r influence-firstrun}
+influence_og <- plm_mods$spp$log_intestinal_length
+first_run_df <- cbind(cbind(estimate = c(influence_og$coefficients, 
+                                         lambda = influence_og$optpar)),
+                      t(influence_og$bootconfint95)[c("(Intercept)", "cladeBat", 
+                                                      "log_mass", "lambda"), ]) %>% 
+    as_tibble %>% 
+    rename(lower = `2.5%`, upper = `97.5%`) %>% 
+    mutate(parameter = c("(Intercept)", "cladeBat", "log_mass", 
+                         "lambda")) %>% 
+    select(parameter, everything()) %>% 
+    mutate_if(is.numeric, function(x) sprintf('%.3g', x))
 ```
 
 
 Now the results without including the most influential value:
 
-```{r influence_rerun}
+```{r influence-rerun, cache = TRUE}
 spp_df <- get_df('spp')
 spp_tr <- get_tr('spp')
-
 .df <- get_df('spp')
 .df <- .df[.df$species != 'Artibeus lituratus',]
 .tr <- get_tr('spp') %>% filter_tr(.df$species)
-z <- phylolm(log_intestinal_length ~ clade + log_mass, model = 'lambda',
-        data = .df, boot = 2000, phy = .tr)
-z %>% summary
+set.seed(1018666821)
+suppressWarnings(  # gives warning about low lambda
+    influence_rerun <- phylolm(log_intestinal_length ~ clade + log_mass, 
+                               model = 'lambda', data = .df, boot = 2000, 
+                               phy = .tr))
+```
+
+```{r re-run-summ-dfs}
+rerun_df <- cbind(cbind(estimate = c(influence_rerun$coefficients, 
+                                     lambda = influence_rerun$optpar)),
+                  t(influence_rerun$bootconfint95)[c("(Intercept)", "cladeBat", 
+                                                     "log_mass", "lambda"), ]) %>% 
+    as_tibble %>% 
+    rename(lower = `2.5%`, upper = `97.5%`) %>% 
+    mutate(parameter = c("(Intercept)", "cladeBat", "log_mass", 
+                         "lambda")) %>% 
+    select(parameter, everything()) %>% 
+    mutate_if(is.numeric, function(x) sprintf('%.3g', x))
+list(first_run_df, rerun_df) %>% 
+    lapply(function(x) {
+        mutate(x, parameter = sapply(
+            parameter, 
+            function(.p){
+                switch(.p, 
+                       `(Intercept)` = "$\\beta_0$",
+                       cladeBat = "$\\beta_{clade}$",
+                       log_mass = "$\\beta_{mass}$",
+                       lambda = "$\\lambda$",
+                       .p)}))
+    }) %>% 
+    pretty_df(., caption = str_c('\\texttt{phylolm} model estimates for regression of ',
+                                 'log(intestinal length) on clade and log(body mass), ',
+                                 'with (left) and  without (right) influential point ',
+                                 'present in dataset.'))
 ```
 
 
@@ -322,23 +430,28 @@ We can see that we're much less sure about mass's influence on intestinal length
 we remove that one point.
 Fortunately it does not change our conclusions regarding the influence of clade
 (P-value for $\beta_{\text{clade}}$ with influential point:
-`r sprintf("%.4g", pval(plm_mods$spp$log_intestinal_length, 'cladeBat'))`;
-P without it: `r sprintf("%.4g", pval(z, 'cladeBat'))`).
-
+`r sprintf("%.4g", pval(influence_og, 'cladeBat'))`;
+P without it: `r sprintf("%.4g", pval(influence_rerun, 'cladeBat'))`).
 
 ## Percent differences
 
 This is for the percent differences in the discussion and abstract.
 
-I calculated rodent and bat estimates at `log(body mass) = 0` to remove the effect
+We calculated rodent and bat estimates at `log(body mass) = 0` to remove the effect
 of body mass.
-If the variable was log-transformed (all those below were), then I exponentiated
+If the variable was log-transformed (all those below were), then we exponentiated
 both rodent and bat estimates before computing the proportional, then percentage, 
-difference.
+difference:
 
-> Negative values mean bats had lower values.
+\begin{equation}
+  100 \times \frac{ e^{\beta_0 + \beta_{\text{clade}}} - e^{\beta_0} }{ e^{\beta_0} }
+\end{equation}
 
-```{r percent_diff}
+
+where $\beta_0$ is the intercept and $\beta_{\text{clade}}$ the coefficient for clade.
+
+
+```{r percent-diff}
 perc_diff <- function(.mod) {
     
     # Detect log-transform from formula
@@ -356,13 +469,15 @@ perc_diff <- function(.mod) {
 }
 ```
 
-### NSA
-```{r percent_diff_nsa}
+
+__NSA\:__
+```{r percent-diff-nsa}
 cat(sprintf('%.4g %%\n', perc_diff(plm_mods$spp$log_nsa)))
 ```
 
-### SEF
-```{r percent_diff_sef}
+
+__SEF\:__
+```{r percent-diff-sef}
 cat(sprintf('%.4g %%\n', mean(c(
     perc_diff(plm_mods$pos$prox$log_sef),
     perc_diff(plm_mods$pos$med$log_sef),
@@ -371,13 +486,12 @@ cat(sprintf('%.4g %%\n', mean(c(
 ```
 
 
-### Enterocyte density
-```{r percent_diff_ent_dens}
+__Enterocyte density\:__
+```{r percent-diff-ent-dens}
 cat(sprintf('%.4g %%\n', mean(c(
     perc_diff(plm_mods$pos$prox$log_enterocyte_density), 
     perc_diff(plm_mods$pos$med$log_enterocyte_density), 
-    perc_diff(plm_mods$pos$dist$log_enterocyte_density)
-))))
+    perc_diff(plm_mods$pos$dist$log_enterocyte_density)))))
 ```
 
 
@@ -388,14 +502,24 @@ cat(sprintf('%.4g %%\n', mean(c(
 This is to determine whether there's an effect of body mass on SEF. It appears there
 is not.
 
-```{r sef_clade_mass, echo = TRUE}
+```{r sef-clade-mass, echo = TRUE, cache = TRUE}
+# Retrieve necessary data:
 tr <- get_tr('spp')
 spp_df <- get_df('spp')
+# Run new phylolm fit:
 set.seed(940318092)
 mod <- suppressWarnings(
-    phylolm(log_sef ~ clade + log_mass, data = spp_df, phy = tr, model = "lambda",
-            boot = 2000))
-# P-values for coefficient estimates != 0, using parametric bootstrapping:
+    phylolm(log_sef ~ clade + log_mass, data = spp_df, phy = tr, 
+            model = "lambda", boot = 2000))
+# P-values for coefficient estimates != 0, using parametric 
+# bootstrapping:
 pval(mod, c('log_mass', 'cladeBat'))
+```
+
+
+
+
+```{r biblio, message = FALSE}
+write.bibtex(file="doc/references.bib")
 ```
 
