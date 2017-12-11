@@ -1,3 +1,5 @@
 *.bbl
 *.run.xml
 *.pdf
+*.aux
+*_cache*
