@@ -1,56 +1,20 @@
----
-title: 'Electronic Supplementary Material: Supplemental Methods and Results'
-subtitle: "``Morphometric bases for intestinal paracellular absorption in bats and rodents''"
-date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
-fontsize: 12pt
-csl: "ecology.csl"
-bibliography: "references.bib"
-geometry: margin=1in,letterpaper
-documentclass: article
-tables: true
-graphics: true
-colorlinks: true
-output:
-    bookdown::pdf_document2:
-        fig_caption: yes
-        number_sections: yes
-        template: template.tex
-        toc: yes
-        toc_depth: 2
----
 
-```{r setup, include=FALSE, cache = FALSE}
-suppressPackageStartupMessages({
-    library(knitr)
-    library(knitcitations)
-    library(bookdown)
-})
-opts_chunk$set(echo = FALSE, cache = FALSE, dev = 'quartz_pdf', fig.pos = 'h')
-opts_knit$set(root.dir = normalizePath(".."))
-knit_theme$set(knit_theme$get("acid"))
-cleanbib()
-options("citation_format" = "pandoc")
-```
- 
+
 This section displays all results from analyses using
 `phylolm::phylolm` `r citep(citation("phylolm"))` and 
 a modified version of `ape::corphylo`
 `r citep(list(citation("ape"), "10.1111/j.1365-2435.2009.01596.x"))`
 that provides parametric bootstrapping.
 
-In the tables below, the "parameter" column indicates which variable (either an X 
-variable or phylogenetic signal parameter) that row's numbers refer to.
-Column "estimate" is the maximum likelihood estimate for the specified parameter, 
+In the tables below, the "estimate" column is the maximum likelihood estimate 
+for the specified parameter, 
 while columns "lower" and "upper" are lower and upper bounds of the 95% confidence 
-interval for the coefficient estimate.
-"P" is the p-value for an estimate not being equal to zero.
-Both p-values and CIs were obtained by parametric bootstrapping of the `phylolm` model.
+interval for the parameter estimate.
+"P" is the p-value for a parameter not being equal to zero.
+Both p-values and CIs were obtained by parametric bootstrapping of the `phylolm`
+or `corphylo` model.
 We do not present P-values for phylogenetic signals because they were bound
 above zero by the models; thus confidence intervals are more informative.
-
-Within a given table, multiple parameter-column values for a given Y do not indicate 
-that separate analyses were performed for each parameter, merely that both 
-were included in the same model.
 
 
  

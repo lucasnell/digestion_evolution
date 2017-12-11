@@ -38,6 +38,7 @@ documentclass: article
 tables: true
 graphics: true
 colorlinks: true
+supplemental: true
 output:
     bookdown::pdf_document2:
         fig_caption: yes
@@ -53,7 +54,7 @@ suppressPackageStartupMessages({
     library(knitcitations)
     library(bookdown)
 })
-knitr::opts_chunk$set(echo = FALSE, cache = FALSE, dev = 'quartz_pdf', fig.pos = 'h')
+knitr::opts_chunk$set(echo = FALSE, cache = FALSE, dev = 'quartz_pdf')
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 knitr::knit_theme$set(knitr::knit_theme$get("acid"))
 
@@ -62,21 +63,21 @@ options("citation_format" = "pandoc")
 ```
 
 
-# Phylogeny
+# Supplementary Methods
+
+## Phylogeny
 
 ```{r phylogeny-main, child = 'phylo_tree.Rmd'}
 ```
 
 
-# Results
+# Supplementary Results
 
 ```{r results-main, child = 'results.Rmd'}
 ```
 
 
-# Testing References
 
-I wish now to test my citation manager [@Nell:2016cg; @KahlJr:1964ju].
 
 # References
 
