@@ -23,6 +23,7 @@ $if(linestretch)$
 \usepackage{setspace}
 \setstretch{$linestretch$}
 $endif$
+\usepackage{bbm}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
@@ -137,7 +138,7 @@ $if(keywords)$
 $endif$
 $if(colorlinks)$
             colorlinks=true,
-            linkcolor=$if(linkcolor)$$linkcolor$$else$Maroon$endif$,
+            linkcolor=$if(linkcolor)$$linkcolor$$else$Blue$endif$,
             citecolor=$if(citecolor)$$citecolor$$else$Blue$endif$,
             urlcolor=$if(urlcolor)$$urlcolor$$else$Blue$endif$,
 $else$
@@ -165,17 +166,17 @@ $if(highlighting-macros)$
 $highlighting-macros$
 $endif$
 $if(tables)$
-\usepackage{longtable,booktabs}
-$if(beamer)$
-\usepackage{caption}
-% These lines are needed to make table captions work with longtable:
-\makeatletter
-\def\fnum@table{\tablename~\thetable}
-\makeatother
-$else$
-% Fix footnotes in tables (requires footnote package)
-\IfFileExists{footnote.sty}{\usepackage{footnote}\makesavenoteenv{longtable}}{}
-$endif$
+    \usepackage{longtable,booktabs}
+    $if(beamer)$
+        \usepackage{caption}
+        % These lines are needed to make table captions work with longtable:
+        \makeatletter
+        \def\fnum@table{\tablename~\thetable}
+        \makeatother
+    $else$
+        % Fix footnotes in tables (requires footnote package)
+        \IfFileExists{footnote.sty}{\usepackage{footnote}\makesavenoteenv{longtable}}{}
+    $endif$
 $endif$
 $if(graphics)$
 \usepackage{graphicx,grffile}
@@ -369,8 +370,9 @@ $endif$
 
 $for(include-before)$
 $include-before$
-
 $endfor$
+
+
 $if(toc)$
 $if(beamer)$
 \begin{frame}
