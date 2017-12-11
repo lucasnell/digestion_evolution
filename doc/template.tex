@@ -165,10 +165,10 @@ $endif$
 $if(highlighting-macros)$
 $highlighting-macros$
 $endif$
+\usepackage[labelfont=bf]{caption}
 $if(tables)$
     \usepackage{longtable,booktabs}
     $if(beamer)$
-        \usepackage{caption}
         % These lines are needed to make table captions work with longtable:
         \makeatletter
         \def\fnum@table{\tablename~\thetable}
@@ -247,10 +247,18 @@ $else$
 $endif$
 $endif$
 
-% set default figure placement to htbp
+% set default figure and tabke placement
+\usepackage{float}
 \makeatletter
-\def\fps@figure{htbp}
+\def\fps@figure{H}
+\def\fps@table{H}
 \makeatother
+
+% Add S to the beginning of figure and table labels if it's supplemental section
+$if(supplemental)$
+    \renewcommand{\thefigure}{S\arabic{figure}}
+    \renewcommand{\thetable}{S\arabic{table}}
+$endif$
 
 $for(header-includes)$
 $header-includes$
