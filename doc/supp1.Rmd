@@ -2,8 +2,6 @@
 title: 'Electronic Supplementary Material: Supplemental Methods and Results'
 subtitle: "``Morphometric bases for intestinal paracellular absorption in bats and rodents''"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
-header-includes:
-    - \usepackage{bbm}
 author:
     - name: Antonio Brun
       nums: "1,2"
@@ -34,23 +32,33 @@ affil:
       num: "4"
 fontsize: 12pt
 csl: "ecology.csl"
-bibliography: "refs.bib"
+bibliography: "references.bib"
 geometry: margin=1in,letterpaper
 documentclass: article
+tables: true
+graphics: true
+colorlinks: true
 output:
-    pdf_document:
-      df_print: kable
-      fig_caption: yes
-      highlight: haddock
-      number_sections: yes
-      template: template.tex
-      toc: yes
-      toc_depth: 2
+    bookdown::pdf_document2:
+        fig_caption: yes
+        number_sections: yes
+        template: template.tex
+        toc: yes
+        toc_depth: 2
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, dev = 'quartz_pdf')
+```{r setup, include=FALSE, cache = FALSE}
+suppressPackageStartupMessages({
+    library(knitr)
+    library(knitcitations)
+    library(bookdown)
+})
+knitr::opts_chunk$set(echo = FALSE, cache = FALSE, dev = 'quartz_pdf', fig.pos = 'h')
 knitr::opts_knit$set(root.dir = normalizePath(".."))
+knitr::knit_theme$set(knitr::knit_theme$get("acid"))
+
+cleanbib()
+options("citation_format" = "pandoc")
 ```
 
 
@@ -71,4 +79,8 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 I wish now to test my citation manager [@Nell:2016cg; @KahlJr:1964ju].
 
 # References
+
+```{r biblio, message = FALSE}
+write.bibtex(file="doc/references.bib")
+```
 
