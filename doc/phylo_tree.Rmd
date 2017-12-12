@@ -8,12 +8,12 @@ The phylogenetic tree was downloaded from [`timetree.org`](timetree.org)
 `r citep("10.1093/molbev/msx116")`.
 Not every species in our phylogeny was used for every analysis.
 Analyses related to morphometric, clearance, and absorption data had separate
-datasets consisting of different species (i.e., there were 3 datasets total).
-Figure \ref{fig:phylo-plot} shows the full phylogeny and which species were present
-in each dataset.
+datasets consisting of different species.
+Figure \ref{fig:phylo-plot} shows the full phylogeny and which species were 
+present in each dataset.
 
 
-```{r packages-data, echo = FALSE}
+```{r phylo-packages-data, echo = FALSE}
 suppressPackageStartupMessages({
     library(ape)
     library(dplyr)
@@ -43,7 +43,7 @@ data_df <- data_df[, -1]
 
 
 
-```{r phylo-plot, echo = FALSE, fig.cap = "Phylogeny of species used in these analyses. Boxes on the right indicate whether the species was used in morphometric (\"morph.\"), absorption (\"absorp.\"), or clearance (\"clear.\") analyses. Gray boxes indicate a species was absent."}
+```{r phylo-plot, echo = FALSE, fig.cap = "Phylogeny of species used in these analyses. Boxes on the right indicate whether the species was used in morphometric (\"morph.\"), absorption (\"absorp.\"), or clearance (\"clear.\") analyses. Gray boxes indicate a species was absent. The scale is in millions of years."}
 x_end <- 32
 gg_tr <- ggtree(tr)
 gg_tr$data$x <- gg_tr$data$x - max(gg_tr$data$x)
