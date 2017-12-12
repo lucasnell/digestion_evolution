@@ -1,7 +1,7 @@
 Phylogenetic linear regression
 ================
 Lucas Nell
-07 Dec 2017
+12 Dec 2017
 
 -   [Retrieve data](#retrieve-data)
 -   [`phylolm`](#phylolm)
@@ -11,9 +11,6 @@ Lucas Nell
     -   [`Morphometrics` on `Clade`, separately by segment](#morphometrics-on-clade-separately-by-segment)
 -   [`corphylo`](#corphylo)
     -   [`Clearance` and `SEF`](#clearance-and-sef)
-    -   [`Clearance` and `log_enterocyte_density`](#clearance-and-log_enterocyte_density)
-    -   [`Absorption` and `log_total_enterocytes`](#absorption-and-log_total_enterocytes)
-    -   [Saving `corphylo` objects](#saving-corphylo-objects)
 -   [Assembling all output into one table](#assembling-all-output-into-one-table)
 -   [Session info](#session-info)
 
@@ -248,10 +245,6 @@ All variables under this section are log-transformed.
 Clearance = "paracellular probe L-arabinose clearance"
 
 ``` r
-clear_df <- get_df('clear')
-clear_se_df <- get_df('clear', .stat = 'se')
-clear_tr <- get_tr('clear')
-
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
@@ -260,74 +253,16 @@ clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat,
                           boot = 2000, n_cores = 4)
 ```
 
-`Clearance` and `log_enterocyte_density`
-----------------------------------------
-
-> One species (*Rattus norvegicus*) doesn't have `log_enterocyte_density` data, which is why I'm removing that row below.
+Saving `corphylo` object:
 
 ``` r
-Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
-Xmat <- Xmat[!is.na(rowSums(Xmat)),]
-
-MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
-MEmat <- MEmat[!is.na(rowSums(MEmat)),]
-
-clear_ed_tr <- filter_tr(clear_tr, rownames(Xmat))
-
-set.seed(1442148819)
-clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat, 
-                         boot = 2000, n_cores = 4)
-```
-
-`Absorption` and `log_total_enterocytes`
-----------------------------------------
-
-``` r
-Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
-
-set.seed(2016097648)
-absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, 
-                          boot = 2000, n_cores = 4)
-```
-
-Saving `corphylo` objects
--------------------------
-
-I'm saving all these objects together.
-
-``` r
-readr::write_rds(list(clear_sef = clear_sef, clear_ed = clear_ed, 
-                      absorp_te = absorp_te), 
-                 'output/models_corphylo.rds')
+readr::write_rds(clear_sef, 'output/models_corphylo.rds')
 ```
 
 Assembling all output into one table
 ====================================
 
 I ran `summ_df` on all models (both `phylolm` and `corphylo`) above. This function summarizes both of these object classes into a single data frame. See [`R/model_summaries.R`](R/model_summaries.R) for more info.
-
-``` r
-summ_df(pos_fits$prox$crypt_width_pagel)
-```
-
-    ## # A tibble: 2 x 8
-    ##             Y        X   pos phy_model       value      lower      upper
-    ##         <chr>    <chr> <lgl>     <chr>       <dbl>      <dbl>      <dbl>
-    ## 1 crypt_width cladeBat    NA    lambda -0.01048766 -0.0315114 0.01036664
-    ## 2 crypt_width   lambda    NA    lambda  0.99299121  0.0000001 1.00000000
-    ## # ... with 1 more variables: P <dbl>
-
-``` r
-summ_df(pos_fits$prox$crypt_width)
-```
-
-    ## # A tibble: 2 x 8
-    ##             Y        X   pos   phy_model       value        lower
-    ##         <chr>    <chr> <lgl>       <chr>       <dbl>        <dbl>
-    ## 1 crypt_width cladeBat    NA OUfixedRoot -0.01077394 -0.023208583
-    ## 2 crypt_width    alpha    NA OUfixedRoot  0.01558186  0.008038714
-    ## # ... with 2 more variables: upper <dbl>, P <dbl>
 
 ``` r
 mod_summaries <- bind_rows(
@@ -339,9 +274,7 @@ mod_summaries <- bind_rows(
             lapply(names(pos_fits), function(p) {
                 bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
             })),
-        summ_df(clear_sef, .corr_pars = c('log_sef', 'log_clear')),
-        summ_df(clear_ed, .corr_pars = c('log_enterocyte_density', 'log_clear')),
-        summ_df(absorp_te, .corr_pars = c('absorp', 'log_total_enterocytes'))
+        summ_df(clear_sef, .corr_pars = c('log_sef', 'log_clear'))
         ))
 ```
 
@@ -365,7 +298,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-07
+    ##  date     2017-12-12
 
     ## Packages -----------------------------------------------------------------
 
