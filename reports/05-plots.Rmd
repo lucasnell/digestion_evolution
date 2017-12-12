@@ -414,7 +414,8 @@ fig5a <- clade_pos_plot('enterocyte_diameter',
                # CHANGING UNITS HERE (from mm to µm):
                y_breaks = seq(6e-3, 10e-3, 2e-3), y_labels = seq(6, 10, 2),
                plot_title = 'A') +
-    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+          legend.position = 'top')
 
 # Figure 5b
 fig5b <- clade_pos_plot('log_enterocyte_density',

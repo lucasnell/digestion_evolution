@@ -1,7 +1,7 @@
 Regression plots
 ================
 Lucas Nell
-08 Dec 2017
+11 Dec 2017
 
 -   [Loading model data](#loading-model-data)
 -   [Standardize plot titles](#standardize-plot-titles)
@@ -382,7 +382,8 @@ fig5a <- clade_pos_plot('enterocyte_diameter',
                # CHANGING UNITS HERE (from mm to µm):
                y_breaks = seq(6e-3, 10e-3, 2e-3), y_labels = seq(6, 10, 2),
                plot_title = 'A') +
-    theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+    theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+          legend.position = 'top')
 
 # Figure 5b
 fig5b <- clade_pos_plot('log_enterocyte_density',
@@ -546,7 +547,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-08
+    ##  date     2017-12-11
 
     ## Packages -----------------------------------------------------------------
 
