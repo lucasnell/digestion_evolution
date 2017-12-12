@@ -37,7 +37,8 @@ get_par_names <- function(p, grepl_str = NULL) {
 #' @param boot_out Function to retrieve necessary info from corphylo object for each
 #'     bootstrap replicate. If defining your own function for this, make sure that 
 #'     the output is either a single number or a matrix row.
-#'     Defaults to \code{NULL}, which retrieves the correlation(s).
+#'     Defaults to \code{NULL}, which retrieves the correlation(s) and the 
+#'     \code{d}-values for the OU process (i.e., the measures of phylogenetic signal).
 #' @param n_cores Number of cores to use. Defaults to 1.
 #'
 #' @return
@@ -499,7 +500,7 @@ boot_corphylo <- function(cp_obj, boot, boot_out = NULL, n_cores = 1, max_iter =
 
 
 # Redefine print.corphylo to include SE info if present
-#' @S3method
+#' @export
 print.corphylo <- function(x, digits = max(3, getOption("digits") - 3), ...) {
     cat("Call to corphylo\n\n")
     logLik = x$logLik
