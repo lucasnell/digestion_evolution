@@ -408,7 +408,7 @@ absorp_df <- absorp_df %>%
         inv_injection = ifelse(species[1] %in% sep_absorps,
                                mean(1 / injection, na.rm = TRUE), 1),
         
-        # "gi_" stands for gavage and injection
+        # "gi" stands for gavage and injection
         gi_v = gavage^2 * inv_injection_v + inv_injection^2 * gavage_v +
             gavage_v * inv_injection_v,
         gi = gavage * inv_injection,

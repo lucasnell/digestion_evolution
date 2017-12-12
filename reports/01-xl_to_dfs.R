@@ -61,14 +61,14 @@ xl <- read_excel('data/raw_data.xlsx', col_names = FALSE,
 #' 
 #+  manip_morph
 # Table of abbreviated species names
-spp_df <- xl[69:86,2:3] %>% 
+spp_df_ <- xl[69:86,2:3] %>% 
     rename(abbrev = X__2, full = X__3) %>% 
     arrange(full)
 # Resolving ambiguous and untidy abbreviated names
-spp_df$abbrev[spp_df$abbrev == 'Ds1'] <- 'Ds'
-spp_df$abbrev[spp_df$full == 'Eumops glaucinus'] <- 'Eg'
-spp_df$abbrev[spp_df$full == 'Microtus pennsylvanicus'] <- 'Microtus'
-spp_df$abbrev[spp_df$full == 'Molossus molossus'] <- 'Mmo'
+spp_df_$abbrev[spp_df_$abbrev == 'Ds1'] <- 'Ds'
+spp_df_$abbrev[spp_df_$full == 'Eumops glaucinus'] <- 'Eg'
+spp_df_$abbrev[spp_df_$full == 'Microtus pennsylvanicus'] <- 'Microtus'
+spp_df_$abbrev[spp_df_$full == 'Molossus molossus'] <- 'Mmo'
 
 
 # Start of final morphometrics data frame, starting with diet, clade, name, and 
@@ -89,7 +89,7 @@ initial_df$id[grepl('My', initial_df$id)] <- paste0('My', 1:3)
 # Assigning species names
 initial_df <- initial_df %>% 
     mutate(species = sapply(id, function(.id) {
-        spp_df$full[spp_df$abbrev == gsub('[0-9]', '', .id)]
+        spp_df_$full[spp_df_$abbrev == gsub('[0-9]', '', .id)]
     })) %>% 
     select(diet, clade, species, id, measure, everything())
 #' 
@@ -390,8 +390,11 @@ absorp_df <- bind_rows(abs_df, abs_df2) %>%
 #' Only the objects `morph_df`, `clear_df`, and `absorp_df` are needed downstream.
 #' 
 #+ rm_excess
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% 
-                                   c('morph_df', 'clear_df', 'absorp_df')])
+rm(list = c(".i", "abbrev_id", "abs_df",
+            "abs_df2", "find_clade", "find_diet", "full_spp",
+            "initial_df", "is_num", "new_cols", "sef_df",
+            "spp_df_", "xl", "xl_abs", "xl_clear",
+            "xl_extr", "xl_sef"))
 #' 
 #' 
 #' 

@@ -1,7 +1,7 @@
 Convert raw Excel file into simpler data frames
 ================
 Lucas Nell
-05 Dec 2017
+12 Dec 2017
 
 -   [Morphometric data](#morphometric-data)
 -   [Clearance data](#clearance-data)
@@ -55,14 +55,14 @@ Initial manipulation to retrieve desired info and correct ambiguity / "untidy-ne
 
 ``` r
 # Table of abbreviated species names
-spp_df <- xl[69:86,2:3] %>% 
+spp_df_ <- xl[69:86,2:3] %>% 
     rename(abbrev = X__2, full = X__3) %>% 
     arrange(full)
 # Resolving ambiguous and untidy abbreviated names
-spp_df$abbrev[spp_df$abbrev == 'Ds1'] <- 'Ds'
-spp_df$abbrev[spp_df$full == 'Eumops glaucinus'] <- 'Eg'
-spp_df$abbrev[spp_df$full == 'Microtus pennsylvanicus'] <- 'Microtus'
-spp_df$abbrev[spp_df$full == 'Molossus molossus'] <- 'Mmo'
+spp_df_$abbrev[spp_df_$abbrev == 'Ds1'] <- 'Ds'
+spp_df_$abbrev[spp_df_$full == 'Eumops glaucinus'] <- 'Eg'
+spp_df_$abbrev[spp_df_$full == 'Microtus pennsylvanicus'] <- 'Microtus'
+spp_df_$abbrev[spp_df_$full == 'Molossus molossus'] <- 'Mmo'
 
 
 # Start of final morphometrics data frame, starting with diet, clade, name, and 
@@ -83,7 +83,7 @@ initial_df$id[grepl('My', initial_df$id)] <- paste0('My', 1:3)
 # Assigning species names
 initial_df <- initial_df %>% 
     mutate(species = sapply(id, function(.id) {
-        spp_df$full[spp_df$abbrev == gsub('[0-9]', '', .id)]
+        spp_df_$full[spp_df_$abbrev == gsub('[0-9]', '', .id)]
     })) %>% 
     select(diet, clade, species, id, measure, everything())
 ```
@@ -358,8 +358,11 @@ Remove excess objects
 Only the objects `morph_df`, `clear_df`, and `absorp_df` are needed downstream.
 
 ``` r
-rm(list = ls(all.names = TRUE)[!ls(all.names = TRUE) %in% 
-                                   c('morph_df', 'clear_df', 'absorp_df')])
+rm(list = c(".i", "abbrev_id", "abs_df",
+            "abs_df2", "find_clade", "find_diet", "full_spp",
+            "initial_df", "is_num", "new_cols", "sef_df",
+            "spp_df_", "xl", "xl_abs", "xl_clear",
+            "xl_extr", "xl_sef"))
 ```
 
 Session info
@@ -376,7 +379,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-05
+    ##  date     2017-12-12
 
     ## Packages -----------------------------------------------------------------
 
