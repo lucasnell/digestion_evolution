@@ -34,7 +34,7 @@ Lucas A. Nell
       models by species and intestinal position
       ([`doc/03-include_mass`](doc/03-include_mass.md)).
     - `models_summaries.csv`: summaries for all `phylolm` and `corphylo` models
-      ([`doc/04-phylo_regressions`](doc/04-phylo_regressions.md)).
+      ([`doc/04-phylo_fits`](doc/04-phylo_fits.md)).
     - `tidy_absorp.csv`: tidy version of absorption dataset
       ([`doc/02-aggregate`](doc/02-aggregate.md))
     - `tidy_clear.csv`: tidy version of clearance dataset 
@@ -57,6 +57,6 @@ Lucas A. Nell
       and/or intestinal segment, then write to CSV files.
     - `03-include_mass`: test whether to include log(mass) as a covariate for all 
       analyses.
-    - `04-phylo_regressions`: `phylolm` and `corphylo` analyses.
+    - `04-phylo_fits`: `phylolm` and `corphylo` analyses.
     - `05-plots`: plots used in the main portion of the text.
 

@@ -59,7 +59,7 @@ theme_set(theme_classic() %+replace%
 # Loading model data
 
 
-`phylolm` objects saved from [`04-phylo_regressions`](04-phylo_regressions.md):
+`phylolm` objects saved from [`04-phylo_fits`](04-phylo_fits.md):
 
 ```{r load_models}
 models <- list(absorp = read_rds('output/models_absorp.rds'),
