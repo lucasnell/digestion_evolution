@@ -457,110 +457,8 @@ fig7a <- data$clear %>%
 fig7a <- fig7a %>%
     add_title('A')
 
+
 # fig7b <- 
-clade_only_plot(models$absorp,
-                         y_axis_title = absorp_label,
-                         plot_title = "B", 
-                         # CHANGING UNITS HERE:
-                         y_breaks = 0.001 * 4^(0:2), y_labels = 1 * 4^(0:2),
-                         y_limits = c(7e-4, 0.02))
-
-absorp_df2 <- left_join(data$absorp, data$spp, by = 'species', suffix = c('', '_X')) %>% 
-    mutate(diet2 = factor(ifelse(diet == 'Protein', 'Protein', 'Carb'), 
-                          levels = c('Carb', 'Protein'))) %>% 
-    as.data.frame()
-rownames(absorp_df2) <- absorp_df2$species
-
-set.seed(1444134918)
-abz <- phylolm(log_absorp ~ clade + diet2, 
-        data = absorp_df2, model = 'lambda', phy = get_tr('absorp'),
-        boot = 2000)
-summary(abz)
-pval(abz, c('cladeBat', 'diet2Protein'))
-
-clear_df2 <- data$clear %>% 
-    mutate(diet2 = factor(ifelse(diet == 'Protein', 'Protein', 'Carb'), 
-                          levels = c('Carb', 'Protein'))) %>% 
-    as.data.frame()
-rownames(clear_df2) <- clear_df2$species
-
-set.seed(1962960973)
-clz <- phylolm(log_clear ~ clade + diet2, data = clear_df2, model = 'lambda', 
-               phy = get_tr('clear'), boot = 2000)
-summary(clz)
-pval(clz, c('cladeBat', 'diet2Protein'))
-
-Xmat <- cp_mat(get_df('absorp'), c('log_absorp', 'log_enterocyte_density'))
-# Xmat <- Xmat[!is.na(rowSums(Xmat)),]
-MEmat <- cp_mat(get_df('absorp', .stat = 'se'), c('log_absorp', 'log_enterocyte_density'))
-# MEmat <- MEmat[!is.na(rowSums(MEmat)),]
-Umat <- NULL
-# Umat <- list(NULL, NULL)
-# Umat[[1]] <- cbind(setNames(absorp_df2$log_mass, absorp_df2$species))
-# Umat[[1]] <- cbind(Umat[[1]][!is.na(absorp_df2$log_enterocyte_density),])
-# Umat[[2]] <- cbind(setNames(as.integer(absorp_df2$clade) - 1, absorp_df2$species))
-
-left_join(data$clear, data$spp, by = 'species', suffix = c('', '_X')) %>% 
-    filter(!is.na(log_mass)) %>% 
-    ggplot(aes(log_total_enterocytes, log_clear, color = clade)) +
-    geom_point()
-
-
-cpmods <- read_rds('output/models_corphylo.rds')
-
-cp = cpmods$clear_sef
-mean_df = get_df('clear')
-se_df = get_df('clear', .stat = 'se')
-phy = get_tr('clear')
-par_names = c('log_clear', 'log_sef')
-
-
-i = 5
-comp_ <- cp$cor.matrix[1,2]
-# lapply(1:nrow(mean_df),
-#        function(i) {
-           
-           Xmat_ <- cp_mat(mean_df[-i,], par_names)
-           MEmat_ <- cp_mat(se_df[-i,], par_names)
-           
-           to_drop_ <- phy$tip.label
-           to_drop_ <- to_drop_[!to_drop_ %in% rownames(Xmat_)]
-           tr_ <- ape::drop.tip(phy, to_drop_)
-           cp_ <- corphylo_cpp(Xmat_, phy = tr_, SeM = MEmat_, boot = 2000, n_cores = 4)
-           cp_
-           
-           # return(c(infl = cp_$cor.matrix[1,2] - comp_))
-    #    }) %>%
-    # do.call(what = rbind) %>%
-    # as_tibble
-
-
-
-
-
-
-
-
-boot_fxn <- function(cp) {
-    r = cp$cor.matrix[1,2]
-    B = cp$B[!grepl('.0$', rownames(cp$B)),]
-    rbind(c(R = r, B))
-}
-
-set.seed(2016097648)
-# test_fit <- 
-corphylo_cpp(Xmat, phy = get_tr('absorp'),
-             SeM = MEmat, U = Umat, constrain.d = TRUE,
-             boot = 2000, n_cores = 4)
-test_fit
-pval(test_fit)
-
-apply(absorp_te$bootstrap, 2, quantile, probs = c(0.025, 0.975))
-head(absorp_te$bootstrap)
-
-
-
-
 models$absorp %>% 
     predict_ci() %>%
     # Exponentiate variables for plotting so we can more transparently
@@ -585,12 +483,15 @@ models$absorp %>%
     # All these plots include log(mass) on the x-axis so I'm including this here.
     scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2),
                        limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
-    scale_y_continuous(y_axis_title, trans = 'log', breaks = y_breaks, 
-                       labels = y_labels, limits = y_limits) +
+    scale_y_continuous(absorp_label, trans = 'log',
+                       # CHANGING UNITS HERE:
+                       breaks = 0.001 * 4^(0:2), labels = 1 * 4^(0:2),
+                       limits = c(7e-4, 0.02)) +
     scale_color_manual(values = c('#9ecae1', '#de2d26'))
 
-# # Add title if one is provided
-# .p <- add_title(.p, plot_title)
+# fig7b <- fig7b %>%
+#     add_title('B')
+
 
 ```
 
