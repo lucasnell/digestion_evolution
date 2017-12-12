@@ -55,7 +55,7 @@ greekify <- function(parameters) {
                        `(Intercept)` = "$\\beta_0$",
                        cladeBat = "$\\beta_{\\text{clade}}$",
                        dietOmnivorous = "$\\beta_{\\text{omniv.}}$",
-                       dietProtein = "$\\beta_{\\text{protein}}$",
+                       dietProtein = "$\\beta_{\\text{carniv.}}$",
                        lambda = "phylo$_{\\lambda}$",
                        alpha = "phylo$_{\\alpha}$",
                        d = "phylo$_d$",
@@ -170,7 +170,7 @@ for independent variable $X$. $X$ is one of the following:
 - clade: binary variable whose value is 1 if the species is a bat (0 if a rodent)
 - mass: log-transformed body mass
 - omniv.: binary variable whose value is 1 if the species is omnivorous
-- protein: binary variable whose value is 1 if the species is carnivorous
+- carniv.: binary variable whose value is 1 if the species is carnivorous
 
 When the "parameter" column is of the form phylo$_Y$, it refers to the 
 phylogenetic signal parameter $Y$;
