@@ -313,10 +313,6 @@ Clearance = "paracellular probe L-arabinose clearance"
 
 
 ```{r clear_sef, eval = FALSE}
-clear_df <- get_df('clear')
-clear_se_df <- get_df('clear', .stat = 'se')
-clear_tr <- get_tr('clear')
-
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
@@ -336,6 +332,12 @@ clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat,
 Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
 Xmat <- Xmat[!is.na(rowSums(Xmat)),]
 
+# 26.331
+z <- phylolm(log_clear ~ clade, phy = clear_tr, data = clear_df,
+             method = 'lambda', boot = 2000)
+summary(z)
+
+
 MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
 MEmat <- MEmat[!is.na(rowSums(MEmat)),]
 
@@ -352,12 +354,45 @@ clear_ed <- corphylo_cpp(Xmat, phy = clear_ed_tr, SeM = MEmat,
 
 
 ```{r absorp_te, eval = FALSE}
-Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
+Xmat <- cp_mat(absorp_df %>% filter(species != "Artibeus lituratus"), 
+               c('log_absorp', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df %>% filter(species != "Artibeus lituratus"), 
+                c('log_absorp', 'log_total_enterocytes'))
+Umat <- list(NULL, cbind(setNames(absorp_df$log_mass[absorp_df$species != 'Artibeus lituratus'],
+                                  absorp_df$species[absorp_df$species != 'Artibeus lituratus'])))
 
-set.seed(2016097648)
-absorp_te <- corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, 
-                          boot = 2000, n_cores = 4)
+seed_ <- sample.int(2^31-1, 1)
+set.seed(seed_)
+# set.seed(2016097648)
+# absorp_te2 <- 
+corphylo_cpp(Xmat, phy = drop.tip(absorp_tr, tip = 'Artibeus lituratus'), 
+                           SeM = MEmat, U = Umat, method = 'SANN', maxit.SA = 1e4)  # ,
+                           # boot = 2000, n_cores = 4)
+
+absorp_te; absorp_te2
+
+
+Xmat <- cp_mat(absorp_df, c('log_enterocyte_density', 'log_total_enterocytes'))
+MEmat <- cp_mat(absorp_se_df, c('log_enterocyte_density', 'log_total_enterocytes'))
+Umat <- list(NULL, cbind(setNames(absorp_df$log_mass, absorp_df$species)))
+
+
+set.seed(62904769)
+corphylo_cpp(Xmat, phy = absorp_tr, SeM = MEmat, U = Umat, method = 'SANN', maxit.SA = 1e4,
+             boot = 2000, n_cores = 4)
+
+library(ggplot2)
+theme_set(theme_classic())
+
+absorp_df %>% 
+    ggplot(aes(log_enterocyte_density, log_absorp, color = clade)) +
+    geom_point()
+
+left_join(spp_df, pos_df_list$prox, by = 'species', suffix = c('', '_POS')) %>% 
+    ggplot(aes(log_total_enterocytes, log_vill_surface_area, color = clade)) +
+    geom_point()
+
+
 ```
 
 
