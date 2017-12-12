@@ -22,8 +22,8 @@ suppressPackageStartupMessages({
     library(ggimage)
 })
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
-morph_df <- get_df('spp')
 tr <- get_tr('spp') # <-- full tree
+morph_df <- get_df('spp')
 absorp_df <- get_df('absorp')
 clear_df <- get_df('clear')
 
@@ -35,35 +35,28 @@ data_df <- morph_df %>%
            `clear.` = species %in% clear_df$species)
 rownames(data_df) <- data_df$species
 data_df <- data_df[, -1]
-# Useful if you keep getting `polygon edge not found` error
-# From here: http://disq.us/t/24rt791
-# options("device" = "quartz"); graphics.off()
 ```
 
 
 
 
 ```{r phylo-plot, echo = FALSE, fig.cap = "Phylogeny of species used in these analyses. Boxes on the right indicate whether the species was used in morphometric (\"morph.\"), absorption (\"absorp.\"), or clearance (\"clear.\") analyses. Gray boxes indicate a species was absent. The scale is in millions of years."}
-x_end <- 32
 gg_tr <- ggtree(tr)
 gg_tr$data$x <- gg_tr$data$x - max(gg_tr$data$x)
-gg_tr <- gg_tr + #%<+% {sp_df %>% select(species, everything())} +
+gg_tr <- gg_tr + 
     theme_tree2(axis.title.x = element_blank(),
                 axis.text.x = element_blank(),
                 axis.ticks.x = element_blank(),
                 plot.margin = margin(0,0,0,0)) +
-    geom_tiplab(aes(x = x + 2), size = 3, fontface = 'bold.italic')# +
-    # geom_tippoint(aes(x = x))
+    geom_tiplab(aes(x = x + 2), size = 3, fontface = 'bold.italic')
+
 suppressMessages(
     gg_tr <- gheatmap(gg_tr, data_df, offset = 38, width = 0.2, font.size = 2.5, 
                       colnames_position ='bottom', colnames_angle = -30, 
                       colnames_offset_y = -0.25, colnames_offset_x = 2) +
-        scale_fill_manual(breaks = c(TRUE, FALSE),  values = c("gray50", "dodgerblue"),
+        scale_fill_manual(breaks = c(TRUE, FALSE),  values = c("gray70", "dodgerblue"),
                           guide = FALSE) + 
         geom_treescale(x = -90, y = 15, offset = 0.5, width = 10)
-    # scale_x_continuous('Time (mya)', limits = c(-100, x_end + 25),
-    #                breaks = seq(-100, 0, 25), labels = seq(100, 0, -25)) +
-    # scale_y_continuous(limits = c(-5, 30))
 )
 gg_tr + 
     # Bat image

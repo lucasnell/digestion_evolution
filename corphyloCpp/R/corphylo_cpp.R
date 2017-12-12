@@ -550,3 +550,10 @@ print.corphylo <- function(x, digits = max(3, getOption("digits") - 3), ...) {
     }
     cat("\n")
 }
+
+
+# Redefine summary.corphylo to use its print method
+#' @export
+summary.corphylo <- function(x, digits = max(3, getOption("digits") - 3), ...) {
+    print.corphylo(x, digits, ...)
+}

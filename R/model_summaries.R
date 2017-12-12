@@ -127,7 +127,7 @@ summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
 #' plus it assumes an intercept is estimated.
 #'
 #' @param plm A \code{phylolm} object.
-#' @param phy The \code{phylo} object, the same one that was used to fit the original
+#' @param phy A \code{phylo} object, the same one that was used to fit the original
 #'     \code{phylolm} model.
 #'
 #' @return An `n` by `p` data frame, where `n` is the sample size and `p` is the 
@@ -185,6 +185,46 @@ jack_phylolm <- function(plm, phy) {
         gather('estimate', 'influence', -species)
     
     return(jack_df)
+}
+
+
+#' Jackknifing on a \code{corphylo} object to find influential points.
+#' 
+#' All arguments to this function should be the same as used for the original
+#' call to \code{corphylo} or \code{corphylo_cpp}
+#' 
+#' \emph{Note}: this function only works for my specific analyses.
+#' 
+#'
+#' @param cp A \code{corphylo} object.
+#' @param mean_df A data frame of mean values by species.
+#' @param se_df A data frame of standard errors by species.
+#' @param phy A \code{phylo} object of all species.
+#' @param par_names Names of columns for the parameters of interest.
+#' 
+#'
+#' @return An `n` by 1 data frame, where `n` is the sample size. 
+#'     A cell in row `i` is the jackknife influence value on 
+#'     the correlation for removing row `i` from the analysis.
+#' 
+#' @export
+#'
+jack_corphylo <- function(cp, mean_df, se_df, phy, par_names) {
+    comp_ <- cp$cor.matrix[1,2]
+    lapply(1:nrow(mean_df),
+           function(i) {
+               Xmat_ <- cp_mat(mean_df[-i,], par_names)
+               MEmat_ <- cp_mat(se_df[-i,], par_names)
+               
+               to_drop_ <- phy$tip.label
+               to_drop_ <- to_drop_[!to_drop_ %in% rownames(Xmat_)]
+               tr_ <- ape::drop.tip(phy, to_drop_)
+               cp_ <- corphylo_cpp(Xmat_, phy = tr_, SeM = MEmat_)
+               return(c(influence = cp_$cor.matrix[1,2] - comp_))
+           }) %>%
+        do.call(what = rbind) %>%
+        as_tibble %>% 
+        mutate(species = mean_df$species)
 }
 
 
