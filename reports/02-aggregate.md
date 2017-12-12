@@ -1,7 +1,7 @@
 Aggregate from individual to species-level data
 ================
 Lucas Nell
-05 Dec 2017
+12 Dec 2017
 
 -   [Summary of output](#summary-of-output)
 -   [Morphometric data aggregated by species](#morphometric-data-aggregated-by-species)
@@ -16,7 +16,7 @@ This converts the cleaned Excel-file-derived data frames (with data for individu
 Sourcing the file `doc/01-xl_to_dfs.R` creates three data frames: `morph_df`, `clear_df`, and `absorp_df`. Each is associated with one or more data set(s) output from this file.
 
 ``` r
-source("doc/01-xl_to_dfs.R")
+source("reports/01-xl_to_dfs.R")
 ```
 
 Summary of output
@@ -203,7 +203,8 @@ clear_df <- clear_df %>%
 I'm going to add in columns `log_enterocyte_density` and `log_mass` from the morphometric data frame.
 
 ``` r
-tmp_df <- morph_df %>% 
+# Data frame for retrieving
+retr_df <- morph_df %>% 
     select(clade, diet, species, pos, id, mass, enterocyte_density) %>% 
     # Taking the log now, before taking any means
     mutate(log_mass = log(mass), log_enterocyte_density = log(enterocyte_density)) %>% 
@@ -221,17 +222,7 @@ tmp_df <- morph_df %>%
     # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
     mutate_at(vars(ends_with('_se')), na_se)
 
-# Function to retrieve an X from tmp_df
-get_X <- function(X) {
-    map_dbl(clear_df$species, function(s) tmp_df[[X]][tmp_df$species == s][1])
-}
-
-clear_df <- clear_df %>% 
-    mutate(log_mass = get_X('log_mass'),
-           log_enterocyte_density_mean = get_X('log_enterocyte_density_mean'),
-           log_enterocyte_density_se = get_X('log_enterocyte_density_se'))
-
-rm(tmp_df)
+clear_df <- left_join(clear_df, retr_df, by = 'species')
 ```
 
 I now add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
@@ -346,21 +337,17 @@ absorp_df <- absorp_df %>%
 rm(sep_absorps)
 ```
 
-I'm going to add in the column `log_total_enterocytes` from the morphometric data frame.
+I'm going to add in the column `log_total_enterocytes` and `log_enterocyte_density` from the morphometric data frame.
 
 ``` r
-# Function to get log_total_enterocytes from spp_df
-get_lte <- function(.stat) {
-    map_dbl(absorp_df$species, function(s) {
-        .df <- spp_df %>% filter(species == s, stat == .stat)
-        return(.df$log_total_enterocytes[1])
-    })
-}
-absorp_df <- absorp_df %>% 
-    mutate(log_total_enterocytes_mean = get_lte('mean'),
-           log_total_enterocytes_se = get_lte('se'))
-
-rm(get_lte)
+# I'm getting `log_total_enterocytes` from `spp_df` and `log_enterocyte_density`
+# from `retr_df` created above
+absorp_df <- left_join(absorp_df,
+          spp_df %>% filter(stat == 'mean') %>% select(species, log_total_enterocytes),
+          by = 'species') %>% 
+    left_join(spp_df %>% filter(stat == 'se') %>% select(species, log_total_enterocytes),
+          by = 'species', suffix = c('_mean', '_se')) %>% 
+    left_join(retr_df %>% select(-log_mass), by = 'species')
 ```
 
 As above, I add a column named `stat` to distinguish between mean and SE values, making filtering for a given statistic easier.
@@ -402,7 +389,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-05
+    ##  date     2017-12-12
 
     ## Packages -----------------------------------------------------------------
 
