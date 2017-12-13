@@ -272,6 +272,29 @@ from the full dataset.
 
 We used jackknifing to determine how influential each point is to the `log_mass`
 and `clade` estimates.
+We first conducted jackknife replicates (1 per row in the dataset), where, for
+replicate $i$, we removed row $i$ from the dataset and fit a `phylolm` model.
+This resulted in an $n$ by $p$ matrix of the jackknifed coefficient estimates
+($\mathbf{B}$), 
+where $n$ is the sample size and $p$ the number of coefficients estimated.
+For column $j$ from 1 to $p$, I did the following:
+
+\begin{equation}
+\label{eq:jackknife}
+\begin{split}
+    \mathbf{\hat{B}}_j &= \mathbf{B}_j - \mathbf{b}_{(0)j} \\
+    \mathbf{\tilde{B}}_j &= \left| \frac{ \mathbf{\hat{B}}_j }{ 
+        \sigma_{\hat{B}_j} } \right|
+\end{split}
+\end{equation}
+
+where $\mathbf{B}_j$ refers to column $j$ in $\mathbf{B}$
+and $\mathbf{b}_{(0)j}$ is the $j$th item from the initial vector of coefficient 
+estimates using the full dataset.
+The output $n$ by $p$ matrix, $\mathbf{\tilde{B}}$, presents absolute influence 
+values scaled to have a standard deviation of one.
+
+
 Figure \ref{fig:results-influence-plots} shows that one species (*Artibeus lituratus*) has
 a disproportionate effect on all three coefficient estimates.
 
@@ -288,7 +311,6 @@ int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length,
 # Adding morphometric data to the jackknife data frame
 jack_df <- dplyr::left_join(int_jack, get_df('spp'), by = 'species') %>% 
     group_by(estimate) %>% 
-    mutate(influence = abs(influence) / max(abs(influence))) %>% 
     ungroup() %>% 
     select(diet, clade, species, log_mass, log_intestinal_length, 
            estimate, influence) %>% 
@@ -427,6 +449,9 @@ from the full dataset.
 
 We used jackknifing to determine how influential each point is to the correlation 
 estimate.
+See \ref{eq:jackknife} for how I calculated absolute influence values.
+
+
 Figure \ref{fig:results-influence-plot-corphylo} shows that one species 
 (*Tadarida brasiliensis*) has a disproportionate effect on the correlation.
 
@@ -445,7 +470,6 @@ cp_jack <- jack_corphylo(cp_mod, mean_df = clear_df, se_df = clear_se_df,
 ```{r results-influence-plot-corphylo, fig.height = 3, fig.width = 3.5, fig.cap = "Plot of absolute influence values for the correlation between clearance and SEF. Point sizes are proportional to their influence on the maximum likelihood estimate of Pearson's r. Color indicates clade, and both axes are on the log scale."}
 # Adding morphometric data to the jackknife data frame
 cor_jack_df <- dplyr::left_join(cp_jack, get_df('clear'), by = 'species') %>% 
-    mutate(influence = abs(influence)) %>% 
     select(diet, clade, species, log_sef, log_clear, influence)
 
 # Plotting it
