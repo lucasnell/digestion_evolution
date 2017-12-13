@@ -1,10 +1,11 @@
-Regression plots
+Plots for main paper
 ================
 Lucas Nell
-11 Dec 2017
+13 Dec 2017
 
 -   [Loading model data](#loading-model-data)
 -   [Standardize plot titles](#standardize-plot-titles)
+-   [Creating plot lists](#creating-plot-lists)
 -   [Individual plots for models by species only](#individual-plots-for-models-by-species-only)
     -   [Function to create base plots](#function-to-create-base-plots)
     -   [Creating plot objects](#creating-plot-objects)
@@ -15,6 +16,8 @@ Lucas Nell
 -   [Creating and saving final plots](#creating-and-saving-final-plots)
     -   [Function to combine plots](#function-to-combine-plots)
 -   [Session info](#session-info)
+
+This file creates the figures from the main portion of the paper. In the code below, note that functions `get_df`, `get_tr`, `filter_tr`, and `cp_mat` come from [`R/get_data.R`](R/get_data.R) and functions `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_corphylo`, and `predict_ci` come from [`R/model_summaries.R`](R/model_summaries.R). See those files for these functions' documentation.
 
 ``` r
 # Packages needed for this script
@@ -45,12 +48,10 @@ theme_set(theme_classic() %+replace%
                     plot.title = element_text(size = 14, hjust = 0)))
 ```
 
-> Below, the `predict_ci` function creates a data frame of predictions and 95% CI from a `phylolm` object. See its documentation in [`R/model_summaries.R`](R/model_summaries.R) for more information.
-
 Loading model data
 ==================
 
-`phylolm` objects saved from [`04-phylo_regressions`](04-phylo_regressions.md):
+`phylolm` objects saved from [`04-phylo_fits`](04-phylo_fits.md):
 
 ``` r
 models <- list(absorp = read_rds('output/models_absorp.rds'),
@@ -61,8 +62,6 @@ models$pos$prox$crypt_width_pagel <- NULL
 ```
 
 Data frames used for each model fit:
-
-> See [`../R/get_data.R`](../R/get_data.R) for what `get_df` does.
 
 ``` r
 data <- list(absorp = get_df('absorp') %>% as_tibble,
@@ -114,6 +113,16 @@ add_title <- function(.p, .title, .mult = list(x = 1, y = 1), .data = NULL) {
                   fontface = 'plain')
     return(.p)
 }
+```
+
+Creating plot lists
+===================
+
+Plots are not organized in a straightforward way so that it would be easy to create them one by one. So I'm creating lists here that will store sub-plots (e.g., Fig. 1a, 1b) for each figure. (There are 7 figures total.)
+
+``` r
+for (i in 1:7) assign(sprintf('fig%i', i), list())
+rm(i)
 ```
 
 Individual plots for models by species only
@@ -183,24 +192,24 @@ For all the plots below...
 
 ``` r
 # Figure 1A
-fig1a <- clade_only_plot(models$spp$log_intestinal_length,
-                         "Intestinal length (cm)", 
-                         y_breaks = 15 * 2^(0:2), 
-                         plot_title = 'A') +
+fig1[['a']] <- clade_only_plot(models$spp$log_intestinal_length,
+                               "Intestinal length (cm)", 
+                               y_breaks = 15 * 2^(0:2), 
+                               plot_title = 'A') +
     theme(legend.position = c(0.05, 1), legend.justification = c(0, 1),
           axis.title.x = element_blank(), axis.text.x = element_blank())
 # Figure 1B
-fig1b <- clade_only_plot(models$spp$log_nsa,
+fig1[['b']] <- clade_only_plot(models$spp$log_nsa,
                          expression("NSA (" * cm^2 * ")"), 
                          y_breaks = 5 * 2^(0:3), 
                          plot_title = 'B')
-# Figure 4
+# Figure 4 (replacing the empty list here bc it's just one plot)
 fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
                         expression("Villous surface area (" * cm^2 * ")"),
                         y_breaks = 50 * 3^(0:2)) +
     theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
 
-# Figure 6
+# Figure 6 (same as for figure 4)
 fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
                         expression("Total enterocytes" %*% 10^{-9}),
                         # CHANGING UNITS HERE (from enterocytes to 
@@ -353,32 +362,32 @@ Y-axis is on log scale for all plots *except* the following:
 
 ``` r
 # Figure 1c
-fig1c <- clade_pos_plot('log_intestinal_diameter', y_breaks = 0.3 * 2^(0:2),
+fig1[['c']] <- clade_pos_plot('log_intestinal_diameter', y_breaks = 0.3 * 2^(0:2),
                         plot_title = 'C')
 
 # Figure 2a
-fig2a <- clade_pos_plot('log_villus_height', y_breaks = 0.2 * 2 ^(0:2),
+fig2[['a']] <- clade_pos_plot('log_villus_height', y_breaks = 0.2 * 2 ^(0:2),
                         plot_title = 'A') +
         theme(legend.position = 'top', legend.margin = margin(0,0,0,0),
               axis.text.x = element_blank(), axis.title.x = element_blank())
 
 # Figure 2b
-fig2b <- clade_pos_plot('villus_width', y_breaks = seq(0.04, 0.12, 0.04),
+fig2[['b']] <- clade_pos_plot('villus_width', y_breaks = seq(0.04, 0.12, 0.04),
                         plot_title = 'B') +
     theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
           strip.background = element_blank(), strip.text = element_blank())
 
 # Figure 2c
-fig2c <- clade_pos_plot('crypt_width', y_breaks = c(0.02, 0.04),
+fig2[['c']] <- clade_pos_plot('crypt_width', y_breaks = c(0.02, 0.04),
                         plot_title = 'C') + 
     theme(strip.background = element_blank(), strip.text = element_blank())
 
-# figure 3
+# figure 3 (same as for figures 4 and 6)
 fig3 <- clade_pos_plot('log_sef', y_breaks = 5 * 2^(0:2)) +
     theme(legend.position = 'top')
 
 # Figure 5a
-fig5a <- clade_pos_plot('enterocyte_diameter',
+fig5[['a']] <- clade_pos_plot('enterocyte_diameter',
                # CHANGING UNITS HERE (from mm to µm):
                y_breaks = seq(6e-3, 10e-3, 2e-3), y_labels = seq(6, 10, 2),
                plot_title = 'A') +
@@ -386,7 +395,7 @@ fig5a <- clade_pos_plot('enterocyte_diameter',
           legend.position = 'top')
 
 # Figure 5b
-fig5b <- clade_pos_plot('log_enterocyte_density',
+fig5[['b']] <- clade_pos_plot('log_enterocyte_density',
                # CHANGING UNITS HERE (from enterocytes / cm^2 to 
                # 1e6 enterocytes / cm^2):
                y_breaks = 8e6 * 3^(0:2), y_labels = 8 * 3^(0:2),
@@ -405,76 +414,60 @@ clear_label <- bquote(.("L-arabinose clearance (\u03BC") *
 absorp_label <- bquote(.("Absorption") %*% 10^{3} ~ .("/ ") ~
                                 .("intest. area (") * cm^{-2} * .(")"))
 
-fig7a <- data$clear %>%
+fig7[['a']] <- data$clear %>%
     mutate(sef = exp(log_sef), clear = exp(log_clear)) %>% 
-    ggplot(aes(sef, clear, shape = diet, color = clade)) +
-    geom_point(size = 3, fill = 'gray60') +
+    ggplot(aes(sef, clear, color = clade, shape = diet)) +
+    geom_point(size = 3) +
     theme(legend.position = 'top',
           legend.title = element_text(size = 10, face = 'bold.italic'),
           legend.margin = margin(0,0,4,0),
-          legend.justification = c(1, 0),
+          legend.justification = c(0.3, 0.5),
           legend.key.size = unit(0.75, 'lines')) +
-    guides(shape = 'none', color = guide_legend('Clade:')) +
-    scale_shape_manual(values = c(16, 17)) +
+    guides(color = guide_legend('Clade:', order = 1, nrow = 2), 
+           shape = guide_legend('Diet:', nrow = 2)) +
+    scale_shape_manual(values = c(15, 17)) +
     scale_color_manual(values = c('#9ecae1', '#de2d26')) +
     scale_x_continuous("Surface enlagement factor (SEF)", 
                        trans = 'log', breaks = 8 * 1.5^(0:2)) +
     scale_y_continuous(clear_label,
                        trans = 'log', breaks = 1 * 3^(0:2))
-fig7a <- fig7a %>%
+fig7[['a']] <- fig7[['a']] %>%
     add_title('A')
 
 
-fig7b <- data$clear %>%
-    filter(!is.na(log_enterocyte_density)) %>% 
-    mutate_at(vars(log_enterocyte_density, log_clear), exp) %>% 
-    ggplot(aes(log_enterocyte_density, log_clear, shape = diet, color = clade)) +
-    geom_point(size = 3, fill = 'gray60') +
-    theme(legend.position = 'top',
-          legend.title = element_text(size = 10, face = 'bold.italic'),
-          legend.margin = margin(0,0,4,0),
-          legend.justification = c(-0.05, 0),
-          legend.key.size = unit(0.75, 'lines'),
-          axis.title.y = element_blank(), axis.text.y = element_blank()) +
-    guides(shape = guide_legend('Diet:'), color = 'none') +
-    scale_shape_manual(values = c(16, 17)) +
-    scale_color_manual(values = c('#9ecae1', '#de2d26')) +
-    scale_x_continuous(eval(parse(
-        text = plot_names[plot_names$og == 'log_enterocyte_density',]$new)), 
-                       trans = 'log', breaks = 1e7 * 3^(0:2), labels = 1e1 * 3^(0:2)) +
-    scale_y_continuous(clear_label,
-                       trans = 'log', breaks = 1 * 3^(0:2))
-fig7b <- fig7b %>% 
-    add_title('B')
-
-
-fig7c <- clade_only_plot(models$absorp,
-                         y_axis_title = absorp_label,
-                         plot_title = "C", 
-                         # CHANGING UNITS HERE:
-                         y_breaks = 0.001 * 4^(0:2), y_labels = 1 * 4^(0:2),
-                         y_limits = c(7e-4, 0.02))
-
-
-
-fig7d <- data$absorp %>%
-    mutate(diet = sapply(species, function(s) data$spp$diet[data$spp$species == s]),
-           diet = factor(ifelse(diet == "Protein", paste(diet), "Carb"),
-                         levels = c('Carb', 'Protein'))) %>% 
-    mutate_at(vars(log_total_enterocytes, log_absorp), exp) %>% 
-    ggplot(aes(log_total_enterocytes, log_absorp, shape = diet, color = clade)) +
-    geom_point(size = 3, fill = 'gray60') +
-    theme(legend.position = 'none', 
-          axis.title.y = element_blank(), axis.text.y = element_blank()) +
-    scale_shape_manual(values = c(16, 17)) +
-    scale_color_manual(values = c('#9ecae1', '#de2d26')) +
-    scale_x_continuous(expression("Total enterocytes" %*% 10^{-9}),
-                       trans = 'log', breaks = 200e6 * 2^(0:3), labels = 0.2 * 2^(0:3)) +
-    scale_y_continuous(absorp_label, trans = 'log', limits = c(7e-4, 0.0172),
+fig7[['b']] <- models$absorp %>%
+    predict_ci() %>%
+    # Exponentiate variables for plotting so we can more transparently
+    # provide axis labels of the non-transformed numbers.
+    # The same is done below when plotting the raw data.
+    mutate_at(vars(log_mass, estimate, low, high), exp) %>% 
+    ggplot(aes(log_mass, estimate, color = clade)) +
+    # 95% CI envelopes
+    geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
+                fill = 'gray80', color = NA, alpha = 0.5) +
+    # Raw data points
+    geom_point(data = left_join(get_df('absorp'), get_df('spp'), 
+                                by = 'species', suffix = c('', '_X')) %>%
+                   mutate_at(vars(log_mass, log_absorp), exp) %>% 
+                   mutate(diet = case_when(
+                       diet == 'Protein' ~ 'Protein',
+                       TRUE ~ 'Carb') %>% 
+                           factor(., levels = c('Carb', 'Protein'))),
+               size = 3, aes(y = log_absorp, shape = diet)) +
+    # Regression fit
+    geom_line() +
+    theme(legend.position = 'none', legend.title = element_blank()) +
+    scale_x_continuous('Body mass (g)', trans = 'log', breaks = 10 * 4^(0:2),
+                       limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
+    scale_y_continuous(absorp_label, trans = 'log',
                        # CHANGING UNITS HERE:
-                       breaks = 0.001 * 4^(0:2), labels = 1 * 4^(0:2))
-fig7d <- fig7d %>% 
-    add_title('D')
+                       breaks = 0.001 * 4^(0:2), labels = 1 * 4^(0:2),
+                       limits = c(7e-4, 0.02)) +
+    scale_color_manual(values = c('#9ecae1', '#de2d26')) +
+    scale_shape_manual(values = c(15, 17))
+
+fig7[['b']] <- fig7[['b']] %>%
+    add_title('B')
 ```
 
 Creating and saving final plots
@@ -484,53 +477,68 @@ Function to combine plots
 -------------------------
 
 ``` r
-# Combining multiple figures using the naming scheme `figX` where `X` is the 
-# figure number I'm interested in plotting
-# It also works for single figures.
-one_fig <- function(fig_num, fig1_heights = c(7.9, 9, 10)) {
-    grob_list <- lapply(ls(envir = .GlobalEnv)[grepl(paste0('^fig', fig_num), 
-                                                     ls(envir = .GlobalEnv))], 
-                        function(n) {
-                            ggplotGrob(eval(parse(text = n)))
-                        })
-    if (fig_num == 1) {
-        grid.draw(arrangeGrob(grobs = grob_list, ncol = 1, nrow = length(grob_list), 
-                              heights = fig1_heights))
-    } else if (fig_num %in% c(2, 5)) {
-        grob_list <- lapply(grob_list, 
+# Printing figures from single or a list of ggplot object(s).
+one_fig <- function(fig_list, fig1_heights = c(7.9, 9, 10)) {
+    if (is(fig_list, 'list')) {
+        stopifnot(all(sapply(fig_list, function(x) is(x, 'ggplot'))))
+
+        grob_list <- lapply(fig_list, ggplotGrob)
+        # Number of columns in each plot; indicative of whether it's faceted
+        grob_cols <- sapply(grob_list, ncol)
+        
+        if (any(!grob_cols %in% c(7, 15))) {
+            stop(str_c("The number of columns in this ggplotGrob is not 7 or 15. ",
+                       "Check that it's doing what you want and re-program the ",
+                       "`one_fig` function."))
+        }
+        
+        # Figure 1 combines faceted and non-faceted plots.
+        # This is the best way I know of for plotting them:
+        if (length(unique(grob_cols)) > 1) {
+            grid.draw(arrangeGrob(grobs = grob_list, ncol = 1, 
+                                  nrow = length(grob_list), 
+                                  heights = fig1_heights))
+            return(invisible(NULL))
+        }
+        # Figures 2 and 5 have entirely faceted plots, so require this to work
+        if (all(grob_cols == 15)) {
+            grob_list <- lapply(grob_list, 
                function(gg) {
                    colnames(gg) <- paste0(seq_len(ncol(gg)))
                    return(gg)
                })
+        }
+        
+        # This works for figures 2, 5, and 7
         grid.draw(do.call(gtable_rbind, grob_list))
-    } else if (fig_num == 7) {
-        grid.draw(rbind(do.call(cbind, c(grob_list[1:2], size = 'last')),
-                        do.call(cbind, c(grob_list[3:4], size = 'last')),
-                        size = 'last'))
-    } else {
-        grid.draw(grob_list[[1]])
-    }
-    invisible()
+        
+    # For figures 3, 4, and 6, you can simply plot them bc they're ggplot objects
+    # I'm using ggplotGrob for consistency with those above
+    } else if (is(fig_list, 'ggplot')) {
+        grid.draw(ggplotGrob(fig_list))
+    } else stop("Input fig_list can only be a list or ggplot object.")
+    
+    return(invisible(NULL))
 }
 
 # Employs the above function, plus saves the output
-save_fig <- function(fig_num, fig1_heights = c(7.9, 9, 10), .seed = NULL, ...) {
+save_fig <- function(fig_list, fig_num, fig1_heights = c(7.9, 9, 10), .seed = NULL, ...) {
     file_name <- sprintf('figs/fig%02d.pdf', fig_num)
     if (!is.null(.seed)) set.seed(.seed)
     quartz(type = 'pdf', file = file_name, family = 'Helvetica', ...)
-    one_fig(fig_num, fig1_heights)
+    one_fig(fig_list, fig1_heights)
     invisible(dev.off())
 }
 ```
 
 ``` r
-save_fig(1, width = 3.875, height = 3.125 * 3, .seed = 1)
-save_fig(2, width = 3.875, height = 3.125 * 3, .seed = 2)
-save_fig(3, width = 3.875, height = 3.125, .seed = 3)
-save_fig(4, width = 3.875, height = 3.125, .seed = 4)
-save_fig(5, width = 3.875, height = 3.125 * 2, .seed = 5)
-save_fig(6, width = 3.875, height = 3.125, .seed = 6)
-save_fig(7, width = 3.125 * 2, height = 3.125 * 2, .seed = 7)
+save_fig(fig1, 1, width = 3.875, height = 3.125 * 3, .seed = 1)
+save_fig(fig2, 2, width = 3.875, height = 3.125 * 3, .seed = 2)
+save_fig(fig3, 3, width = 3.875, height = 3.125, .seed = 3)
+save_fig(fig4, 4, width = 3.875, height = 3.125, .seed = 4)
+save_fig(fig5, 5, width = 3.875, height = 3.125 * 2, .seed = 5)
+save_fig(fig6, 6, width = 3.875, height = 3.125, .seed = 6)
+save_fig(fig7, 7, width = 3.875, height = 3.125 * 2, .seed = 7)
 ```
 
 Session info
@@ -547,7 +555,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-11
+    ##  date     2017-12-13
 
     ## Packages -----------------------------------------------------------------
 
