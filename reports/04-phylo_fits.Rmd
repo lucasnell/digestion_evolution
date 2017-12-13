@@ -1,5 +1,5 @@
 ---
-title: "Phylogenetic linear regression"
+title: "Phylogenetic linear regressions and correlations"
 author: "Lucas Nell"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
 tz: "CST6CDT"
@@ -11,10 +11,19 @@ editor_options:
   chunk_output_type: console
 ---
 
+
 ```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
+
+
+This file conducts the linear regressions using `phylolm::phylolm` and 
+computes correlations using a modified version of `ape::corphylo` that does 
+parametric bootstrapping.
+
+
+
 ```{r setup2, echo = FALSE, purl = FALSE}
 suppressPackageStartupMessages({
     library(readr)

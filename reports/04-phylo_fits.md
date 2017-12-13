@@ -1,7 +1,7 @@
-Phylogenetic linear regression
+Phylogenetic linear regressions and correlations
 ================
 Lucas Nell
-12 Dec 2017
+13 Dec 2017
 
 -   [Retrieve data](#retrieve-data)
 -   [`phylolm`](#phylolm)
@@ -13,6 +13,8 @@ Lucas Nell
     -   [`Clearance` and `SEF`](#clearance-and-sef)
 -   [Assembling all output into one table](#assembling-all-output-into-one-table)
 -   [Session info](#session-info)
+
+This file conducts the linear regressions using `phylolm::phylolm` and computes correlations using a modified version of `ape::corphylo` that does parametric bootstrapping.
 
 Retrieve data
 =============
@@ -298,7 +300,7 @@ This outlines the package versions I used for these analyses.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-12
+    ##  date     2017-12-13
 
     ## Packages -----------------------------------------------------------------
 
