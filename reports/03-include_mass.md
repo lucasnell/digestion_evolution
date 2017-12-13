@@ -1,7 +1,7 @@
 Test whether to include log\_mass in phylogenetic linear regression
 ================
 Lucas Nell
-05 Dec 2017
+13 Dec 2017
 
 -   [Necessary data:](#necessary-data)
 -   [`SEF` on `Diet`](#sef-on-diet)
@@ -9,11 +9,9 @@ Lucas Nell
 -   [`Morphometrics` on `Clade`](#morphometrics-on-clade)
 -   [`Morphometrics` on `Clade`, separately by segment](#morphometrics-on-clade-separately-by-segment)
 -   [`Clearance` and `SEF`](#clearance-and-sef)
--   [`Clearance` and `log_enterocyte_density`](#clearance-and-log_enterocyte_density)
--   [`Absorption` and `log_total_enterocytes`](#absorption-and-log_total_enterocytes)
 -   [Session info](#session-info)
 
-This file determines whether to use `log_mass` in `phylolm` regressions or not. These analyses take about half an hour to run.
+This file determines whether to use `log_mass` in `phylolm` regressions and `corphylo` correlations. These analyses take about half an hour to run.
 
 All p-values below are for whether the coefficient for log(mass) are not equal to zero.
 
@@ -68,7 +66,7 @@ absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
 
 P-value:
 
-    ## P = 0
+    ## P = 0.000
 
 `Morphometrics` on `Clade`
 ==========================
@@ -190,7 +188,9 @@ P-values:
 `Clearance` and `SEF`
 =====================
 
-> P-values in all following sections are for whether the coefficient for the `U` matrix is not zero. There are two p-values because I'm including the `U` matrix separately for the first and second `X` matrix parameters.
+In `corphylo`, you can input a `U` object if one or more of your variables of interest has a covariate that might be having confounding effects. `U` is a list of length `p`, where `p` is the number of variables you're interested in getting correlations between (in my case, `p = 2`). If `U[[i]]` is `NULL`, then variable `i` is considered to not have a covariate, while if `U[[i]]` is a matrix, then each column in that matrix is considered a covariate for variable `i`. Below, I'm trying out whether either clearance or SEF needs body mass as a covariate by including a 1-column matrix of body mass values in the `U` object, first for the position associated with SEF, then for the position associated with clearance.
+
+P-values in this section are for whether the coefficient for the `U` matrix is not zero.
 
 ``` r
 # Function to retrieve the U coefficient(s) from a corphylo object
@@ -200,88 +200,46 @@ get_U <- function(cp_obj) {
     colnames(uc) <- rn
     return(uc)
 }
-
+# Matrix of mean SEF and clearance values by species
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
+# Matrix of standard error SEF and clearance values by species
 MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 
-# For this comparison, I have to remove one row that doesn't have log_mass
+# For this comparison, I have to remove one row that doesn't have body mass
 Xmat <- Xmat[!is.na(clear_df$log_mass),]
 MEmat <- MEmat[!is.na(clear_df$log_mass),]
-Umat <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
-rownames(Umat[[1]]) <- rownames(Xmat)
-Umat2 <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
-rownames(Umat2[[2]]) <- rownames(Xmat)
 
+# Now creating two U objects, one for having it as a covariate for SEF, 
+# then another for clearance
+U_sef <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
+rownames(U_sef[[1]]) <- rownames(Xmat)
+U_clear <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
+rownames(U_clear[[2]]) <- rownames(Xmat)
+
+# Phylogenetic tree, removing species with no body mass data
 clear_tr <- ape::drop.tip(
     clear_tr,
     tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
 
-# corphylo_cpp run with bootstrapping (takes ~1 min)
+# corphylo_cpp run with bootstrapping (takes ~1 min each)
 set.seed(1844365955)
-clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat, 
-                          boot = 2000, n_cores = 4, boot_out = get_U)
-clear_sef2 <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat2, 
-                          boot = 2000, n_cores = 4, boot_out = get_U)
+clear_sef <- list(
+    sef = corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = U_sef, 
+                       boot = 2000, n_cores = 4, boot_out = get_U),
+    clear = corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = U_clear, 
+                       boot = 2000, n_cores = 4, boot_out = get_U))
 ```
 
-P-values:
+P-values for including body mass for SEF and clearance, respectively:
 
     ## P = 0.997
 
     ## P = 0.308
 
-`Clearance` and `log_enterocyte_density`
-========================================
+Writing this object to an `rds` file for later.
 
 ``` r
-Xmat <- cp_mat(clear_df, c('log_enterocyte_density', 'log_clear'))
-Xmat <- Xmat[!is.na(rowSums(Xmat)),]
-
-MEmat <- cp_mat(clear_se_df, c('log_enterocyte_density', 'log_clear'))
-MEmat <- MEmat[!is.na(rowSums(MEmat)),]
-
-# Fit and bootstrap r (takes ~1 min)
-set.seed(1442148819)
-clear_ed <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat, 
-                          boot = 2000, n_cores = 4, boot_out = get_U)
-clear_ed2 <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = Umat2, 
-                          boot = 2000, n_cores = 4, boot_out = get_U)
-```
-
-P-values:
-
-    ## P = 0.947
-
-    ## P = 0.228
-
-`Absorption` and `log_total_enterocytes`
-========================================
-
-``` r
-Xmat <- cp_mat(absorp_df, c('log_absorp', 'log_total_enterocytes'))
-MEmat <- cp_mat(absorp_se_df, c('log_absorp', 'log_total_enterocytes'))
-
-Umat <- list(cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]), NULL)
-rownames(Umat[[1]]) <- rownames(Xmat)
-Umat2 <- list(NULL, cbind(absorp_df$log_mass[!is.na(absorp_df$log_mass)]))
-rownames(Umat2[[2]]) <- rownames(Xmat)
-
-# Fit and bootstrap
-set.seed(2016097648)
-absorp_te <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat, 
-                          boot = 2000, n_cores = 4, boot_out = get_U)
-# # This one gives numerical issues: non positive definite correlation matrix
-# absorp_te2 <- corphylo_cpp(X = Xmat, phy = absorp_tr, SeM = MEmat, U = Umat2, 
-#                           boot = 2000, n_cores = 4, boot_out = get_U)
-```
-
-P-value:
-
-    ## P = 1
-
-``` r
-save(clear_sef, clear_sef2, clear_ed, clear_ed2, absorp_te, 
-     file = 'output/inc_mass_corphylo.RData')
+write_rds(clear_sef, 'output/inc_mass_corphylo.rds')
 ```
 
 Session info
@@ -298,7 +256,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-05
+    ##  date     2017-12-13
 
     ## Packages -----------------------------------------------------------------
 
