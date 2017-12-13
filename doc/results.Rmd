@@ -115,7 +115,6 @@ pretty_df <- function(df_, caption = NULL) {
     for (i in 1:(length(kable_str)-1)) {
         if (grepl('^ &', kable_str[i]) & !grepl('^ &', kable_str[(i+1)]) & 
             !grepl('^\\bottomrule', kable_str[(i+1)])) {
-            # !grepl('^\\\\bottomrule', kable_str[(i+1)])) {
             kable_str[i] <- str_c(kable_str[i], "\n", "\\addlinespace")
         }
     }
@@ -134,7 +133,7 @@ summ_df <- read_csv('output/models_summaries.csv', col_types = 'ccccdddd') %>%
     select(pos, Y, X, phy_model, estimate, lower, upper, P) %>% 
     mutate_if(is.numeric, function(s) signif(s, digits = 4)) %>% 
     mutate(model = ifelse(phy_model == 'OU', 'corphylo', 'phylolm'),
-           P = ifelse(X %in% c('lambda', 'd', 'alpha'), "–", P),
+           P = ifelse(X %in% c('lambda', 'd', 'alpha'), "–", sprintf("$%.3f$", P)),
            # Explicitly ordering parameters:
            X = factor(X, 
                       levels = c("clade", "log_mass", 
@@ -147,7 +146,7 @@ plm_mods <- list(absorp = read_rds('output/models_absorp.rds'),
                diet = read_rds('output/models_diet.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
-cp_mods <- read_rds('output/models_corphylo.rds')
+cp_mod <- read_rds('output/models_corphylo.rds')
 ```
 
 
@@ -353,8 +352,8 @@ When that point is removed, we are much less sure about mass's influence on
 intestinal length.
 It does not, however, change our conclusions regarding the influence of clade
 (P-value for $\beta_{\text{clade}}$ with influential point:
-`r sprintf("%.4g", pval(influence_og, 'cladeBat'))`;
-P without it: `r sprintf("%.4g", pval(influence_rerun, 'cladeBat'))`).
+`r sprintf("%.3f", pval(influence_og, 'cladeBat'))`;
+P without it: `r sprintf("%.3f", pval(influence_rerun, 'cladeBat'))`).
 
 
 ```{r results-re-run-summ-dfs}
@@ -394,17 +393,14 @@ list(first_run_df, rerun_df) %>%
 
 ## `corphylo`
 
-Tables \ref{tab:results-clear-sef-kable}, \ref{tab:results-clear-ed-kable}, and
-\ref{tab:results-absorp-te-kable}
-refer to `corphylo` estimates for the correlations between clearance and SEF, 
-clearance and enterocyte density, and
-between fractional absorption and total enterocytes, respectively.
-Each table includes the Pearson correlation coefficient ($r$) between the two traits 
+Table \ref{tab:results-clear-sef-kable}
+refers to `corphylo` estimates for the correlation between clearance and SEF.
+The table includes the Pearson correlation coefficient ($r$) between the two traits 
 and phylogenetic signals from an Ornstein-Uhlenbeck process for each individual trait.
 
 
 ```{r results-clear-sef-kable}
-filter(summ_df, model == 'corphylo')$data[[1]][1:3,] %>% 
+filter(summ_df, model == 'corphylo')$data[[1]] %>% 
     mutate(Y = str_replace_all(Y, 'log_', '') %>% str_replace_all('_', ' '), 
            parameter = c('$r$', sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[2])), 
                          sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[3])))) %>% 
@@ -419,37 +415,6 @@ filter(summ_df, model == 'corphylo')$data[[1]][1:3,] %>%
 ```
 
 
-```{r results-clear-ed-kable}
-filter(summ_df, model == 'corphylo')$data[[1]][4:6,] %>% 
-    mutate(Y = str_replace_all(Y, 'log_', '') %>% str_replace_all('_', ' '), 
-           parameter = c('$r$', sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[2])), 
-                         sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[3])))) %>% 
-    select(-phy_model, -Y) %>% 
-    pretty_df(., caption = str_c('\\texttt{corphylo} model summary for the ',
-                                 'correlation between clearance and enterocyte density. ',
-                                 '$r$ indicates the correlation and $d_X$ indicates ',
-                                 'the phylogenetic signal from an Ornstein-Uhlenbeck ',
-                                 'process for variable $X$. ',
-                                 'Both variables were log-transformed for this ',
-                                 'analysis.'))
-```
-
-
-```{r results-absorp-te-kable}
-filter(summ_df, model == 'corphylo')$data[[1]][7:9,] %>% 
-    mutate(Y = str_replace_all(Y, 'log_', '') %>% str_replace_all('_', ' '), 
-           parameter = c('$r$', sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[2])), 
-                         sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[3])))) %>% 
-    select(-phy_model, -Y) %>% 
-    pretty_df(., caption = str_c('\\texttt{corphylo} model summary for the ',
-                                 'correlation between fractional absorption and ',
-                                 'total enterocytes. ',
-                                 '$r$ indicates the correlation and $d_X$ indicates ',
-                                 'the phylogenetic signal from an Ornstein-Uhlenbeck ',
-                                 'process for variable $X$. ',
-                                 'Both variables were log-transformed for this ',
-                                 'analysis.'))
-```
 
 
 ### Influential value for clearance and SEF
@@ -471,7 +436,7 @@ Figure \ref{fig:results-influence-plot-corphylo} shows that one species
 clear_df <- get_df('clear')
 clear_se_df <- get_df('clear', .stat = 'se')
 clear_tr <- get_tr('clear')
-cp_jack <- jack_corphylo(cp_mods$clear_sef, mean_df = clear_df, se_df = clear_se_df,
+cp_jack <- jack_corphylo(cp_mod, mean_df = clear_df, se_df = clear_se_df,
                          phy = clear_tr, par_names = c('log_sef', 'log_clear'))
 ```
 
@@ -493,7 +458,7 @@ cor_jack_df %>%
     geom_point() +
     scale_x_continuous("Surface enlagement factor (SEF)", 
                        trans = 'log', breaks = 8 * 1.5^(0:2)) +
-    scale_y_continuous(bquote(.("L-arabinose clearance (\u03BC") * 
+    scale_y_continuous(bquote(.("L-arabinose clearance (") * mu * 
                                   l ~ min^{-1} ~ cm^{-2} * ")"),
                        trans = 'log', breaks = 1 * 3^(0:2)) +
     scale_size_area(breaks = c(0.1, 0.2), max_size = 4) + 
@@ -506,15 +471,6 @@ cor_jack_df %>%
 
 #### Re-running model without influential point
 
-```{r results-influence-firstrun-corphylo}
-influence_og <- cp_mods$clear_sef
-first_run_df <- data_frame(parameter = 'r',
-                           estimate = influence_og$cor.matrix[1,2],
-                           lower = quantile(influence_og$bootstrap[,'r12'], 0.025),
-                           upper = quantile(influence_og$bootstrap[,'r12'], 0.975))
-```
-
-
 ```{r results-influence-rerun-corphylo, cache = TRUE}
 Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
 Xmat <- Xmat[clear_df$species != 'Tadarida brasiliensis',]
@@ -522,35 +478,33 @@ MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
 MEmat <- MEmat[clear_se_df$species != 'Tadarida brasiliensis',]
 tr_ <- clear_tr %>% filter_tr(rownames(Xmat))
 set.seed(1052373084)
-influence_rerun <- corphylo_cpp(X = Xmat, phy = tr_, SeM = MEmat, 
-                          boot = 2000, n_cores = 4)
+influence_rerun <- corphylo_cpp(X = Xmat, phy = tr_, SeM = MEmat,
+                                boot = 2000, n_cores = 4)
 ```
 
 
-
-Table \ref{tab:results-re-run-summ-dfs} compares summaries of this model 
-with and without the influential value.
-When that point is removed, we are much less sure about mass's influence on 
-intestinal length.
-It does not, however, change our conclusions regarding the influence of clade
-(P-value for $\beta_{\text{clade}}$ with influential point:
-`r sprintf("%.4g", pval(influence_og, 'cladeBat'))`;
-P without it: `r sprintf("%.4g", pval(influence_rerun, 'cladeBat'))`).
-
+Table \ref{tab:results-re-run-summ-dfs-corphylo} shows the `corphylo` output
+when this influential point is excluded.
 
 ```{r results-re-run-summ-dfs-corphylo}
-rerun_df <- data_frame(parameter = 'r',
-                       estimate = influence_rerun$cor.matrix[1,2],
-                       lower = quantile(influence_rerun$bootstrap[,'r12'], 0.025),
-                       upper = quantile(influence_rerun$bootstrap[,'r12'], 0.975))
-list(first_run_df, rerun_df) %>% 
-    bind_rows() %>% 
-    mutate(`influential point` = c('present', 'absent')) %>% 
-    select(-parameter) %>% 
-    pretty_df(., caption = str_c('\\texttt{corphylo} estimates for the Pearson ',
-                                 'correlation coefficient between log(clearance) and ',
-                                 'log(SEF), with and  without influential point ',
-                                 'present in the dataset.'))
+rerun_df <- data_frame(parameter = c('$r$', '$d_{\\text{sef}}$', 
+                                     '$d_{\\text{clear}}$'),
+                       estimate = c(influence_rerun$cor.matrix[1,2], 
+                                    influence_rerun$d),
+                       lower = apply(influence_rerun$bootstrap, 2, 
+                                     quantile, probs = 0.025),
+                       upper = apply(influence_rerun$bootstrap, 2, 
+                                     quantile, probs = 0.975),
+                       P = c(pval(influence_rerun)[1], rep("–", 2)))
+rerun_df %>% 
+    pretty_df(., caption = str_c('\\texttt{corphylo} model summary for the ',
+                                 'correlation between clearance and SEF ',
+                                 'without the most influential point. ',
+                                 '$r$ indicates the correlation and $d_X$ indicates ',
+                                 'the phylogenetic signal from an Ornstein-Uhlenbeck ',
+                                 'process for variable $X$. ',
+                                 'Both variables were log-transformed for this ',
+                                 'analysis.'))
 ```
 
 

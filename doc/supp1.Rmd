@@ -44,6 +44,7 @@ output:
         fig_caption: yes
         number_sections: yes
         template: template.tex
+        latex_engine: xelatex
         toc: yes
         toc_depth: 2
 ---
