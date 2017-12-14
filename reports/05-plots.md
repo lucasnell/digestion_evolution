@@ -156,7 +156,7 @@ For all the plots below...
 # Figure 1A
 fig1[['a']] <- clade_only_plot(models$spp$log_intestinal_length,
                                "Intestinal length (cm)", 
-                               y_breaks = 15 * 2^(0:2), 
+                               y_breaks = 8 * 2^(0:3), 
                                plot_title = 'A') +
     theme(legend.position = c(0.05, 1), legend.justification = c(0, 1),
           axis.title.x = element_blank(), axis.text.x = element_blank(),
@@ -326,7 +326,7 @@ Y-axis is on log scale for all plots *except* the following:
 
 ``` r
 # Figure 1c
-fig1[['c']] <- clade_pos_plot('log_intestinal_diameter', y_breaks = 0.3 * 2^(0:2),
+fig1[['c']] <- clade_pos_plot('log_intestinal_diameter', y_breaks = 0.4 * 1.5^(0:3),
                         plot_title = 'C')
 
 # Figure 2a
@@ -342,7 +342,7 @@ fig2[['b']] <- clade_pos_plot('villus_width', y_breaks = seq(0.04, 0.12, 0.04),
           strip.background = element_blank(), strip.text = element_blank())
 
 # Figure 2c
-fig2[['c']] <- clade_pos_plot('crypt_width', y_breaks = c(0.02, 0.04),
+fig2[['c']] <- clade_pos_plot('crypt_width', y_breaks = seq(0.02, 0.05, 0.01),
                         plot_title = 'C') + 
     theme(strip.background = element_blank(), strip.text = element_blank())
 
@@ -382,6 +382,10 @@ fig7[['a']] <- data$clear %>%
     mutate(sef = exp(log_sef), clear = exp(log_clear)) %>% 
     ggplot(aes(sef, clear, color = clade, shape = diet)) +
     geom_point(size = 3) +
+    geom_point(data = data$clear %>% 
+                   filter(species == "Tadarida brasiliensis") %>%
+                   mutate(sef = exp(log_sef), clear = exp(log_clear)), 
+               size = 1.75, color = 'white', shape = 17) +
     theme(legend.position = 'top',
           legend.title = element_text(size = 10, face = 'bold.italic'),
           legend.margin = margin(0,0,4,0),
