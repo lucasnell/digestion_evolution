@@ -10,8 +10,8 @@ In the tables below, the "estimate" column is the maximum likelihood estimate
 for the specified parameter, 
 while columns "lower" and "upper" are lower and upper bounds of the 95% confidence 
 interval for the parameter estimate.
-"P" is the p-value for a parameter not being equal to zero.
-Both p-values and CIs were obtained by parametric bootstrapping of the `phylolm`
+"P" is the P-value for a parameter not being equal to zero.
+Both P-values and CIs were obtained by parametric bootstrapping of the `phylolm`
 or `corphylo` model.
 We do not present P-values for phylogenetic signals because they were bound
 above zero by the models; thus confidence intervals are more informative.
@@ -207,8 +207,8 @@ filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>%
                                  'log-transformed. ',
                                  '$\\star$ indicates the model that was fit using ',
                                  'the Ornstein-Uhlenbeck model for the phylogenetic ',
-                                 'error term (see "Uncertainty in regression of ',
-                                 'proximal crypt width on clade" below for more ',
+                                 'error term (see ``Uncertainty in regression of ',
+                                 "proximal crypt width on clade'' below for more ",
                                  'information on this model fit).'))
 ``` 
 
@@ -264,50 +264,19 @@ replaced the original model with one using the OU error model.
 
 
 
-### Influential values
+### Influential value in regression of intestinal length on clade
 
-In the `phylolm` model for `log_intestinal_length ~ clade`, one point is very
-influential to the results, which might make us less confident in the conclusions 
-from the full dataset.
+#### Jackknifing
 
-#### Jackknifing methodology
-
-We used jackknifing to determine how influential each point is to model estimates.
-We first conducted jackknife replicates (1 per row in the dataset), where, for
-replicate $i$, we removed row $i$ from the dataset and fit a `phylolm` model.
-This resulted in an $n$ by $p$ matrix of the jackknifed coefficient estimates
-($\mathbf{B}$), 
-where $n$ is the sample size and $p$ the number of coefficients estimated.
-For column $j$ from 1 to $p$, we did the following:
-
-\begin{equation}
-\label{eq:jackknife}
-\begin{split}
-    \mathbf{\hat{B}}_j &= \mathbf{B}_j - \mathbf{b}_{(0)j} \\
-    \mathbf{\tilde{B}}_j &= \frac{ \mathbf{\hat{B}}_j - \mu_{\mathbf{\hat{B}}_j} }{ 
-        \sigma_{\mathbf{\hat{B}}_j} }
-\end{split}
-\end{equation}
-
-where $\mathbf{B}_j$ refers to column $j$ in $\mathbf{B}$,
-$\mu_{\mathbf{\hat{B}}_j}$ and $\sigma_{\mathbf{\hat{B}}_j}$ are the mean and 
-standard deviation of $\mathbf{\hat{B}}_j$ respectively,
-and $\mathbf{b}_{(0)j}$ is the $j$th item from the initial vector of coefficient 
-estimates using the full dataset.
-The output $n$ by $p$ matrix, $\mathbf{\tilde{B}}$, presents influence-value
-Z-scores (scaled to have a standard deviation of one and mean of zero).
-We used the absolute value of these Z-scores for plotting.
-
-
-
-#### Jackknifing results
-
-Figures \ref{fig:results-influence-plots1} and \ref{fig:results-influence-plots2}
+We used jackknifing to determine how influential each point is to the coefficient 
+estimates in the `phylolm` model for `log_intestinal_length ~ clade`.
+See equation \ref{eq:jackknife} for how I calculated influence absolute Z-scores.
+Figure \ref{fig:results-influence-plots}
 show that one species (*Artibeus lituratus*) has a disproportionate effect on all 
 three coefficient estimates.
 
 
-```{r results-influence-jack, cache = TRUE}
+```{r results-influence-jack, cache = FALSE}
 # (See `R/model_summaries.R` for the `jack_phylolm` function.)
 int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length, 
                          phy = get_tr('spp'))
@@ -315,33 +284,17 @@ int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length,
 
 
 
-```{r results-influence-plots1, fig.height = 4, fig.width = 7, fig.cap = "Plot of absolute Z-scores of influence values for the regression of intestinal length on clade and body mass. Point color indicates which parameter the influence-values pertain to."}
+```{r results-influence-plots, fig.height = 6.5, fig.width = 6.5, fig.cap = "Influential points for the regression of intestinal length on clade and body mass. (A) Intestinal length against body mass where point sizes are proportional to their influence absolute Z-score, color indicates clade, and both axes are on the log scale. (B) Influence absolute Z-scores by species. For both plots, facet labels indicate which parameter influence-values pertain to."}
 # Adding morphometric data to the jackknife data frame
 jack_df <- dplyr::left_join(int_jack, get_df('spp'), by = 'species') %>% 
     select(diet, clade, species, estimate, influence, log_mass, log_intestinal_length) %>% 
     mutate(estimate = factor(estimate, levels = c('cladeBat', 'log_mass', 'intercept'), 
-                             labels = c('clade', 'body mass', 'intercept')))
+                             labels = c('clade', 'body mass', 'intercept')),
+           species = reorder(species, abs(influence)))
+infl_p <- list()
 
-# Plotting to show better the actual |Z-scores|
-jack_df %>%
-    ggplot(aes(reorder(species, abs(influence)), abs(influence), color = estimate)) +
-    # geom_col() +
-    geom_segment(aes(xend = species), yend = 0, color = 'gray40') +
-    geom_point(size = 2, color = 'dodgerblue') +
-    scale_color_manual(values = c('#1b9e77','#d95f02','#7570b3')) +
-    facet_wrap(~ estimate) +
-    coord_flip() +
-    ylab("Influence absolute Z-score") +
-    theme(legend.position = 'top',
-          legend.justification = c(0.5, 0),
-          axis.title.y = element_blank(),
-          axis.text.y = element_text(face = 'italic'), 
-          plot.title = element_text(size = 16, margin = margin(0,0,0,0)))
-```
-
-```{r results-influence-plots2, fig.height = 4, fig.width = 7, fig.cap = "Plot of influential points for the regression of intestinal length on clade and body mass. Point sizes are proportional to their influence absolute Z-score. Facet labels indicate which parameter influence-values pertain to, and color indicates clade. Both axes are on the log scale."}
 # Plot showing context of influential values
-jack_df %>%
+infl_p[['A']] <- jack_df %>%
     # Exponentiate variables for plotting so we can more transparently
     # provide axis labels of the non-transformed numbers.
     # The same is done below when plotting the raw data.
@@ -353,13 +306,31 @@ jack_df %>%
                        limits = exp(c(2.043877, 5.199205)), expand = c(0,0)) +
     scale_y_continuous('Intestinal length (cm)', trans = 'log', breaks = 10*2^(0:2)) +
     facet_grid(~ estimate) +
-    scale_size_area('Influence |Z-score|:', breaks = 1:2, max_size = 4) +
+    scale_size_area('Influence\n|Z-score|:', breaks = 1:2, max_size = 4) +
     scale_color_manual('Clade:', values = c('#9ecae1', '#de2d26')) +
     theme(legend.title = element_text(size = 10, face = 'bold.italic'),
-          legend.position = 'top', 
-          plot.title = element_text(size = 16, margin = margin(0,0,0,0)))
-```
+          legend.position = 'left', 
+          plot.margin = margin(t = 5.5, r = 5.5, b = 0, l = 5.5))
 
+
+# Plotting to show better the actual |Z-scores|
+infl_p[['B']] <- jack_df %>%
+    ggplot(aes(abs(influence), species, color = estimate)) +
+    geom_segment(aes(yend = species), xend = 0, color = 'gray40') +
+    geom_point(size = 2, color = 'dodgerblue') +
+    scale_color_manual(values = c('#1b9e77','#d95f02','#7570b3')) +
+    facet_wrap(~ estimate) +
+    xlab("Influence |Z-score|") +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_text(face = 'italic'),
+          strip.text = element_blank(),
+          strip.background = element_blank(),
+          plot.margin = margin(t = 0, r = 5.5, b = 5.5, l = 5.5))
+
+cowplot::plot_grid(plotlist = infl_p, ncol = 1, axis = 'lb', align = 'hv', 
+                   rel_heights = c(3, 4), 
+                   labels = LETTERS[1:2], label_fontface = 'plain')
+```
 
 
 
@@ -465,21 +436,14 @@ filter(summ_df, model == 'corphylo')$data[[1]] %>%
 
 
 
-### Influential value for clearance and SEF
-
-In the `corphylo` model for `clearance ~ SEF`, one point is very
-influential to the results, which might make us less confident in the conclusions 
-from the full dataset.
+### Influential value for correlation between clearance and SEF
 
 #### Jackknifing
 
 We used jackknifing to determine how influential each point is to the correlation 
-estimate.
-See equation \ref{eq:jackknife} for how I calculated absolute influence values.
-
-
-Figures \ref{fig:results-influence-plot-cp1} and \ref{fig:results-influence-plot-cp2}
-show that one species 
+estimate in the `corphylo` model for `clearance ~ SEF`.
+See equation \ref{eq:jackknife} for how I calculated influence absolute Z-scores.
+Figure \ref{fig:results-influence-plot-cp} shows that one species 
 (*Tadarida brasiliensis*) has a disproportionate effect on the correlation.
 
 
@@ -494,26 +458,16 @@ cp_jack <- jack_corphylo(cp_mod, mean_df = clear_df, se_df = clear_se_df,
 
 
 
-```{r results-influence-plot-cp1, fig.height = 3, fig.width = 6, fig.cap = "Plot of absolute Z-scores of influence values for the correlation (Pearson's $r$) between clearance and SEF."}
+```{r results-influence-plot-cp, fig.height = 3, fig.width = 6.5, fig.cap = "Influential points for the correlation (Pearson's $r$) between clearance and SEF. (A) Clearance against SEF where point sizes are proportional to their influence absolute Z-score, color indicates clade, and both axes are on the log scale. (B) Influence absolute Z-scores by species."}
 # Adding morphometric data to the jackknife data frame
 cor_jack_df <- dplyr::left_join(cp_jack, get_df('clear'), by = 'species') %>% 
-    select(diet, clade, species, log_sef, log_clear, influence)
+    select(diet, clade, species, log_sef, log_clear, influence) %>% 
+    mutate(species = reorder(species, abs(influence)))
 
-# Plotting it
-cor_jack_df %>%
-    ggplot(aes(reorder(species, abs(influence)), abs(influence))) +
-    geom_segment(aes(xend = species), yend = 0, color = 'gray40') +
-    geom_point(size = 2, color = 'dodgerblue') +
-    theme(axis.title.y = element_blank(),
-          axis.text.y = element_text(face = 'italic')) +
-    coord_flip() +
-    ylab("Influence absolute Z-score")
-```
+cor_jack_p <- list()
 
-
-```{r results-influence-plot-cp2, fig.height = 4, fig.width = 4, fig.cap = "Plot of influential points for the correlation (Pearson's $r$) between clearance and SEF. Point sizes are proportional to their influence absolute Z-score on the estimate of Pearson's $r$. Color indicates clade, and both axes are on the log scale."}
-
-cor_jack_df %>%
+# Plot showing context of influential value
+cor_jack_p[['A']] <- cor_jack_df %>%
     # Exponentiate variables for plotting so we can more transparently
     # provide axis labels of the non-transformed numbers.
     # The same is done below when plotting the raw data.
@@ -522,18 +476,29 @@ cor_jack_df %>%
     geom_point() +
     scale_x_continuous("Surface enlagement factor (SEF)",
                        trans = 'log', breaks = 8 * 1.5^(0:2)) +
-    scale_y_continuous(bquote(.("L-arabinose clearance (") * mu *
+    scale_y_continuous(bquote(.("L-arabinose clearance (µ") *
                                   l ~ min^{-1} ~ cm^{-2} * ")"),
                        trans = 'log', breaks = 1 * 3^(0:2)) +
-    scale_size_area('Influence |Z-score|:', breaks = 1:2, max_size = 4) +
+    scale_size_area('Influence\n|Z-score|:', breaks = 1:2, max_size = 4) +
     scale_color_manual('Clade:', values = c('#9ecae1', '#de2d26')) +
-    theme(legend.position = 'top',
-          legend.title = element_text(size = 10, face = 'bold.italic'),
-          legend.box = 'vertical', legend.margin = margin(-7.5,0,-7.5,0),
-          legend.box.just = 'right')
+    theme(legend.position = 'left',
+          legend.title = element_text(size = 10, face = 'bold.italic'), 
+          legend.margin = margin(0,0,0,0))
+
+
+# Plotting to show better the actual |Z-scores|
+cor_jack_p[['B']] <- cor_jack_df %>%
+    ggplot(aes(abs(influence), species)) +
+    geom_segment(aes(yend = species), xend = 0, color = 'gray40') +
+    geom_point(size = 2, color = 'dodgerblue') +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_text(face = 'italic'),
+          plot.margin = margin(5.5, 5.5, 5.5, 8.5)) +
+    xlab("Influence |Z-score|")
+
+cowplot::plot_grid(plotlist = cor_jack_p, ncol = 2, rel_widths = c(5, 4),
+                   labels = LETTERS[1:2], label_fontface = 'plain')
 ```
-
-
 
 
 

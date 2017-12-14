@@ -20,6 +20,7 @@ suppressPackageStartupMessages({
     library(ggplot2)
     library(ggtree)
     library(ggimage)
+    library(grid)
 })
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 tr <- get_tr('spp') # <-- full tree
@@ -58,7 +59,7 @@ suppressMessages(
                           guide = FALSE) + 
         geom_treescale(x = -90, y = 15, offset = 0.5, width = 10)
 )
-gg_tr + 
+gg_tr <- gg_tr + 
     # Bat image
     geom_phylopic(image = "18bfd2fc-f184-4c3a-b511-796aafcc70f6",
                            color = "firebrick", 
@@ -71,5 +72,8 @@ gg_tr +
                            data = NULL, inherit.aes = FALSE,
                            x = -60, y = 13,
                            alpha = 0.01, height = 551, size = 0.25)
+
+gg_tr_grob <- ggplotGrob(gg_tr)
+grid.draw(gg_tr_grob)
 ```
 
