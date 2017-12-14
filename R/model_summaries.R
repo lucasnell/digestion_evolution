@@ -180,8 +180,8 @@ jack_phylolm <- function(plm, phy) {
                       }) %>% 
         do.call(what = rbind) %>% 
         as_tibble %>% 
-        # Standardizing to SD of 1
-        mutate_if(is.numeric, function(x) abs(x / sd(x))) %>% 
+        # Standardizing to SD of 1 and mean = 0
+        mutate_if(is.numeric, function(x) (x - mean(x)) / sd(x)) %>% 
         rename(intercept = `(Intercept)`) %>% 
         mutate(species = rownames(df_)) %>% 
         gather('estimate', 'influence', -species)
@@ -226,8 +226,8 @@ jack_corphylo <- function(cp, mean_df, se_df, phy, par_names) {
            }) %>%
         do.call(what = rbind) %>%
         as_tibble %>% 
-        # Standardizing to SD of 1
-        mutate_if(is.numeric, function(x) abs(x / sd(x))) %>% 
+        # Standardizing to SD of 1 and mean = 0
+        mutate_if(is.numeric, function(x) (x - mean(x)) / sd(x)) %>% 
         mutate(species = mean_df$species)
 }
 
