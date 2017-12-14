@@ -323,3 +323,46 @@ predict_ci <- function(.model){
 
 
 
+
+#' Add title to the top left corner of a plot.
+#'
+#' @param .p \code{ggplot} object to add the title to.
+#' @param .title String to add as the plot title.
+#' @param .mult List specifying multipliers for offset for x- and y-axes. 
+#'     Offsets are the amount of space from the upper-left corner of the plot 
+#'     the upper-left corner of the title text. Defaults to 1 for both.
+#' @param .data Data frame used for the call to `geom_text`. This is often useful
+#'     for faceted plots to make sure the title ends up on only one facet.
+#'     Defaults to \code{NULL}.
+#' @param font_size Numeric font size for the title (in pts). Defaults to \code{14}.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+add_title <- function(.p, .title, .mult = list(x = 1, y = 1), .data = NULL, 
+                      font_size = 14) {
+    
+    if (missing(.title)) stop("Why is .title missing?")
+    if (is.null(.title)) return(.p)
+    
+    x_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$x.range
+    y_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$y.range
+    if (!is.null(.p$coordinates$trans$x)) {
+        x_range <- .p$coordinates$trans$x$inverse(x_range)
+    }
+    if (!is.null(.p$coordinates$trans$y)) {
+        y_range <- .p$coordinates$trans$y$inverse(y_range)
+    }
+    min_x <- min(x_range) + .mult$x * 0.02 * diff(x_range)
+    max_y <- max(y_range) - .mult$y * 0.02 * diff(y_range)
+    .p <- .p +
+        geom_text(data = .data, 
+                  label = .title,
+                  x = min_x, y = max_y,
+                  color = 'black',
+                  hjust = 0, vjust = 1, 
+                  size = font_size * (25.4/72), # <-- 25.4/72 is to convert from mm to pt
+                  fontface = 'plain')
+    return(.p)
+}

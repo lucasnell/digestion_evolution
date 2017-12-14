@@ -1,10 +1,9 @@
 Plots for main paper
 ================
 Lucas Nell
-13 Dec 2017
+14 Dec 2017
 
 -   [Loading model data](#loading-model-data)
--   [Standardize plot titles](#standardize-plot-titles)
 -   [Creating plot lists](#creating-plot-lists)
 -   [Individual plots for models by species only](#individual-plots-for-models-by-species-only)
     -   [Function to create base plots](#function-to-create-base-plots)
@@ -17,7 +16,7 @@ Lucas Nell
     -   [Function to combine plots](#function-to-combine-plots)
 -   [Session info](#session-info)
 
-This file creates the figures from the main portion of the paper. In the code below, note that functions `get_df`, `get_tr`, `filter_tr`, and `cp_mat` come from [`R/get_data.R`](R/get_data.R) and functions `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_corphylo`, and `predict_ci` come from [`R/model_summaries.R`](R/model_summaries.R). See those files for these functions' documentation.
+This file creates the figures from the main portion of the paper. In the code below, note that functions `get_df`, `get_tr`, `filter_tr`, and `cp_mat` come from [`R/get_data.R`](R/get_data.R) and functions `add_title`, `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_corphylo`, and `predict_ci` come from [`R/model_summaries.R`](R/model_summaries.R). See those files for these functions' documentation.
 
 ``` r
 # Packages needed for this script
@@ -76,43 +75,6 @@ data <- list(absorp = get_df('absorp') %>% as_tibble,
                                      labels = c('Proximal', 'Medial', 'Distal'))),
              spp = get_df('spp') %>% as_tibble,
              clear = get_df('clear') %>% as_tibble)
-```
-
-Standardize plot titles
-=======================
-
-The below function adds titles to the top left corner of plots.
-
--   `.p`: `ggplot` object to add the title to.
--   `.title`: String to add as the plot title.
--   `.mult`: List specifying multipliers for offset for x- and y-axes. Offsets are the amount of space from the upper-left corner of the plot the upper-left corner of the title text.
-
-``` r
-add_title <- function(.p, .title, .mult = list(x = 1, y = 1), .data = NULL) {
-    
-    if (missing(.title)) stop("Why is .title missing?")
-    if (is.null(.title)) return(.p)
-    
-    x_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$x.range
-    y_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$y.range
-    if (!is.null(.p$coordinates$trans$x)) {
-        x_range <- .p$coordinates$trans$x$inverse(x_range)
-    }
-    if (!is.null(.p$coordinates$trans$y)) {
-        y_range <- .p$coordinates$trans$y$inverse(y_range)
-    }
-    min_x <- min(x_range) + .mult$x * 0.02 * diff(x_range)
-    max_y <- max(y_range) - .mult$y * 0.02 * diff(y_range)
-    .p <- .p +
-        geom_text(data = .data, 
-                  label = .title,
-                  x = min_x, y = max_y,
-                  color = 'black',
-                  hjust = 0, vjust = 1, 
-                  size = 14 * (25.4/72), # <-- 25.4/72 is to convert from mm to pt
-                  fontface = 'plain')
-    return(.p)
-}
 ```
 
 Creating plot lists
@@ -555,7 +517,7 @@ This outlines the package versions I used for this script.
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-13
+    ##  date     2017-12-14
 
     ## Packages -----------------------------------------------------------------
 
