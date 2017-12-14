@@ -159,12 +159,14 @@ fig1[['a']] <- clade_only_plot(models$spp$log_intestinal_length,
                                y_breaks = 15 * 2^(0:2), 
                                plot_title = 'A') +
     theme(legend.position = c(0.05, 1), legend.justification = c(0, 1),
-          axis.title.x = element_blank(), axis.text.x = element_blank())
+          axis.title.x = element_blank(), axis.text.x = element_blank(),
+          plot.margin = margin(t = 5.5, r = 5.5, b = 0, l = 5.5))
 # Figure 1B
 fig1[['b']] <- clade_only_plot(models$spp$log_nsa,
                          expression("NSA (" * cm^2 * ")"), 
                          y_breaks = 5 * 2^(0:3), 
-                         plot_title = 'B')
+                         plot_title = 'B') +
+    theme(plot.margin = margin(t = 0, r = 5.5, b = 5.5, l = 5.5))
 # Figure 4 (replacing the empty list here bc it's just one plot)
 fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
                         expression("Villous surface area (" * cm^2 * ")"),
@@ -440,10 +442,10 @@ Function to combine plots
 
 ``` r
 # Printing figures from single or a list of ggplot object(s).
-one_fig <- function(fig_list, fig1_heights = c(7.9, 9, 10)) {
+one_fig <- function(fig_list) {
     if (is(fig_list, 'list')) {
         stopifnot(all(sapply(fig_list, function(x) is(x, 'ggplot'))))
-
+        
         grob_list <- lapply(fig_list, ggplotGrob)
         # Number of columns in each plot; indicative of whether it's faceted
         grob_cols <- sapply(grob_list, ncol)
@@ -457,10 +459,10 @@ one_fig <- function(fig_list, fig1_heights = c(7.9, 9, 10)) {
         # Figure 1 combines faceted and non-faceted plots.
         # This is the best way I know of for plotting them:
         if (length(unique(grob_cols)) > 1) {
-            grid.draw(arrangeGrob(grobs = grob_list, ncol = 1, 
-                                  nrow = length(grob_list), 
-                                  heights = fig1_heights))
-            return(invisible(NULL))
+            out <- cowplot::plot_grid(plotlist = fig_list, ncol = 1,
+                                      align = 'hv', axis = 'lb')
+            out <- ggplotGrob(out)
+            return(out)
         }
         # Figures 2 and 5 have entirely faceted plots, so require this to work
         if (all(grob_cols == 15)) {
@@ -472,24 +474,26 @@ one_fig <- function(fig_list, fig1_heights = c(7.9, 9, 10)) {
         }
         
         # This works for figures 2, 5, and 7
-        grid.draw(do.call(gtable_rbind, grob_list))
+        out <- do.call(gtable_rbind, grob_list)
         
     # For figures 3, 4, and 6, you can simply plot them bc they're ggplot objects
     # I'm using ggplotGrob for consistency with those above
     } else if (is(fig_list, 'ggplot')) {
-        grid.draw(ggplotGrob(fig_list))
+        out <- ggplotGrob(fig_list)
     } else stop("Input fig_list can only be a list or ggplot object.")
     
-    return(invisible(NULL))
+    return(out)
 }
 
 # Employs the above function, plus saves the output
-save_fig <- function(fig_list, fig_num, fig1_heights = c(7.9, 9, 10), .seed = NULL, ...) {
+save_fig <- function(fig_list, fig_num, .seed = NULL, ...) {
     file_name <- sprintf('figs/fig%02d.pdf', fig_num)
     if (!is.null(.seed)) set.seed(.seed)
+    gg <- one_fig(fig_list)
     quartz(type = 'pdf', file = file_name, family = 'Helvetica', ...)
-    one_fig(fig_list, fig1_heights)
+        grid.draw(gg)
     invisible(dev.off())
+    return(invisible(NULL))
 }
 ```
 
@@ -532,6 +536,7 @@ This outlines the package versions I used for this script.
     ##  commonmark    1.4     2017-09-01 CRAN (R 3.4.1)
     ##  compiler      3.4.2   2017-10-04 local         
     ##  corphyloCpp * 1.0     <NA>       local         
+    ##  cowplot       0.9.1   2017-11-16 CRAN (R 3.4.2)
     ##  datasets    * 3.4.2   2017-10-04 local         
     ##  devtools      1.13.3  2017-08-02 CRAN (R 3.4.1)
     ##  digest        0.6.12  2017-01-27 CRAN (R 3.4.0)
@@ -547,6 +552,7 @@ This outlines the package versions I used for this script.
     ##  hms           0.3     2016-11-22 CRAN (R 3.4.0)
     ##  htmltools     0.3.6   2017-04-28 cran (@0.3.6) 
     ##  knitr         1.17    2017-08-10 CRAN (R 3.4.1)
+    ##  labeling      0.3     2014-08-23 CRAN (R 3.4.0)
     ##  lattice       0.20-35 2017-03-25 CRAN (R 3.4.2)
     ##  lazyeval      0.2.1   2017-10-29 CRAN (R 3.4.2)
     ##  magrittr      1.5     2014-11-22 CRAN (R 3.4.0)
