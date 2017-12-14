@@ -362,7 +362,18 @@ $if(logo)$
 $endif$
 $endif$
 
+\newcommand{\mean}[1]{\text{mean}\left( #1 \right)}
+\newcommand{\var}[1]{\text{var}\left( #1 \right)}
+
+% Removing extra space around \left( and \right)
+\let\originalleft\left
+\let\originalright\right
+\renewcommand{\left}{\mathopen{}\mathclose\bgroup\originalleft}
+\renewcommand{\right}{\aftergroup\egroup\originalright}
+
+
 \begin{document}
+
 $if(title)$
     $if(beamer)$
         \frame{\titlepage}
@@ -377,66 +388,69 @@ $if(title)$
 $endif$
 
 $for(include-before)$
-$include-before$
+    $include-before$
 $endfor$
 
 
 $if(toc)$
-$if(beamer)$
-\begin{frame}
-\tableofcontents[hideallsubsections]
-\end{frame}
-$else$
-{
-$if(colorlinks)$
-\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
-$endif$
-\setcounter{tocdepth}{$toc-depth$}
-\tableofcontents
-}
-$endif$
+    $if(beamer)$
+        \begin{frame}
+        \tableofcontents[hideallsubsections]
+        \end{frame}
+    $else$
+    {
+        $if(colorlinks)$
+            \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+        $endif$
+        \setcounter{tocdepth}{$toc-depth$}
+        \tableofcontents
+    }
+    $endif$
 $endif$
 $if(lot)$
-\listoftables
+    \listoftables
 $endif$
 $if(lof)$
-\listoffigures
+    \listoffigures
 $endif$
+
+\raggedright
+
 $body$
 
 $if(natbib)$
-$if(bibliography)$
-$if(biblio-title)$
-$if(book-class)$
-\renewcommand\bibname{$biblio-title$}
-$else$
-\renewcommand\refname{$biblio-title$}
-$endif$
-$endif$
-$if(beamer)$
-\begin{frame}[allowframebreaks]{$biblio-title$}
-\bibliographytrue
-$endif$
-\bibliography{$for(bibliography)$$bibliography$$sep$,$endfor$}
-$if(beamer)$
-\end{frame}
+    $if(bibliography)$
+        $if(biblio-title)$
+            $if(book-class)$
+                \renewcommand\bibname{$biblio-title$}
+            $else$
+                \renewcommand\refname{$biblio-title$}
+            $endif$
+        $endif$
+        $if(beamer)$
+            \begin{frame}[allowframebreaks]{$biblio-title$}
+            \bibliographytrue
+        $endif$
+        \bibliography{$for(bibliography)$$bibliography$$sep$,$endfor$}
+        $if(beamer)$
+        \end{frame}
+        $endif$
+    $endif$
 $endif$
 
-$endif$
-$endif$
 $if(biblatex)$
-$if(beamer)$
-\begin{frame}[allowframebreaks]{$biblio-title$}
-\bibliographytrue
-\printbibliography[heading=none]
-\end{frame}
-$else$
-\printbibliography$if(biblio-title)$[title=$biblio-title$]$endif$
+    $if(beamer)$
+        \begin{frame}[allowframebreaks]{$biblio-title$}
+        \bibliographytrue
+        \printbibliography[heading=none]
+        \end{frame}
+    $else$
+    \printbibliography$if(biblio-title)$[title=$biblio-title$]$endif$
+    $endif$
 $endif$
 
-$endif$
 $for(include-after)$
-$include-after$
-
+    $include-after$
 $endfor$
+
 \end{document}

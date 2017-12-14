@@ -72,7 +72,10 @@ options("citation_format" = "pandoc")
 ```{r phylogeny-main, child = 'phylo_tree.Rmd'}
 ```
 
+## Aggregating data
 
+```{r aggregate-main, child = 'aggregate.Rmd'}
+```
 
 ## Jackknifing
 
