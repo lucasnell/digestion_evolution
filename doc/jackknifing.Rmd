@@ -1,0 +1,31 @@
+
+
+We used jackknifing to estimate how influential points were to `phylolm` 
+and `corphylo` model estimates.
+We first conducted jackknife replicates (1 per row in the dataset), where, for
+replicate $i$, we removed row $i$ from the dataset and re-fit the original model
+with the subsetted datset.
+This resulted in an $n$ by $p$ matrix of the jackknifed coefficient estimates
+($\mathbf{B}$), 
+where $n$ is the sample size and $p$ the number of coefficients estimated.
+For column $j$ from 1 to $p$, we did the following:
+
+\begin{equation}
+\label{eq:jackknife}
+\begin{split}
+    \mathbf{\hat{B}}_j &= \mathbf{B}_j - \mathbf{b}_{(0)j} \\
+    \mathbf{\tilde{B}}_j &= \frac{ \mathbf{\hat{B}}_j - \mu_{\mathbf{\hat{B}}_j} }{ 
+        \sigma_{\mathbf{\hat{B}}_j} }
+\end{split}
+\end{equation}
+
+where $\mathbf{B}_j$ refers to column $j$ in $\mathbf{B}$,
+$\mu_{\mathbf{\hat{B}}_j}$ and $\sigma_{\mathbf{\hat{B}}_j}$ are the mean and 
+standard deviation of $\mathbf{\hat{B}}_j$ respectively,
+and $\mathbf{b}_{(0)j}$ is the $j$th item from the initial vector of coefficient 
+estimates using the full dataset.
+The output $n$ by $p$ matrix, $\mathbf{\tilde{B}}$, presents influence-value
+Z-scores (scaled to have a standard deviation of one and mean of zero).
+We used the absolute value of these Z-scores for plotting.
+
+

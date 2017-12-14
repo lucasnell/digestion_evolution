@@ -1,0 +1,63 @@
+
+
+This section calculates the percent differences mentioned in the discussion and abstract.
+
+We calculated rodent and bat estimates at `log(body mass) = 0` to remove the effect
+of body mass.
+Since all these variables were log-transformed, we then exponentiated
+both rodent and bat estimates before computing the proportional, then percentage, 
+difference:
+
+\begin{equation}
+    100 \times \frac{ \exp\left( \beta_0 + \beta_{\text{clade}} \right) - 
+        \exp\left( \beta_0 \right) }{ \exp\left( \beta_0 \right) }
+\end{equation}
+
+
+where $\beta_0$ is the intercept and $\beta_{\text{clade}}$ the coefficient for clade.
+
+
+```{r results-percent-diff}
+perc_diff <- function(.mod) {
+    
+    # Detect log-transform from formula
+    logged <- grepl('^log', paste(.mod$formula)[2])
+    
+    coefs <- {.mod %>% summary %>% coef}[,'Estimate']
+    rodents <- coefs[['(Intercept)']]
+    bats <- rodents + coefs[['cladeBat']]
+    if (logged) {
+        rodents <- exp(rodents)
+        bats <- exp(bats)
+    }
+    prop_diff <- (bats - rodents) / rodents
+    return(prop_diff * 100)
+}
+```
+
+
+```{r results-percent-diff-nsa}
+pd_nsa <- perc_diff(plm_mods$spp$log_nsa) %>% 
+    signif(digits = 4)
+```
+```{r results-percent-diff-sef}
+pd_sef <- mean(c(
+    perc_diff(plm_mods$pos$prox$log_sef),
+    perc_diff(plm_mods$pos$med$log_sef),
+    perc_diff(plm_mods$pos$dist$log_sef))) %>% 
+    signif(digits = 4)
+```
+```{r results-percent-diff-ent-dens}
+pd_ed <- mean(c(
+    perc_diff(plm_mods$pos$prox$log_enterocyte_density), 
+    perc_diff(plm_mods$pos$med$log_enterocyte_density), 
+    perc_diff(plm_mods$pos$dist$log_enterocyte_density))) %>% 
+    signif(digits = 4)
+```
+
+
+- __NSA\:__ $`r pd_nsa`$\%
+- __SEF\:__ $`r pd_sef`$\%
+- __Enterocyte density\:__ $`r pd_ed`$\%
+
+

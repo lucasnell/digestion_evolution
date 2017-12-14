@@ -39,6 +39,7 @@ tables: true
 graphics: true
 colorlinks: true
 supplemental: true
+mathspec: true
 output:
     bookdown::pdf_document2:
         fig_caption: yes
@@ -72,11 +73,36 @@ options("citation_format" = "pandoc")
 ```
 
 
+
+## Jackknifing
+
+```{r jackknifing-main, child = 'jackknifing.Rmd'}
+```
+
+
+
 # Supplementary Results
 
 ```{r results-main, child = 'results.Rmd'}
 ```
 
+
+## `phylolm`
+
+```{r results-phylolm-main, child = 'results-phylolm.Rmd'}
+```
+
+
+## `corphylo`
+
+```{r results-corphylo-main, child = 'results-corphylo.Rmd'}
+```
+
+
+## Percent differences
+
+```{r results-percent-main, child = 'results-percent.Rmd'}
+```
 
 
 
