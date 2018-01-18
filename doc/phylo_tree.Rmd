@@ -73,7 +73,6 @@ gg_tr <- gg_tr +
                            x = -60, y = 13,
                            alpha = 0.01, height = 551, size = 0.25)
 
-gg_tr_grob <- ggplotGrob(gg_tr)
-grid.draw(gg_tr_grob)
+gg_tr
 ```
 
