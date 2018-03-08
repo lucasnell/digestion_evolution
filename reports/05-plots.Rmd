@@ -204,7 +204,7 @@ fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
 
 # Figure 6 (same as for figure 4)
 fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
-                        expression("Total enterocytes" %*% 10^{-9}),
+                        "Total enterocytes",
                         # CHANGING UNITS HERE (from enterocytes to 
                         # 1e9 enterocytes:
                         y_breaks = 200e6 * 2^(0:3), y_labels = 0.2 * 2^(0:3)) +
@@ -246,7 +246,7 @@ plot_names <- rbind(c("log_intestinal_diameter", "Intestinal ~ diameter ~ '(cm)'
                     c("log_sef", "Surface ~ enlargement ~ factor ~ '(SEF)'"),
                     c("enterocyte_diameter", "Enterocyte ~ diameter ~ '(\u03BCm)'"),
                     c("log_enterocyte_density", 
-                      "Enterocyte ~ density  %*% 10^{-6} ~ '(' * cm^{-2} * ')'")) %>% 
+                      "Enterocyte ~ density ~ '(' * cm^{-2} * ')'")) %>% 
     as_tibble %>% 
     rename(og = V1, new = V2)
 ```
