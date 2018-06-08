@@ -233,7 +233,7 @@ corphylo_cpp <- function(X, U = list(), SeM = NULL, phy = NULL, REML = TRUE,
         Cd <- (d[i]^tau * (d[j]^t(tau)) * (1 - (d[i] * d[j])^Vphy))/(1 - d[i] * d[j])
         C[(n * (i - 1) + 1):(i * n), (n * (j - 1) + 1):(j * n)] <- R[i, j] * Cd
     }
-    V <- C + diag(MM)
+    V <- C + diag(as.numeric(MM))
     iV <- solve(V)
     denom <- t(UU) %*% iV %*% UU
     num <- t(UU) %*% iV %*% XX
@@ -431,7 +431,8 @@ prep_info <- function(cp_obj, max_iter = 100) {
     ## phylogenetic signal: a vector of independent normal random variables,
     ## when multiplied by the transpose of the Cholesky deposition of Vphy will
     ## have covariance matrix equal to Vphy.
-    V <- chol_fix(cp_obj$V, max_iter)
+    # V <- chol_fix(cp_obj$V, max_iter)
+    V <- cp_obj$V
     
     iD <- t(chol(V))
     
@@ -448,8 +449,9 @@ prep_info <- function(cp_obj, max_iter = 100) {
 
 boot_out_default <- function(cp_obj) {
     x <- cp_obj$cor.matrix
-    out <- rbind(c(x[lower.tri(x, FALSE)], cp_obj$d))
-    colnames(out) <- c(get_par_names(nrow(x), 'r'), get_par_names(nrow(x), 'd'))
+    out <- rbind(c(x[lower.tri(x, FALSE)], cp_obj$d, cp_obj$B))
+    colnames(out) <- c(get_par_names(nrow(x), 'r'), get_par_names(nrow(x), 'd'),
+                       rownames(cp_obj$B))
     return(out)
 }
 
