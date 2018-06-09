@@ -12,9 +12,6 @@ Lucas A. Nell
 
 *(Alphabetical order)*
 
-* `corphyloCpp`: A small R package that provides a modified version of `ape::corphylo`
-  with parametric bootstrapping.
-
 * `data`: raw data files
     - `raw_data.xlsx`: the Excel sheet exactly as it was sent to me
     - `tree.nwk`: the phylogenetic tree as downloaded from
