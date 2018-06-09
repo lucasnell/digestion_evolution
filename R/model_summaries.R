@@ -6,110 +6,209 @@
 
 #' Coefficient P-value(s) for a \code{phylolm} or \code{corphylo} object.
 #'
-#' @param .model A \code{phylolm} or \code{corphylo} object that has bootstrap 
+#' @param mod A \code{phylolm} or \code{corphylo} object that has bootstrap 
 #'     replicates within (i.e., was run with \code{boot > 0}).
-#' @param .parameters A character vector of the parameter name(s) of interest. 
+#' @param params A character vector of the parameter name(s) of interest. 
 #'     Defaults to \code{'cladeBat'}.
 #'
 #' @return A numeric vector of p-values for each parameter not equalling zero.
 #' 
 #' @export
 #'
-pval <- function(.model, .parameters = 'cladeBat') {
-    if (length(.model$bootstrap) == 0) {
+pval <- function(mod, params) UseMethod("pval")
+
+pval.phylolm <- function(mod, params = 'cladeBat') {
+    if (length(mod$bootstrap) == 0) {
         stop("The input model must include bootstrap replicates.")
     }
     p_fun <- function(x) 2 * min(c(mean(x > 0), mean(x < 0)))
-    if (is(.model, 'phylolm')) {
-        out <- lapply(.parameters, function(p) p_fun(.model$bootstrap[, p])) %>% 
-            c(recursive = TRUE)
-    } else if (is(.model, 'corphylo')) {
-        out <- as.numeric(apply(.model$bootstrap, 2, p_fun))
-    } else {
-        stop("only for phylolm or corphylo objects")
-    }
+    out <- lapply(params, function(p) p_fun(mod$bootstrap[, p]))
+    out <- c(out, recursive = TRUE)
     return(out)
 }
+
+pval.cor_phylo <- function(mod, params) {
+    lower.to.upper.tri.inds <- function (n) {
+        n1 <- as.integer(n - 1)
+        if (n1 < 1) {
+            stop("'n' must be >= 2")
+        } else if (n1 == 1) {
+            1L
+        } else {
+            fxn <- function(k) cumsum(c(0L, (n - 2L):(n - k)))
+            rep(seq_len(n1), seq_len(n1)) + c(0L, unlist(lapply(2:n1, fxn)))
+        }
+    }
+    
+    if (length(mod$bootstrap) == 0) {
+        stop("The input model must include bootstrap replicates.")
+    }
+    p_fun <- function(x) 2 * min(c(mean(x > 0), mean(x < 0)))
+    
+    # Indices for failed convergences:
+    if (phyr:::call_arg(mod$call,"method") %in% c("nelder-mead-r", "sann")) {
+        f <- mod$bootstrap$inds[mod$bootstrap$codes != 0]
+    } else {
+        f <- mod$bootstrap$inds[mod$bootstrap$codes < 0]
+    }
+    if (length(f) == 0) f <- ncol(mod$bootstrap$d) + 1
+    
+    output <- rep(list(NA), length(params))
+    for (i in 1:length(params)) {
+        if (params[i] == "corrs") {
+            
+            lowers <- lapply({1:(dim(mod$bootstrap$corrs)[3])}[-f],
+                             function(i) {
+                                 logs <- lower.tri(mod$bootstrap$corrs[,,i])
+                                 mod$bootstrap$corrs[,,i][logs]
+                             })
+            lowers <- do.call(rbind, lowers)
+            
+            out <- matrix(-1, nrow(mod$bootstrap$corrs), ncol(mod$bootstrap$corrs))
+            out[lower.tri(out)] <- apply(lowers, 2, p_fun)
+            out[upper.tri(out)] <- out[lower.tri(out)][lower.to.upper.tri.inds(ncol(out))]
+            
+            rownames(out) <- rownames(mod$corrs)
+            colnames(out) <- colnames(mod$corrs)
+        } else if (params[i] == "d") {
+            out <- NA
+        } else if (params[i] == "B0") {
+            
+            out <- cbind(apply(mod$bootstrap$B0[,-f,drop=FALSE], 1, p_fun))
+            rownames(out) <- rownames(mod$B)
+            colnames(out) <- "P-value"
+            
+        } else if (params[i] == "B_cov") {
+            
+            lowers <- lapply({1:(dim(mod$bootstrap$B_cov)[3])}[-f],
+                             function(i) {
+                                 logs <- lower.tri(mod$bootstrap$B_cov[,,i])
+                                 mod$bootstrap$B_cov[,,i][logs]
+                             })
+            lowers <- do.call(rbind, lowers)
+            
+            out <- matrix(-1, nrow(mod$bootstrap$B_cov), ncol(mod$bootstrap$B_cov))
+            out[lower.tri(out)] <- apply(lowers, 2, p_fun)
+            out[upper.tri(out)] <- out[lower.tri(out)][lower.to.upper.tri.inds(ncol(out))]
+            
+            rownames(out) <- rownames(mod$B_cov)
+            colnames(out) <- colnames(mod$B_cov)
+        } else out <- NA
+        output[[i]] <- out
+    }
+    if (length(output) == 1) output <- output[[1]]
+
+
+    return(output)
+}
+
+
 
 #' Coefficient confidence interval(s) for a \code{phylolm} or \code{corphylo} object.
 #'
 #' @inheritParams pval
 #'
-#' @return A two-column matrix of confidence intervals for each parameter, where the
-#'     first colum is the lower limit and the second is the upper.
+#' @return A matrix of confidence intervals for each parameter.
+#'     In most instances, it returns two-column matrices, where the first column 
+#'     is the lower limit and the second is the upper.
+#'     For `corrs` and `B_cov` fields in a `cor_phylo` object, it returns
+#'     a square matrix, where values above the diagonal are upper limits and
+#'     values below the diagonal are lower limits.
 #' 
 #' @export
 #'
-ci <- function(.model, .parameters = 'cladeBat') {
-    if (is(.model, 'phylolm')) {
-        out <- matrix(as.numeric(.model$bootconfint95[,.parameters]), 
-                      ncol = 2, nrow = length(.parameters), byrow = TRUE)
-    } else if (is(.model, 'corphylo')) {
-        out <- t(apply(.model$bootstrap, 2, quantile, probs = c(0.025, 0.975)))
-        rownames(out) <- NULL
-    } else {
-        stop("only for phylolm or corphylo objects")
-    }
-    colnames(out) <- c('lower', 'upper')
+ci <- function(mod, params) UseMethod("ci")
+
+ci.phylolm <- function(mod, params = "cladeBat") {
+    
+    out <- matrix(as.numeric(mod$bootconfint95[,params]), 
+                  ncol = 2, nrow = length(params), byrow = TRUE)
+    
+    colnames(out) <- c("lower", "upper")
     return(out)
 }
 
+ci.cor_phylo <- function(mod, params) {
+    if (any(!params %in% c("corrs", "d", "B0", "B_cov"))) {
+        stop("params can only be corrs, d, B0, or B_cov for cor_phylo.")
+    }
+    out <- boot_ci(mod)
+    output <- lapply(params, function(pp) out[[pp]])
+    if (length(output) == 1) output <- output[[1]]
+    return(output)
+}
 
 
 #' Extract phylogenetic signal string from a \code{phylolm} object.
 #'
-#' @param .model \code{phylolm} object.
+#' @param mod \code{phylolm} object.
 #'
 #' @return A string specifying the name of the coefficient for the phylogenetic signal.
 #' @export
 #'
-phy_signal_str <- function(.model) {
-    switch(.model$model,
+phy_signal_str <- function(mod) {
+    switch(mod$model,
            OUfixedRoot = "alpha",
            OUrandomRoot = "alpha",
            EB = "rate",
-           .model$model)
+           mod$model)
 }
 
 
 #' Summarize a \code{phylolm} or \code{corphylo} object.
 #' 
 #'
-#' @param .model A \code{phylolm} or \code{corphylo} object that has bootstrap 
+#' @param mod A \code{phylolm} or \code{corphylo} object that has bootstrap 
 #'     replicates within (i.e., was run with \code{boot > 0}).
 #' @param .pos 
-#' @param .corr_pars 
 #'
 #' @return
 #' @export
 #'
 #' @examples
-summ_df <- function(.model, .pos = NA, .corr_pars = NA) {
+summ_df <- function(mod, .pos = NA) {
     
-    if (is(.model, 'phylolm')) {
-        error_model <- .model$model
-        .parameters <- names(coef(.model))[names(coef(.model)) != '(Intercept)']
-        estimates <- as.numeric(c(coef(.model)[.parameters], .model$optpar))
-        .parameters <- c(.parameters, phy_signal_str(.model))
-        Y <- paste(.model$formula)[2]
-    } else if (is(.model, 'corphylo')) {
-        if (length(.corr_pars) != 2) stop("Correlation parameters must have length == 2")
+    if (inherits(mod, 'phylolm')) {
+        error_model <- mod$model
+        params <- names(coef(mod))[names(coef(mod)) != '(Intercept)']
+        estimates <- as.numeric(c(coef(mod)[params], mod$optpar))
+        params <- c(params, phy_signal_str(mod))
+        Y <- paste(mod$formula)[2]
+        .df <- as_data_frame(ci(mod, params))
+        P <- pval(mod, params)
+    } else if (inherits(mod, 'cor_phylo')) {
+        .corr_pars <- rownames(mod$d)
+        if (length(.corr_pars) > 2) stop("\nNot designed for >2 parameters.")
         error_model <- "OU"
         Y <- c(.corr_pars[1], .corr_pars)
-        .parameters <- c(.corr_pars[2], rep('d', 2))
-        estimates <- c(.model$cor.matrix[lower.tri(.model$cor.matrix)], .model$d)
+        params <- c(.corr_pars[2], rep('d', 2))
+        estimates <- c(mod$corrs[lower.tri(mod$corrs)], mod$d)
+        
+        corrs <- ci(mod, "corrs")
+        corrs <- cbind(lower = corrs[lower.tri(corrs)],
+                       upper = corrs[upper.tri(corrs)])
+        ds <- ci(mod, "d")
+        
+        .df <- as_data_frame(rbind(corrs, ds))
+        
+        P <- pval(mod, c("corrs", rep("d", length(.corr_pars))))
+        P <- c(lapply(P,
+                      function(x) {
+                          if (inherits(x, "matrix")) x[lower.tri(x)] else x
+                      }),
+               recursive = TRUE)
+        
     } else {
-        stop("only for phylolm or corphylo objects")
+        stop("only for phylolm or cor_phylo objects")
     }
     
-    .df <- as_data_frame(ci(.model, .parameters))
-    .df <- .df %>% 
+    .df <- .df %>%
         mutate(Y = Y, 
-               X = .parameters,
+               X = params,
                pos = .pos,
                phy_model = error_model,
                value = estimates,
-               P = pval(.model, .parameters)) %>% 
+               P = P) %>% 
         select(Y, X, pos, phy_model, value, lower, upper, P)
     
     return(.df)
@@ -190,15 +289,15 @@ jack_phylolm <- function(plm, phy) {
 }
 
 
-#' Jackknifing on a \code{corphylo} object to find influential points.
+#' Jackknifing on a \code{cor_phylo} object to find influential points.
 #' 
 #' All arguments to this function should be the same as used for the original
-#' call to \code{corphylo} or \code{corphylo_cpp}
+#' call to \code{cor_phylo} or \code{corphylo_cpp}
 #' 
 #' \emph{Note}: this function only works for my specific analyses.
 #' 
 #'
-#' @param cp A \code{corphylo} object.
+#' @param mod A \code{cor_phylo} object.
 #' @param mean_df A data frame of mean values by species.
 #' @param se_df A data frame of standard errors by species.
 #' @param phy A \code{phylo} object of all species.
@@ -211,24 +310,35 @@ jack_phylolm <- function(plm, phy) {
 #' 
 #' @export
 #'
-jack_corphylo <- function(cp, mean_df, se_df, phy, par_names) {
-    comp_ <- cp$cor.matrix[1,2]
-    lapply(1:nrow(mean_df),
-           function(i) {
-               Xmat_ <- cp_mat(mean_df[-i,], par_names)
-               MEmat_ <- cp_mat(se_df[-i,], par_names)
-               
-               to_drop_ <- phy$tip.label
-               to_drop_ <- to_drop_[!to_drop_ %in% rownames(Xmat_)]
-               tr_ <- ape::drop.tip(phy, to_drop_)
-               cp_ <- corphylo_cpp(Xmat_, phy = tr_, SeM = MEmat_)
-               return(c(influence = cp_$cor.matrix[1,2] - comp_))
-           }) %>%
+jack_cor_phylo <- function(mod) {
+    
+    comp_ <- mod$corrs[1,2]
+    call_ <- mod$call
+    call_$boot <- 0
+    call_$data <- quote(clear_df_bm_)
+    call_$phy <- quote(clear_tr_bm_)
+    
+    n <- nrow(eval(mod$call$data))
+    
+    out <- rep(list(NA), n)
+    
+    for (i in 1:n) {
+        clear_df_bm_ <- eval(mod$call$data)[-i,]
+        to_drop_ <- eval(mod$call$phy)$tip.label
+        to_drop_ <- to_drop_[!to_drop_ %in% clear_df_bm_$species]
+        clear_tr_bm_ <- ape::drop.tip(eval(mod$call$phy), to_drop_)
+        cp_ <- eval(call_)
+        out[[i]] <- c(influence = cp_$corrs[1,2] - comp_)
+    }
+    
+    out <- out %>%
         do.call(what = rbind) %>%
-        as_tibble %>% 
+        as_tibble %>%
         # Standardizing to SD of 1 and mean = 0
-        mutate_if(is.numeric, function(x) (x - mean(x)) / sd(x)) %>% 
-        mutate(species = mean_df$species)
+        mutate_if(is.numeric, function(x) (x - mean(x)) / sd(x)) %>%
+        mutate(species = eval(mod$call$data)$species)
+    
+    return(out)
 }
 
 
@@ -239,7 +349,7 @@ jack_corphylo <- function(cp, mean_df, se_df, phy, par_names) {
 
 #' Create data frame of predictions and 95% CI from a \code{phylolm} object.
 #'
-#' @param .model \code{phylolm} object that has bootstrap replicates within 
+#' @param mod \code{phylolm} object that has bootstrap replicates within 
 #'     (i.e., was run with \code{boot > 0}).
 #'
 #' @return A dataframe with columns for clade, intestinal segment position, measurement 
@@ -257,14 +367,14 @@ jack_corphylo <- function(cp, mean_df, se_df, phy, par_names) {
 #' 
 #' @export
 #'
-predict_ci <- function(.model){
+predict_ci <- function(mod){
     
-    stopifnot(is(.model, 'phylolm'))
+    stopifnot(is(mod, 'phylolm'))
 
-    y_measure <- {paste(.model$formula) %>% purrr::discard(~ grepl('~', .x))}[1]
+    y_measure <- {paste(mod$formula) %>% purrr::discard(~ grepl('~', .x))}[1]
     
     # Name of position, if applicable
-    pos_name <- paste(.model$call) %>% 
+    pos_name <- paste(mod$call) %>% 
         purrr::keep(~ grepl('_df', .x)) %>% 
         gsub(pattern = '_df', replacement = '')
     if (pos_name %in% c('spp', 'absorp')) pos_name <- NA
@@ -273,10 +383,10 @@ predict_ci <- function(.model){
     # If log_mass is a covariate in the model, I'm using, for each clade, a sequence 
     # ranging between the minimum and maximum values of the input data for that clade.
     # The new_data matrix is used for matrix multiplication for estimates later on.
-    if ('log_mass' %in% colnames(.model$X)) {
+    if ('log_mass' %in% colnames(mod$X)) {
         n_mass <- 100
-        bat_log_mass <- as.numeric(.model$X[.model$X[,'cladeBat'] == 1,'log_mass'])
-        rod_log_mass <- as.numeric(.model$X[.model$X[,'cladeBat'] == 0,'log_mass'])
+        bat_log_mass <- as.numeric(mod$X[mod$X[,'cladeBat'] == 1,'log_mass'])
+        rod_log_mass <- as.numeric(mod$X[mod$X[,'cladeBat'] == 0,'log_mass'])
         log_mass_ <- c(seq(min(bat_log_mass), max(bat_log_mass), length.out = n_mass),
                       seq(min(rod_log_mass), max(rod_log_mass), length.out = n_mass))
         new_data <- rbind(1.0, rep(c(1.0, 0.0), each = n_mass), log_mass_)
@@ -291,13 +401,13 @@ predict_ci <- function(.model){
     }
     
     # Column names coinciding with phylogenetic parameters from the model:
-    phylo_cols <- which(colnames(.model$bootstrap) %in% 
-                            c('sigma2', phy_signal_str(.model)))
+    phylo_cols <- which(colnames(mod$bootstrap) %in% 
+                            c('sigma2', phy_signal_str(mod)))
     
     # Calculating confidence intervals for predicted y-value for bats, then rodents.
     # Bats are the first `n_mass` rows, rodents the second.
     # Columns are lower and upper limits, respectively.
-    ci_matrix <- .model$bootstrap %>% 
+    ci_matrix <- mod$bootstrap %>% 
         apply(1, 
               function(x) {
                   matrix(x[-phylo_cols] %*% new_data)
@@ -307,7 +417,7 @@ predict_ci <- function(.model){
         t
     
     # Adding predicted outcomes, and converting to a data frame.
-    out_df <- cbind(predict(.model, new_data_df), ci_matrix) %>% 
+    out_df <- cbind(predict(mod, new_data_df), ci_matrix) %>% 
         as_data_frame %>% 
         rename_(.dots = setNames(colnames(.), c('estimate', 'low', 'high'))) %>% 
         mutate(measure = y_measure,
