@@ -96,9 +96,9 @@ options("citation_format" = "pandoc")
 ```
 
 
-## `corphylo`
+## `cor_phylo`
 
-```{r results-corphylo-main, child = 'results-corphylo.Rmd'}
+```{r results-cor_phylo-main, child = 'results-corphylo.Rmd'}
 ```
 
 

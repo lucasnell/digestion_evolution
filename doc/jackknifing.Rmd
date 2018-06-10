@@ -1,7 +1,7 @@
 
 
 We used jackknifing to estimate how influential points were to `phylolm` 
-and `corphylo` model estimates.
+and `cor_phylo` model estimates.
 We first conducted jackknife replicates (1 per row in the dataset), where, for
 replicate $i$, we removed row $i$ from the dataset and re-fit the original model
 with the subsetted datset.

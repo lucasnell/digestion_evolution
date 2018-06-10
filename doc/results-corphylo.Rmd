@@ -1,18 +1,18 @@
 
 
 Table \ref{tab:results-clear-sef-kable}
-refers to `corphylo` estimates for the correlation between clearance and SEF.
+refers to `cor_phylo` estimates for the correlation between clearance and SEF.
 The table includes the Pearson correlation coefficient ($r$) between the two traits 
 and phylogenetic signals from an Ornstein-Uhlenbeck process for each individual trait.
 
 
 ```{r results-clear-sef-kable}
-filter(summ_df, model == 'corphylo')$data[[1]] %>% 
+filter(summary_df, model == 'cor_phylo')$data[[1]] %>% 
     mutate(Y = str_replace_all(Y, 'log_', '') %>% str_replace_all('_', ' '), 
            parameter = c('$r$', sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[2])), 
                          sprintf('$d_{\\text{%s}}$', gsub('log_', '', Y[3])))) %>% 
     select(-phy_model, -Y) %>% 
-    pretty_df(., caption = str_c('\\texttt{corphylo} model summary for the ',
+    pretty_df(., caption = str_c('\\texttt{cor\\_phylo} model summary for the ',
                                  'correlation between clearance and SEF. ',
                                  '$r$ indicates the correlation and $d_X$ indicates ',
                                  'the phylogenetic signal from an Ornstein-Uhlenbeck ',
@@ -29,19 +29,20 @@ filter(summ_df, model == 'corphylo')$data[[1]] %>%
 #### Jackknifing
 
 We used jackknifing to determine how influential each point is to the correlation 
-estimate in the `corphylo` model for `clearance ~ SEF`.
+estimate in the `cor_phylo` model for `clearance ~ SEF`.
 See equation \ref{eq:jackknife} for how I calculated influence absolute Z-scores.
 Figure \ref{fig:results-influence-plot-cp} shows that one species 
 (*Tadarida brasiliensis*) has a disproportionate effect on the correlation.
 
 
-```{r results-influence-jack-corphylo}
-# (See `R/model_summaries.R` for the `jack_corphylo` function.)
-clear_df <- get_df('clear')
-clear_se_df <- get_df('clear', .stat = 'se')
+```{r results-influence-jack-cor-phylo}
+# (See `R/model_summaries.R` for the `jack` function.)
+# Making data frame with both means and SEs:
+clear_sef_df <- bind_cols(get_df('clear') %>% select(species, log_sef, log_clear),
+                          get_df('clear', .stat = 'se') %>% select(log_sef, log_clear) %>% 
+                              rename(log_sef_se = log_sef, log_clear_se = log_clear))
 clear_tr <- get_tr('clear')
-cp_jack <- jack_corphylo(cp_mod, mean_df = clear_df, se_df = clear_se_df,
-                         phy = clear_tr, par_names = c('log_sef', 'log_clear'))
+cp_jack <- jack(cp_mod)
 ```
 
 
@@ -94,33 +95,34 @@ cowplot::plot_grid(plotlist = cor_jack_p, ncol = 2, rel_widths = c(5, 4),
 
 #### Re-running model without influential point
 
-```{r results-influence-rerun-corphylo, cache = TRUE}
-Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
-Xmat <- Xmat[clear_df$species != 'Tadarida brasiliensis',]
-MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
-MEmat <- MEmat[clear_se_df$species != 'Tadarida brasiliensis',]
-tr_ <- clear_tr %>% filter_tr(rownames(Xmat))
+```{r results-influence-rerun-cor-phylo, cache = TRUE}
+clear_sef_df_ <- clear_sef_df %>% 
+    filter(species != 'Tadarida brasiliensis')
+clear_tr_ <- clear_tr %>% filter_tr(clear_sef_df_$species)
+call_ <- cp_mod$call
+call_$data <- quote(clear_sef_df_)
+call_$phy <- quote(clear_tr_)
+
 set.seed(1052373084)
-influence_rerun <- corphylo_cpp(X = Xmat, phy = tr_, SeM = MEmat,
-                                boot = 2000, n_cores = 4)
+influence_rerun <- eval(call_)
 ```
 
 
-Table \ref{tab:results-re-run-summ-dfs-corphylo} shows the `corphylo` output
+Table \ref{tab:results-re-run-summ-dfs-cor-phylo} shows the `cor_phylo` output
 when this influential point is excluded.
 
-```{r results-re-run-summ-dfs-corphylo}
+```{r results-re-run-summ-dfs-cor-phylo}
 rerun_df <- data_frame(parameter = c('$r$', '$d_{\\text{sef}}$', 
                                      '$d_{\\text{clear}}$'),
-                       estimate = c(influence_rerun$cor.matrix[1,2], 
+                       estimate = c(influence_rerun$corrs[1,2], 
                                     influence_rerun$d),
-                       lower = apply(influence_rerun$bootstrap, 2, 
-                                     quantile, probs = 0.025),
-                       upper = apply(influence_rerun$bootstrap, 2, 
-                                     quantile, probs = 0.975),
-                       P = c(pval(influence_rerun)[1], rep("–", 2)))
+                       lower = c(boot_ci(influence_rerun)$corrs[2,1],
+                                 boot_ci(influence_rerun)$d[,'lower']),
+                       upper = c(boot_ci(influence_rerun)$corrs[1,2],
+                                 boot_ci(influence_rerun)$d[,'upper']),
+                       P = c(pval(influence_rerun, "corrs")[1,2], rep("–", 2)))
 rerun_df %>% 
-    pretty_df(., caption = str_c('\\texttt{corphylo} model summary for the ',
+    pretty_df(., caption = str_c('\\texttt{cor\\_phylo} model summary for the ',
                                  'correlation between clearance and SEF ',
                                  'without the most influential point. ',
                                  '$r$ indicates the correlation and $d_X$ indicates ',

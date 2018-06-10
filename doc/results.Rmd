@@ -2,9 +2,7 @@
 
 This section displays all results from analyses using
 `phylolm::phylolm` `r citep(citation("phylolm"))` and 
-a modified version of `ape::corphylo`
-`r citep(list(citation("ape"), "10.1111/j.1365-2435.2009.01596.x"))`
-that provides parametric bootstrapping.
+`phyr::cor_phylo` `r citep("10.1111/j.1365-2435.2009.01596.x")`.
 
 In the tables below, the "estimate" column is the maximum likelihood estimate 
 for the specified parameter, 
@@ -12,7 +10,7 @@ while columns "lower" and "upper" are lower and upper bounds of the 95% confiden
 interval for the parameter estimate.
 "P" is the P-value for a parameter not being equal to zero.
 Both P-values and CIs were obtained by parametric bootstrapping of the `phylolm`
-or `corphylo` model.
+or `cor_phylo` model.
 We do not present P-values for phylogenetic signals because they were bound
 above zero by the models; thus confidence intervals are more informative.
 
@@ -31,6 +29,7 @@ suppressPackageStartupMessages({
     library(ggplot2)
     library(grid)
     library(gridExtra)
+    library(phyr)
 })
 # Set default ggplot2 theme
 # setting default `ggplot2` theme
@@ -40,8 +39,6 @@ theme_set(theme_classic() %+replace%
                     legend.title = element_blank(),
                     legend.background = element_blank(),
                     plot.title = element_text(size = 14, hjust = 0)))
-# Custom package that does bootstrapping on corphylo object
-suppressMessages(devtools::load_all('corphyloCpp'))
 # Sourcing scripts from R directory
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 
@@ -126,13 +123,13 @@ pretty_df <- function(df_, caption = NULL) {
  
  
 ```{r results-parse-output, echo = FALSE} 
-summ_df <- read_csv('output/models_summaries.csv', col_types = 'ccccdddd') %>%
+summary_df <- read_csv('output/models_summaries.csv', col_types = 'ccccdddd') %>%
     mutate(X = ifelse(X == 'cladeBat', 'clade', X),
            pos = ifelse(is.na(pos), 'all', pos)) %>%  
     rename(estimate = value) %>%
     select(pos, Y, X, phy_model, estimate, lower, upper, P) %>% 
     mutate_if(is.numeric, function(s) signif(s, digits = 4)) %>% 
-    mutate(model = ifelse(phy_model == 'OU', 'corphylo', 'phylolm'),
+    mutate(model = ifelse(phy_model == 'OU', 'cor_phylo', 'phylolm'),
            P = ifelse(X %in% c('lambda', 'd', 'alpha'), "–", sprintf("$%.3f$", P)),
            # Explicitly ordering parameters:
            X = factor(X, 
@@ -146,7 +143,7 @@ plm_mods <- list(absorp = read_rds('output/models_absorp.rds'),
                diet = read_rds('output/models_diet.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
-cp_mod <- read_rds('output/models_corphylo.rds')
+cp_mod <- read_rds('output/models_cor_phylo.rds')
 ```
 
 

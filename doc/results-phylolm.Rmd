@@ -24,7 +24,7 @@ $\lambda$ for Pagel's lambda and $\alpha$ for Ornstein-Uhlenbeck.
 
 
 ```{r results-spp-summs} 
-filter(summ_df, pos == 'all', 
+filter(summary_df, pos == 'all', 
                           model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
     mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y) %>% clean_Y(track_log = FALSE),
@@ -38,7 +38,7 @@ filter(summ_df, pos == 'all',
 
 
 ```{r results-prox-summs} 
-filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>% 
+filter(summary_df, pos == 'prox', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, phy_model, parameter) %>%
     mutate(Y = ifelse(Y == lag(Y, default = 'XXX') & 
                           phy_model == lag(phy_model, default = 'XXX'),
@@ -60,7 +60,7 @@ filter(summ_df, pos == 'prox', model == 'phylolm')$data[[1]] %>%
 
 
 ```{r results-med-summs} 
-filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
+filter(summary_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
     mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y) %>% clean_Y(),
            parameter = greekify(parameter)) %>% 
@@ -73,7 +73,7 @@ filter(summ_df, pos == 'med', model == 'phylolm')$data[[1]] %>%
 
 
 ```{r results-dist-summs}
-filter(summ_df, pos == 'dist', model == 'phylolm')$data[[1]] %>% 
+filter(summary_df, pos == 'dist', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
     mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y) %>% clean_Y(),
            parameter = greekify(parameter)) %>% 
@@ -123,9 +123,9 @@ three coefficient estimates.
 
 
 ```{r results-influence-jack, cache = FALSE}
-# (See `R/model_summaries.R` for the `jack_phylolm` function.)
-int_jack <- jack_phylolm(plm_mods$spp$log_intestinal_length, 
-                         phy = get_tr('spp'))
+# (See `R/model_summaries.R` for the `jack` function.)
+int_jack <- jack(plm_mods$spp$log_intestinal_length, 
+                 phy = get_tr('spp'))
 ```
 
 
