@@ -1,7 +1,7 @@
 Test whether to include log\_mass in phylogenetic linear regression
 ================
 Lucas Nell
-09 Jun 2018
+10 Jun 2018
 
 This file determines whether to use `log_mass` in `phylolm` regressions
 and `cor_phylo` correlations. These analyses take about half an hour to
@@ -203,7 +203,7 @@ opts <- list(traits = quote(list(log_clear, log_sef)),
              meas_errors = quote(list(log_clear_se, log_sef_se)),
              species = quote(species), data = quote(clear_df_bm),
              phy = quote(clear_tr_bm), boot = 2000,
-             method = "nelder-mead-nlopt", constrain_d = TRUE,
+             method = "nelder-mead-nlopt",
              max_iter = 1e6, keep_boots = "fail")
 # Now separating into different lists:
 opts <- list(clear = c(opts, covariates = quote(list(log_clear = log_mass))),
@@ -217,9 +217,9 @@ clear_sef <- map(c("clear", "sef"), ~ do.call(cor_phylo, opts[[.x]])) %>%
 
 P-values for including body mass for clearance and SEF, respectively:
 
-    ## P = 0.982
+    ## P = 0.995
 
-    ## P = 0.748
+    ## P = 0.776
 
 # Session info
 
@@ -235,7 +235,7 @@ This outlines the package versions I used for this
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2018-06-09
+    ##  date     2018-06-10
 
     ## Packages -----------------------------------------------------------------
 

@@ -253,7 +253,7 @@ opts <- list(traits = quote(list(log_clear, log_sef)),
              meas_errors = quote(list(log_clear_se, log_sef_se)),
              species = quote(species), data = quote(clear_df_bm),
              phy = quote(clear_tr_bm), boot = 2000,
-             method = "nelder-mead-nlopt", constrain_d = TRUE,
+             method = "nelder-mead-nlopt",
              max_iter = 1e6, keep_boots = "fail")
 # Now separating into different lists:
 opts <- list(clear = c(opts, covariates = quote(list(log_clear = log_mass))),
