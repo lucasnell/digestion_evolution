@@ -268,7 +268,7 @@ clear_sef <- cor_phylo(traits = list(log_sef, log_clear),
 Saving `cor_phylo` object:
 
 ``` r
-readr::write_rds(clear_sef, 'output/models_corphylo.rds')
+readr::write_rds(clear_sef, 'output/models_cor_phylo.rds')
 ```
 
 # Assembling all output into one table

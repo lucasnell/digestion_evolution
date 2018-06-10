@@ -43,7 +43,7 @@ diet_fit <- read_rds('output/inc_mass_diet_fit.rds')
 absorp_fit <- read_rds('output/inc_mass_absorp_fit.rds')
 spp_fits <- read_rds('output/inc_mass_spp_fits.rds')
 pos_fits <- read_rds('output/inc_mass_pos_fits.rds')
-clear_sef <- read_rds('output/inc_mass_corphylo.rds')
+clear_sef <- read_rds('output/inc_mass_cor_phylo.rds')
 ```
 
 
@@ -274,8 +274,8 @@ cat(sprintf('P = %.3f', pval(clear_sef$sef, "B0")["log_sef_log_mass",]))
 ```
 
 
-```{r corphylo_write, echo = FALSE, eval = run_models}
-write_rds(clear_sef, 'output/inc_mass_corphylo.rds')
+```{r cor_phylo_write, echo = FALSE, eval = run_models}
+write_rds(clear_sef, 'output/inc_mass_cor_phylo.rds')
 ```
 
 
