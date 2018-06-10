@@ -13,11 +13,14 @@ editor_options:
 ```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath(".."))
+# Change this to TRUE if you want to run the models instead of getting them from 
+# RDS files:
+run_models <- FALSE
 ```
 
 
 This file determines whether to use `log_mass` in `phylolm` regressions and 
-`corphylo` correlations.
+`cor_phylo` correlations.
 These analyses take about half an hour to run.
 
 All p-values below are for whether the coefficient for log(mass) are not equal to zero.
@@ -31,11 +34,11 @@ suppressPackageStartupMessages({
     library(purrr)
     library(phylolm)
     library(ape)
+    library(phyr)
 })
-suppressMessages(devtools::load_all('corphyloCpp'))
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ```
-```{r load_models, echo = FALSE, eval = TRUE}
+```{r load_models, echo = FALSE, eval = !run_models}
 diet_fit <- read_rds('output/inc_mass_diet_fit.rds')
 absorp_fit <- read_rds('output/inc_mass_absorp_fit.rds')
 spp_fits <- read_rds('output/inc_mass_spp_fits.rds')
@@ -71,12 +74,12 @@ clear_tr <- get_tr('clear')
 
 `phylolm` call and output:
 
-```{r sef_diet, eval = FALSE}
+```{r sef_diet, eval = run_models}
 set.seed(29851644)
 diet_fit <- phylolm(log_sef ~ diet + log_mass, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
 ```
-```{r write_diet, echo = FALSE, eval = FALSE}
+```{r write_diet, echo = FALSE, eval = run_models}
 write_rds(diet_fit, 'output/inc_mass_diet_fit.rds')
 ```
 
@@ -92,14 +95,14 @@ cat(sprintf('P = %.3f\n', pval(diet_fit, 'log_mass')))
 
 `phylolm` call and output:
 
-```{r absorp_clade, eval = FALSE}
+```{r absorp_clade, eval = run_models}
 set.seed(1092141389)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
             model = 'lambda', boot = 2000)
 )
 ```
-```{r write_absorp, echo = FALSE, eval = FALSE}
+```{r write_absorp, echo = FALSE, eval = run_models}
 write_rds(absorp_fit, 'output/inc_mass_absorp_fit.rds')
 ```
 
@@ -115,7 +118,7 @@ cat(sprintf('P = %.3f\n', pval(absorp_fit, 'log_mass')))
 
 `phylolm` calls:
 
-```{r sp_analyses, eval = FALSE}
+```{r sp_analyses, eval = run_models}
 spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
             "log_total_enterocytes")
 set.seed(357885189)
@@ -131,7 +134,7 @@ spp_fits <- lapply(
     })
 names(spp_fits) <- spp_ys
 ```
-```{r write_spp, echo = FALSE, eval = FALSE}
+```{r write_spp, echo = FALSE, eval = run_models}
 write_rds(spp_fits, 'output/inc_mass_spp_fits.rds')
 ```
 
@@ -151,7 +154,7 @@ cbind(P = sapply(spp_fits, pval, 'log_mass'))
 `phylolm` calls:
 
 
-```{r pos_analyses, eval = FALSE}
+```{r pos_analyses, eval = run_models}
 pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
             'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
 set.seed(632929430)
@@ -165,15 +168,15 @@ pos_fits <- lapply(
             function(y) {
                 f <- paste(y, ' ~ clade + log_mass')
                 arg_list <- list(
-                    as.formula(f),
+                    formula = as.formula(f),
                     data = as.name(paste0(pos, "_df")),
                     phy = as.name("tr"), model = 'lambda')
                 # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
                 LL_nostart <- suppressWarnings(do.call("phylolm", arg_list))$logLik
-                LL_wstart <- suppressWarnings(do.call(
-                    "phylolm", c(arg_list, starting.value = 0.1)))$logLik
-                if (LL_wstart > LL_nostart) arg_list <- c(arg_list, starting.value = 0.1)
+                arg_list_wstart <- c(arg_list, starting.value = quote(list(lambda = 0.1)))
+                LL_wstart <- suppressWarnings(do.call("phylolm", arg_list_wstart))$logLik
+                if (LL_wstart > LL_nostart) arg_list <- arg_list_wstart
                 # Adding number of bootstrap replicates
                 arg_list <- c(arg_list, boot = 2000)
                 # Now call phylolm
@@ -183,7 +186,7 @@ pos_fits <- lapply(
 names(pos_fits) <- seg_types
 for (i in 1:length(pos_fits)) names(pos_fits[[i]]) <- pos_ys; rm(i)
 ```
-```{r write_pos, echo = FALSE, eval = FALSE}
+```{r write_pos, echo = FALSE, eval = run_models}
 write_rds(pos_fits, 'output/inc_mass_pos_fits.rds')
 ```
 
@@ -196,7 +199,7 @@ include_df <- lapply(
     function(p) {
         data_frame(pos = p, y = names(pos_fits[[p]]),
                    include = sapply(pos_fits[[p]], pval, 
-                                    .parameters = 'log_mass') < 0.05)
+                                    params = 'log_mass') < 0.05)
     }) %>% 
     bind_rows
 write_csv(include_df, 'output/include_mass_pos.csv')
@@ -209,11 +212,11 @@ P-values:
 
 ```{r pos_analyses_pvals, echo = FALSE}
 cat("proximal:\n")
-cbind(P = sapply(pos_fits$prox, pval, .parameters = 'log_mass'))
+cbind(P = sapply(pos_fits$prox, pval, params = 'log_mass'))
 cat("medial:\n")
-cbind(P = sapply(pos_fits$med, pval, .parameters = 'log_mass'))
+cbind(P = sapply(pos_fits$med, pval, params = 'log_mass'))
 cat("distal:\n")
-cbind(P = sapply(pos_fits$dist, pval, .parameters = 'log_mass'))
+cbind(P = sapply(pos_fits$dist, pval, params = 'log_mass'))
 ```
 
 
@@ -225,71 +228,53 @@ cbind(P = sapply(pos_fits$dist, pval, .parameters = 'log_mass'))
 
 # `Clearance` and `SEF`
 
-In `corphylo`, you can input a `U` object if one or more of your variables of interest
-has a covariate that might be having confounding effects.
-`U` is a list of length `p`, where `p` is the number of variables you're interested 
-in getting correlations between (in my case, `p = 2`).
-If `U[[i]]` is `NULL`, then variable `i` is considered to not have a covariate, while
-if `U[[i]]` is a matrix, then each column in that matrix is considered a covariate
-for variable `i`.
+In `cor_phylo`, you can include covariate(s) that might be having confounding effects.
+
 Below, I'm trying out whether either clearance or SEF needs body mass as a covariate
-by including a 1-column matrix of body mass values in the `U` object, first for
-the position associated with SEF, then for the position associated with clearance.
-
-P-values in this section are for whether the coefficient for the `U` 
-matrix is not zero.
+by including it separately for clearance, then for SEF.
 
 
 
-```{r clear_sef, eval = FALSE}
-# Function to retrieve the U coefficient(s) from a corphylo object
-get_U <- function(cp_obj) {
-    rn <- rownames(cp_obj$B)[grepl('\\.1', rownames(cp_obj$B))]
-    uc <- matrix(as.numeric(cp_obj$B[rn,]), nrow = 1)
-    colnames(uc) <- rn
-    return(uc)
-}
-# Matrix of mean SEF and clearance values by species
-Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
-# Matrix of standard error SEF and clearance values by species
-MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
-
+```{r clear_sef, eval = run_models}
+# Making data frame with all info, including measurement errors:
+clear_df_bm <- clear_df
+clear_df_bm$log_clear_se <- clear_se_df$log_clear
+clear_df_bm$log_sef_se <- clear_se_df$log_sef
 # For this comparison, I have to remove one row that doesn't have body mass
-Xmat <- Xmat[!is.na(clear_df$log_mass),]
-MEmat <- MEmat[!is.na(clear_df$log_mass),]
-
-# Now creating two U objects, one for having it as a covariate for SEF, 
-# then another for clearance
-U_sef <- list( cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]), NULL)
-rownames(U_sef[[1]]) <- rownames(Xmat)
-U_clear <- list(NULL, cbind(clear_df$log_mass[!is.na(clear_df$log_mass)]))
-rownames(U_clear[[2]]) <- rownames(Xmat)
+clear_df_bm <- clear_df_bm[!is.na(clear_df$log_mass),]
 
 # Phylogenetic tree, removing species with no body mass data
-clear_tr <- ape::drop.tip(
+clear_tr_bm <- ape::drop.tip(
     clear_tr,
-    tip = clear_tr$tip.label[!clear_tr$tip.label %in% rownames(Xmat)])
+    tip = clear_tr$tip.label[!clear_tr$tip.label %in% clear_df_bm$species])
 
-# corphylo_cpp run with bootstrapping (takes ~1 min each)
+# Options that are the same for both calls
+opts <- list(traits = quote(list(log_clear, log_sef)),
+             meas_errors = quote(list(log_clear_se, log_sef_se)),
+             species = quote(species), data = quote(clear_df_bm),
+             phy = quote(clear_tr_bm), boot = 2000,
+             method = "nelder-mead-nlopt", constrain_d = TRUE,
+             max_iter = 1e6, keep_boots = "fail")
+# Now separating into different lists:
+opts <- list(clear = c(opts, covariates = quote(list(log_clear = log_mass))),
+             sef = c(opts, covariates = quote(list(log_sef = log_mass))))
+
+# cor_phylo run with bootstrapping (takes ~1.5 min)
 set.seed(1844365955)
-clear_sef <- list(
-    sef = corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = U_sef, 
-                       boot = 2000, n_cores = 4, boot_out = get_U),
-    clear = corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, U = U_clear, 
-                       boot = 2000, n_cores = 4, boot_out = get_U))
+clear_sef <- map(c("clear", "sef"), ~ do.call(cor_phylo, opts[[.x]])) %>% 
+    setNames(c("clear", "sef"))
 ```
 
 
-P-values for including body mass for SEF and clearance, respectively:
+P-values for including body mass for clearance and SEF, respectively:
 
 ```{r clear_sef_pval, echo = FALSE}
-cat(sprintf('P = %.3f', pval(clear_sef$sef)))
-cat(sprintf('P = %.3f', pval(clear_sef$clear)))
+cat(sprintf('P = %.3f', pval(clear_sef$clear, "B0")["log_clear_log_mass",]))
+cat(sprintf('P = %.3f', pval(clear_sef$sef, "B0")["log_sef_log_mass",]))
 ```
 
-Writing this object to an `rds` file for later.
 
-```{r corphylo_write, eval = FALSE}
+```{r corphylo_write, echo = FALSE, eval = run_models}
 write_rds(clear_sef, 'output/inc_mass_corphylo.rds')
 ```
 
