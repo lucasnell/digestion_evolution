@@ -22,7 +22,7 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 This file creates the figures from the main portion of the paper.
 In the code below, note that functions `get_df`, `get_tr`, `filter_tr`, and `cp_mat`
 come from [`R/get_data.R`](R/get_data.R) and 
-functions `add_title`, `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_corphylo`, and
+functions `add_title`, `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_cor_phylo`, and
 `predict_ci` come from [`R/model_summaries.R`](R/model_summaries.R).
 See those files for these functions' documentation.
 
@@ -39,13 +39,12 @@ suppressPackageStartupMessages({
     library(ggplot2)
     library(grid)
     library(gridExtra)
+    library(phyr)
 })
 # Functions `get_df`, `get_tr`, `filter_tr`, `cp_mat`
 source('R/get_data.R')
 # Functions `pval`, `ci`, `summ_df`, `jack_phylolm`, and `predict_ci`
 source('R/model_summaries.R')
-# Custom version of ape::corphylo
-suppressMessages(devtools::load_all('corphyloCpp'))
 
 # setting default `ggplot2` theme
 theme_set(theme_classic() %+replace% 

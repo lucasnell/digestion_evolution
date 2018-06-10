@@ -225,7 +225,7 @@ summ_df <- function(mod, .pos = NA) {
 #' The portion of this function dealing with factors is particularly non-generalizable,
 #' plus it assumes an intercept is estimated.
 #'
-#' @param plm A \code{phylolm} object.
+#' @param mod A \code{phylolm} object.
 #' @param phy A \code{phylo} object, the same one that was used to fit the original
 #'     \code{phylolm} model.
 #'
@@ -236,14 +236,16 @@ summ_df <- function(mod, .pos = NA) {
 #' 
 #' @export
 #'
-jack_phylolm <- function(plm, phy) {
+jack <- function(mod, ...) UseMethod("jack")
+
+jack.phylolm <- function(mod, phy) {
     
-    return_fxn <- function(.plm) return(t(coef(.plm)))
+    return_fxn <- function(.mod) return(t(coef(.mod)))
     
-    X_names <- gsub("\\s+", "", unlist(strsplit(paste(plm$formula)[3], '\\+|\\*')))
+    X_names <- gsub("\\s+", "", unlist(strsplit(paste(mod$formula)[3], '\\+|\\*')))
     
-    df_ <- cbind(plm$X[,-1], as.data.frame(plm$y))
-    colnames(df_)[length(colnames(df_))] <- paste(plm$formula)[2]
+    df_ <- cbind(mod$X[,-1], as.data.frame(mod$y))
+    colnames(df_)[length(colnames(df_))] <- paste(mod$formula)[2]
     # Dealing with factors
     for (xn in X_names) {
         ii <- which(grepl(xn, colnames(df_)))
@@ -264,7 +266,7 @@ jack_phylolm <- function(plm, phy) {
         }
     }; rm(xn, ii, new_col)
     
-    comp_ <- return_fxn(plm)
+    comp_ <- return_fxn(mod)
     
     jack_df <- lapply(1:nrow(df_), 
                       function(i) {
@@ -273,9 +275,9 @@ jack_phylolm <- function(plm, phy) {
                           .to_drop <- .to_drop[!.to_drop %in% rownames(.df)]
                           .tr <- ape::drop.tip(phy, .to_drop)
                           suppressWarnings(
-                              .plm <- update(plm, data = .df, phy = .tr, boot = 0)
+                              .mod <- update(mod, data = .df, phy = .tr, boot = 0)
                           )
-                          return(return_fxn(.plm) - comp_)
+                          return(return_fxn(.mod) - comp_)
                       }) %>% 
         do.call(what = rbind) %>% 
         as_tibble %>% 
@@ -310,23 +312,23 @@ jack_phylolm <- function(plm, phy) {
 #' 
 #' @export
 #'
-jack_cor_phylo <- function(mod) {
+jack.cor_phylo <- function(mod) {
     
     comp_ <- mod$corrs[1,2]
     call_ <- mod$call
     call_$boot <- 0
-    call_$data <- quote(clear_df_bm_)
-    call_$phy <- quote(clear_tr_bm_)
+    call_$data <- quote(clear_df_)
+    call_$phy <- quote(clear_tr_)
     
     n <- nrow(eval(mod$call$data))
     
     out <- rep(list(NA), n)
     
     for (i in 1:n) {
-        clear_df_bm_ <- eval(mod$call$data)[-i,]
+        clear_df_ <- eval(mod$call$data)[-i,]
         to_drop_ <- eval(mod$call$phy)$tip.label
-        to_drop_ <- to_drop_[!to_drop_ %in% clear_df_bm_$species]
-        clear_tr_bm_ <- ape::drop.tip(eval(mod$call$phy), to_drop_)
+        to_drop_ <- to_drop_[!to_drop_ %in% clear_df_$species]
+        clear_tr_ <- ape::drop.tip(eval(mod$call$phy), to_drop_)
         cp_ <- eval(call_)
         out[[i]] <- c(influence = cp_$corrs[1,2] - comp_)
     }
