@@ -15,12 +15,12 @@ editor_options:
 ```{r setup, include = FALSE, cache = FALSE, purl = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath(".."))
+run_models <- FALSE
 ```
 
 
 This file conducts the linear regressions using `phylolm::phylolm` and 
-computes correlations using a modified version of `ape::corphylo` that does 
-parametric bootstrapping.
+computes correlations using `phyr::cor_phylo`.
 
 
 
@@ -32,9 +32,8 @@ suppressPackageStartupMessages({
     library(purrr)
     library(phylolm)
     library(ape)
+    library(phyr)
 })
-# A version of ape::corphylo that does parametric bootstrapping
-suppressMessages(devtools::load_all('corphyloCpp'))
 invisible(sapply(list.files('R', '*.R', full.names = TRUE), source))
 ```
 
@@ -75,7 +74,7 @@ The following sections are regressions using `phylolm::phylolm`.
 
 `phylolm` call:
 
-```{r sef_diet, eval = FALSE}
+```{r sef_diet, eval = run_models}
 set.seed(581120)
 diet_fit <- phylolm(log_sef ~ diet, data = spp_df, phy = tr,
                     model = 'lambda', boot = 2000)
@@ -83,10 +82,10 @@ diet_fit <- phylolm(log_sef ~ diet, data = spp_df, phy = tr,
 
 Saving output:
 
-```{r save_diet, eval = FALSE, purl = FALSE}
+```{r save_diet, eval = run_models, purl = FALSE}
 readr::write_rds(diet_fit, 'output/models_diet.rds')
 ```
-```{r sef_diet_load, echo = FALSE, purl = FALSE}
+```{r sef_diet_load, echo = FALSE, purl = FALSE, eval = !run_models}
 diet_fit <- readr::read_rds('output/models_diet.rds')
 ```
 
@@ -99,7 +98,7 @@ where `total intestinal surface = NSA * SEF`
 
 `phylolm` call:
 
-```{r absorp_clade, eval = FALSE}
+```{r absorp_clade, eval = run_models}
 set.seed(454094511)
 absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
     phylolm(log_absorp ~ clade + log_mass, data = absorp_df, phy = absorp_tr, 
@@ -110,11 +109,11 @@ absorp_fit <- suppressWarnings(  # gives warning about lambda being very low
 
 Saving output:
 
-```{r save_absorp, eval = FALSE, purl = FALSE}
+```{r save_absorp, eval = run_models, purl = FALSE}
 readr::write_rds(absorp_fit, 'output/models_absorp.rds')
 ```
 
-```{r absorp_load, echo = FALSE, purl = FALSE}
+```{r absorp_load, echo = FALSE, purl = FALSE, eval = !run_models}
 absorp_fit <- readr::read_rds('output/models_absorp.rds')
 ```
 
@@ -143,7 +142,7 @@ spp_ys <- c("log_intestinal_length", "log_nsa", "log_vill_surface_area",
 `phylolm` calls:
 
 
-```{r sp_analyses, eval = FALSE}
+```{r sp_analyses, eval = run_models}
 # (takes ~7.5 min)
 set.seed(88754829)
 spp_fits <- lapply(
@@ -161,10 +160,10 @@ names(spp_fits) <- spp_ys
 
 Saving output:
 
-```{r save_spp, eval = FALSE, purl = FALSE}
+```{r save_spp, eval = run_models, purl = FALSE}
 readr::write_rds(spp_fits, 'output/models_spp.rds')
 ```
-```{r spp_load, echo = FALSE, purl = FALSE}
+```{r spp_load, echo = FALSE, purl = FALSE, eval = !run_models}
 spp_fits <- readr::read_rds('output/models_spp.rds')
 ```
 
@@ -209,7 +208,7 @@ include_mass
 
 `phylolm` call:
 
-```{r pos_analyses, eval = FALSE}
+```{r pos_analyses, eval = run_models}
 # (takes ~32 min)
 set.seed(25413535)
 pos_fits <- lapply(
@@ -231,11 +230,9 @@ pos_fits <- lapply(
                 # Some models don't find the peak likelihood unless specifying a
                 # starting value of 0.1.
                 LL_nostart <- suppressWarnings(do.call("phylolm", arg_list))$logLik
-                LL_wstart <- suppressWarnings(do.call(
-                    "phylolm", c(arg_list, starting.value = 0.1)))$logLik
-                if (LL_wstart > LL_nostart) {
-                    arg_list <- c(arg_list, starting.value = 0.1)
-                }
+                arg_list_wstart <- c(arg_list, starting.value = quote(list(lambda = 0.1)))
+                LL_wstart <- suppressWarnings(do.call("phylolm", arg_list_wstart))$logLik
+                if (LL_wstart > LL_nostart) arg_list <- arg_list_wstart
                 arg_list <- c(arg_list, boot = 2000)
                 # Now create the final phylolm object
                 suppressWarnings(do.call("phylolm", arg_list))
@@ -259,7 +256,7 @@ Thus the model likely had convergence issues using Pagel's lambda, so I'm
 replacing the original model with one using the OU error model below.
 I'm saving the original one to report it, too.
 
-```{r pos_analyses_crypt_width_prox, eval = FALSE}
+```{r pos_analyses_crypt_width_prox, eval = run_models}
 pos_fits$prox$crypt_width_pagel <- pos_fits$prox$crypt_width
 prox_df <- get_df('pos', .pos = 'prox')
 set.seed(1340481016)
@@ -270,10 +267,10 @@ pos_fits$prox$crypt_width <- update(pos_fits$prox$crypt_width,
 
 Saving output:
 
-```{r save_pos, eval = FALSE, purl = FALSE}
+```{r save_pos, eval = run_models, purl = FALSE}
 readr::write_rds(pos_fits, 'output/models_pos.rds')
 ```
-```{r pos_load, echo = FALSE, purl = FALSE}
+```{r pos_load, echo = FALSE, purl = FALSE, eval = !run_models}
 pos_fits <- readr::read_rds('output/models_pos.rds')
 ```
 
@@ -288,16 +285,16 @@ pos_fits <- readr::read_rds('output/models_pos.rds')
 
 
 
-# `corphylo`
+# `cor_phylo`
 
 From the original manuscript: 
 
 > ... we used reduced major axis regression (model II regression)... because both 
 > variables [X and Y] were subject to error
 
-Instead of an RMA regression, I'll be using a modified version of `ape::corphylo` 
-that can conduct parametric bootstrapping.
-P-values are calculated using these bootstrap replicates.
+Instead of an RMA regression, I'll be using `phyr::cor_phylo`, which is similar to
+`ape::corphylo` but faster and can conduct parametric bootstrapping.
+P-values are calculated using bootstrap replicates.
 
 I used the same P-values to determine that I do not need to use `log_mass` as
 an independent variable for any of these fits
@@ -306,8 +303,8 @@ an independent variable for any of these fits
 All variables under this section are log-transformed.
 
 
-```{r corphylo_load, echo = FALSE}
-# Load all corphylo objects
+```{r cor_phylo_load, echo = FALSE, eval = !run_models}
+# Load all cor_phylo objects
 clear_sef <- readr::read_rds('output/models_corphylo.rds')
 ```
 
@@ -317,19 +314,24 @@ clear_sef <- readr::read_rds('output/models_corphylo.rds')
 Clearance = "paracellular probe L-arabinose clearance"
 
 
-```{r clear_sef, eval = FALSE}
-Xmat <- cp_mat(clear_df, c('log_sef', 'log_clear'))
-MEmat <- cp_mat(clear_se_df, c('log_sef', 'log_clear'))
+```{r clear_sef, eval = run_models}
+# Making data frame with both means and SEs:
+clear_sef_df <- bind_cols(clear_df %>% select(species, log_sef, log_clear),
+                          clear_se_df %>% select(log_sef, log_clear) %>% 
+                              rename(log_sef_se = log_sef, log_clear_se = log_clear))
 
 set.seed(1844365955)
-clear_sef <- corphylo_cpp(X = Xmat, phy = clear_tr, SeM = MEmat, 
-                          boot = 2000, n_cores = 4)
+clear_sef <- cor_phylo(traits = list(log_sef, log_clear),
+                       meas_errors = list(log_sef_se, log_clear_se),
+                       species = species, phy = clear_tr, data = clear_sef_df,
+                       method = "nelder-mead-nlopt",
+                       boot = 2000, max_iter = 1e6)
 ```
 
 
-Saving `corphylo` object:
+Saving `cor_phylo` object:
 
-```{r save_corphylo, eval = FALSE}
+```{r save_cor_phylo, eval = run_models}
 readr::write_rds(clear_sef, 'output/models_corphylo.rds')
 ```
 
@@ -340,7 +342,7 @@ readr::write_rds(clear_sef, 'output/models_corphylo.rds')
 # Assembling all output into one table
 
 
-I ran `summ_df` on all models (both `phylolm` and `corphylo`) above.
+I ran `summ_df` on all models (both `phylolm` and `cor_phylo`) above.
 This function summarizes both of these object classes into a single data frame.
 See [`R/model_summaries.R`](R/model_summaries.R) for more info.
 
@@ -354,7 +356,7 @@ mod_summaries <- bind_rows(
             lapply(names(pos_fits), function(p) {
                 bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
             })),
-        summ_df(clear_sef, .corr_pars = c('log_sef', 'log_clear'))
+        summ_df(clear_sef)
         ))
 ```
 
