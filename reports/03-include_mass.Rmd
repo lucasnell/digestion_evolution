@@ -253,17 +253,138 @@ opts <- list(traits = quote(list(log_clear, log_sef)),
              meas_errors = quote(list(log_clear_se, log_sef_se)),
              species = quote(species), data = quote(clear_df_bm),
              phy = quote(clear_tr_bm), boot = 2000,
-             method = "nelder-mead-nlopt",
+             method = "nelder-mead-r",
+             constrain_d = TRUE,
              max_iter = 1e6, keep_boots = "fail")
 # Now separating into different lists:
 opts <- list(clear = c(opts, covariates = quote(list(log_clear = log_mass))),
              sef = c(opts, covariates = quote(list(log_sef = log_mass))))
 
-# cor_phylo run with bootstrapping (takes ~1.5 min)
-set.seed(1844365955)
-clear_sef <- map(c("clear", "sef"), ~ do.call(cor_phylo, opts[[.x]])) %>% 
-    setNames(c("clear", "sef"))
+# # cor_phylo run with bootstrapping (takes ~1.5 min)
+# set.seed(1844365955)
+# clear_sef <- map(c("clear", "sef"), ~ do.call(cor_phylo, opts[[.x]])) %>% 
+#     setNames(c("clear", "sef"))
+# # readr::write_rds(clear_sef, "~/Desktop/clear_sef.rds")
+clear_sef <- readr::read_rds("~/Desktop/clear_sef.rds")
 ```
+
+
+```{r cor_phylo_refits}
+
+source(textConnection(readLines("reports/03-include_mass.Rmd")[30:39]))
+source(textConnection(readLines("reports/03-include_mass.Rmd")[53:67]))
+source(textConnection(readLines("reports/03-include_mass.Rmd")[239:268]))
+
+
+
+
+
+
+cp_obj <- clear_sef$clear
+
+new_call <- cp_obj$call
+new_call$boot <- NULL
+new_call$keep_boots <- NULL
+
+data <- eval(new_call$data)
+phy <- phyr:::check_phy(eval(new_call$phy))
+
+# If a character, convert to an expression before evaluating in cp_get_species():
+spp_vec <- phyr:::cp_get_species(new_call$species, data, phy)
+
+phy_order <- match(phy$tip.label, spp_vec)
+X <- phyr:::extract_traits(new_call$traits, phy_order, data)
+trait_names <- colnames(X)
+U <- phyr:::call_arg(new_call, "covariates")
+U <- phyr:::extract_covariates(U, phy_order, trait_names, data)
+M <- phyr:::call_arg(new_call, "meas_errors")
+M <- phyr:::extract_meas_errors(M, phy_order, trait_names, data)
+
+species <- phy$tip.label
+
+new_call$traits <- quote(X)
+new_call$species <- quote(species)
+new_call$phy <- quote(phy)
+new_call$covariates <- quote(U)
+new_call$meas_errors <- quote(M)
+new_call$data <- NULL
+
+# new_args <- list(...)
+new_args <- list(rcond_threshold = 1e-3)
+for (x in names(new_args)) {
+    new_call[[x]] <- new_args[[x]]
+}
+
+new_cps <- as.list(rep(NA, length(cp_obj$bootstrap$inds)))
+
+for (i in 1:length(cp_obj$bootstrap$inds)) {
+    
+    for (j in 1:ncol(X)) {
+        X[,j] <- cp_obj$bootstrap$mats[[i]][,j]
+    }
+    new_cps[[i]] <- eval(new_call)
+    
+    new_cps[[i]]$call$traits <- cp_obj$call$traits
+    new_cps[[i]]$call$species <- cp_obj$call$species
+    new_cps[[i]]$call$phy <- cp_obj$call$phy
+    new_cps[[i]]$call$covariates <- cp_obj$call$covariates
+    new_cps[[i]]$call$meas_errors <- cp_obj$call$meas_errors
+    new_cps[[i]]$call$data <- cp_obj$call$data
+}
+
+class(new_cps) <- c(class(new_cps), "cp_refits")
+
+
+
+
+for (x in c("clear", "sef")) {
+    opts[[x]]$data = quote(clear_df_bm_)
+    opts[[x]]$rcond_threshold <- 1e-3
+    opts[[x]]$boot <- NULL
+    opts[[x]]$keep_boots <- NULL
+}; rm(x)
+
+clear_df_bm_ <- clear_df_bm
+x <- "clear"
+# How many intially failed to converge?
+clear_sef[[x]]$bootstrap$mats %>% length()
+# Re-fit ones that failed
+clear_refits <- map(clear_sef[[x]]$bootstrap$mats,
+       function(X) {
+           for (i in 1:ncol(X)) {
+               clear_df_bm_[, paste(opts[[x]]$traits)[-1][i]] <- X[,i]
+           }
+           do.call(cor_phylo, opts[[x]])
+       })
+
+# How many still failed?
+map_lgl(clear_refits, ~ .x$convcode != 0) %>% 
+    sum()
+
+still_failed <- map_lgl(clear_refits, ~ .x$convcode != 0) %>% 
+    which()
+
+for (x in c("clear", "sef")) {
+    opts[[x]]$rcond_threshold <- 5e-3
+}; rm(x)
+
+x <- "sef"
+map(still_failed, 
+    function(i) {
+        X <- clear_sef[[x]]$bootstrap$mats[[i]]
+        for (i in 1:ncol(X)) {
+            clear_df_bm_[, paste(opts[[x]]$traits)[-1][i]] <- X[,i]
+        }
+        do.call(cor_phylo, opts[[x]])
+    })
+
+
+
+
+
+
+```
+
 
 
 P-values for including body mass for clearance and SEF, respectively:
