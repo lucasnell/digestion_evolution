@@ -2,7 +2,9 @@
 
 This section displays all results from analyses using
 `phylolm::phylolm` `r citep(citation("phylolm"))` and 
-`phyr::cor_phylo` `r citep("10.1111/j.1365-2435.2009.01596.x")`.
+`phyr::cor_phylo`
+`r citep("10.1111/j.1365-2435.2009.01596.x")`.
+The `phyr` package is available from <http://github.com/daijiang/phyr>.
 
 In the tables below, the "estimate" column is the maximum likelihood estimate 
 for the specified parameter, 
@@ -144,6 +146,7 @@ plm_mods <- list(absorp = read_rds('output/models_absorp.rds'),
                pos = read_rds('output/models_pos.rds'),
                spp = read_rds('output/models_spp.rds'))
 cp_mod <- read_rds('output/models_cor_phylo.rds')
+cp_mod_refits <- read_rds('output/models_cor_phylo_refits.rds')
 ```
 
 
