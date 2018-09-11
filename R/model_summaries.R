@@ -15,7 +15,7 @@
 #' 
 #' @export
 #'
-pval <- function(mod, params) UseMethod("pval")
+pval <- function(mod, params, ...) UseMethod("pval")
 
 pval.phylolm <- function(mod, params = 'cladeBat') {
     if (length(mod$bootstrap) == 0) {
@@ -27,46 +27,32 @@ pval.phylolm <- function(mod, params = 'cladeBat') {
     return(out)
 }
 
-pval.cor_phylo <- function(mod, params) {
-    lower.to.upper.tri.inds <- function (n) {
-        n1 <- as.integer(n - 1)
-        if (n1 < 1) {
-            stop("'n' must be >= 2")
-        } else if (n1 == 1) {
-            1L
-        } else {
-            fxn <- function(k) cumsum(c(0L, (n - 2L):(n - k)))
-            rep(seq_len(n1), seq_len(n1)) + c(0L, unlist(lapply(2:n1, fxn)))
-        }
-    }
+pval.cor_phylo <- function(mod, params, refits = NULL) {
     
     if (length(mod$bootstrap) == 0) {
         stop("The input model must include bootstrap replicates.")
     }
     p_fun <- function(x) 2 * min(c(mean(x > 0), mean(x < 0)))
     
-    # Indices for failed convergences:
-    if (phyr:::call_arg(mod$call,"method") %in% c("nelder-mead-r", "sann")) {
-        f <- mod$bootstrap$inds[mod$bootstrap$codes != 0]
-    } else {
-        f <- mod$bootstrap$inds[mod$bootstrap$codes < 0]
-    }
-    if (length(f) == 0) f <- ncol(mod$bootstrap$d) + 1
+    # Create objects of bootstrap estimates (uses `mods` and `refits` objects):
+    phyr:::combine_boots(environment())
+    
     
     output <- rep(list(NA), length(params))
     for (i in 1:length(params)) {
         if (params[i] == "corrs") {
             
-            lowers <- lapply({1:(dim(mod$bootstrap$corrs)[3])}[-f],
+            lowers <- lapply({1:(dim(corrs)[3])},
                              function(i) {
-                                 logs <- lower.tri(mod$bootstrap$corrs[,,i])
-                                 mod$bootstrap$corrs[,,i][logs]
+                                 logs <- lower.tri(corrs[,,i])
+                                 corrs[,,i][logs]
                              })
             lowers <- do.call(rbind, lowers)
             
-            out <- matrix(-1, nrow(mod$bootstrap$corrs), ncol(mod$bootstrap$corrs))
+            out <- matrix(0, nrow(corrs), ncol(corrs))
             out[lower.tri(out)] <- apply(lowers, 2, p_fun)
-            out[upper.tri(out)] <- out[lower.tri(out)][lower.to.upper.tri.inds(ncol(out))]
+            out <- out + t(out)
+            diag(out) <- 1
             
             rownames(out) <- rownames(mod$corrs)
             colnames(out) <- colnames(mod$corrs)
@@ -74,22 +60,23 @@ pval.cor_phylo <- function(mod, params) {
             out <- NA
         } else if (params[i] == "B0") {
             
-            out <- cbind(apply(mod$bootstrap$B0[,-f,drop=FALSE], 1, p_fun))
+            out <- cbind(apply(B0, 1, p_fun))
             rownames(out) <- rownames(mod$B)
             colnames(out) <- "P-value"
             
         } else if (params[i] == "B_cov") {
             
-            lowers <- lapply({1:(dim(mod$bootstrap$B_cov)[3])}[-f],
+            lowers <- lapply({1:(dim(B_cov)[3])},
                              function(i) {
-                                 logs <- lower.tri(mod$bootstrap$B_cov[,,i])
-                                 mod$bootstrap$B_cov[,,i][logs]
+                                 logs <- lower.tri(B_cov[,,i])
+                                 B_cov[,,i][logs]
                              })
             lowers <- do.call(rbind, lowers)
             
-            out <- matrix(-1, nrow(mod$bootstrap$B_cov), ncol(mod$bootstrap$B_cov))
+            out <- matrix(0, nrow(B_cov), ncol(B_cov))
             out[lower.tri(out)] <- apply(lowers, 2, p_fun)
-            out[upper.tri(out)] <- out[lower.tri(out)][lower.to.upper.tri.inds(ncol(out))]
+            out <- out + t(out)
+            diag(out) <- 1
             
             rownames(out) <- rownames(mod$B_cov)
             colnames(out) <- colnames(mod$B_cov)
@@ -117,7 +104,7 @@ pval.cor_phylo <- function(mod, params) {
 #' 
 #' @export
 #'
-ci <- function(mod, params) UseMethod("ci")
+ci <- function(mod, params, ...) UseMethod("ci")
 
 ci.phylolm <- function(mod, params = "cladeBat") {
     
@@ -128,11 +115,11 @@ ci.phylolm <- function(mod, params = "cladeBat") {
     return(out)
 }
 
-ci.cor_phylo <- function(mod, params) {
+ci.cor_phylo <- function(mod, params, refits = NULL) {
     if (any(!params %in% c("corrs", "d", "B0", "B_cov"))) {
         stop("params can only be corrs, d, B0, or B_cov for cor_phylo.")
     }
-    out <- boot_ci(mod)
+    out <- boot_ci(mod, refits)
     output <- lapply(params, function(pp) out[[pp]])
     if (length(output) == 1) output <- output[[1]]
     return(output)
@@ -147,6 +134,7 @@ ci.cor_phylo <- function(mod, params) {
 #' @export
 #'
 phy_signal_str <- function(mod) {
+    stopifnot(inherits(mod, "phylolm"))
     switch(mod$model,
            OUfixedRoot = "alpha",
            OUrandomRoot = "alpha",
@@ -165,47 +153,57 @@ phy_signal_str <- function(mod) {
 #' @return
 #' @export
 #'
-#' @examples
-summ_df <- function(mod, .pos = NA) {
+summ_df <- function(mod, ...) UseMethod("summ_df")
+
+summ_df.phylolm <- function(mod, .pos = NA) {
     
-    if (inherits(mod, 'phylolm')) {
-        error_model <- mod$model
-        params <- names(coef(mod))[names(coef(mod)) != '(Intercept)']
-        estimates <- as.numeric(c(coef(mod)[params], mod$optpar))
-        params <- c(params, phy_signal_str(mod))
-        Y <- paste(mod$formula)[2]
-        .df <- as_data_frame(ci(mod, params))
-        P <- pval(mod, params)
-    } else if (inherits(mod, 'cor_phylo')) {
-        .corr_pars <- rownames(mod$d)
-        if (length(.corr_pars) > 2) stop("\nNot designed for >2 parameters.")
-        error_model <- "OU"
-        Y <- c(.corr_pars[1], .corr_pars)
-        params <- c(.corr_pars[2], rep('d', 2))
-        estimates <- c(mod$corrs[lower.tri(mod$corrs)], mod$d)
-        
-        corrs <- ci(mod, "corrs")
-        corrs <- cbind(lower = corrs[lower.tri(corrs)],
-                       upper = corrs[upper.tri(corrs)])
-        ds <- ci(mod, "d")
-        
-        .df <- as_data_frame(rbind(corrs, ds))
-        
-        P <- pval(mod, c("corrs", rep("d", length(.corr_pars))))
-        P <- c(lapply(P,
-                      function(x) {
-                          if (inherits(x, "matrix")) x[lower.tri(x)] else x
-                      }),
-               recursive = TRUE)
-        
-    } else {
-        stop("only for phylolm or cor_phylo objects")
-    }
+    error_model <- mod$model
+    params <- names(coef(mod))[names(coef(mod)) != '(Intercept)']
+    estimates <- as.numeric(c(coef(mod)[params], mod$optpar))
+    params <- c(params, phy_signal_str(mod))
+    Y <- paste(mod$formula)[2]
+    .df <- as_data_frame(ci(mod, params))
+    P <- pval(mod, params)
     
     .df <- .df %>%
         mutate(Y = Y, 
                X = params,
                pos = .pos,
+               phy_model = error_model,
+               value = estimates,
+               P = P) %>% 
+        select(Y, X, pos, phy_model, value, lower, upper, P)
+    
+    return(.df)
+}
+
+summ_df.cor_phylo <- function(mod, refits = NULL) {
+    
+    .corr_pars <- rownames(mod$d)
+    if (length(.corr_pars) > 2) stop("\nNot designed for >2 parameters.")
+    error_model <- "OU"
+    Y <- c(.corr_pars[1], .corr_pars)
+    params <- c(.corr_pars[2], rep('d', 2))
+    estimates <- c(mod$corrs[lower.tri(mod$corrs)], mod$d)
+    
+    corrs <- ci(mod, "corrs", refits)
+    corrs <- cbind(lower = corrs[lower.tri(corrs)],
+                   upper = corrs[upper.tri(corrs)])
+    ds <- ci(mod, "d", refits)
+    
+    .df <- as_data_frame(rbind(corrs, ds))
+    
+    P <- pval(mod, c("corrs", rep("d", length(.corr_pars))), refits)
+    P <- c(lapply(P,
+                  function(x) {
+                      if (inherits(x, "matrix")) x[lower.tri(x)] else x
+                  }),
+           recursive = TRUE)
+    
+    .df <- .df %>%
+        mutate(Y = Y, 
+               X = params,
+               pos = NA,
                phy_model = error_model,
                value = estimates,
                P = P) %>% 
@@ -313,6 +311,8 @@ jack.phylolm <- function(mod, phy) {
 #' @export
 #'
 jack.cor_phylo <- function(mod) {
+    
+    if (nrow(mod$corrs) != 2) stop("jack fxn only works for 2-trait cor_phylo objects")
     
     comp_ <- mod$corrs[1,2]
     call_ <- mod$call
