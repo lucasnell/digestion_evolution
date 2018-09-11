@@ -293,7 +293,8 @@ From the original manuscript:
 > variables [X and Y] were subject to error
 
 Instead of an RMA regression, I'll be using `phyr::cor_phylo`, which is similar to
-`ape::corphylo` but faster and can conduct parametric bootstrapping.
+`ape::corphylo` but faster, more accurate, and capable of conducting parametric
+bootstrapping.
 P-values are calculated using bootstrap replicates.
 
 I used the same P-values to determine that I do not need to use `log_mass` as
@@ -306,6 +307,7 @@ All variables under this section are log-transformed.
 ```{r cor_phylo_load, echo = FALSE, eval = !run_models}
 # Load all cor_phylo objects
 clear_sef <- readr::read_rds('output/models_cor_phylo.rds')
+cp_boot_refits <- readr::read_rds('output/models_cor_phylo_refits.rds')
 ```
 
 
@@ -319,20 +321,42 @@ Clearance = "paracellular probe L-arabinose clearance"
 clear_sef_df <- bind_cols(clear_df %>% select(species, log_sef, log_clear),
                           clear_se_df %>% select(log_sef, log_clear) %>% 
                               rename(log_sef_se = log_sef, log_clear_se = log_clear))
-
 set.seed(1844365955)
 clear_sef <- cor_phylo(traits = list(log_sef, log_clear),
                        meas_errors = list(log_sef_se, log_clear_se),
                        species = species, phy = clear_tr, data = clear_sef_df,
-                       method = "nelder-mead-nlopt",
+                       method = "nelder-mead-r", constrain_d = TRUE,
                        boot = 2000, max_iter = 1e6)
 ```
 
 
-Saving `cor_phylo` object:
+Some bootstrap replicates did not converge, so I'm refitting them using a higher
+threshold for the reciprocal condition number of two matrices inside the
+likelihood function.
+This makes the optimization process more strongly "bounce away" from badly
+conditioned matrices.
+From trial and error, two sets of refits (using `rcond_threshold` values of
+`1e-4` and `2e-3`) seem to make all the replicates converge and
+provide sensible results.
+
+
+```{r cor_phylo_refits, eval = run_models}
+cp_boot_refits <- list(
+        one = refit_boots(clear_sef, rcond_threshold = 1e-4),
+        two = NA
+    )
+cp_boot_refits$two <- refit_boots(clear_sef,
+                                inds = which(map_lgl(cp_boot_refits$one,
+                                                     ~ .x$convcode != 0)),
+                                rcond_threshold = 2e-3)
+```
+
+
+Saving `cor_phylo` and refits (class `cp_refits`) objects:
 
 ```{r save_cor_phylo, eval = run_models}
 readr::write_rds(clear_sef, 'output/models_cor_phylo.rds')
+readr::write_rds(cp_boot_refits, 'output/models_cor_phylo_refits.rds')
 ```
 
 
@@ -356,7 +380,7 @@ mod_summaries <- bind_rows(
             lapply(names(pos_fits), function(p) {
                 bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
             })),
-        summ_df(clear_sef)
+        summ_df(clear_sef, cp_boot_refits)
         ))
 ```
 

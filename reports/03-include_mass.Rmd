@@ -260,129 +260,45 @@ opts <- list(traits = quote(list(log_clear, log_sef)),
 opts <- list(clear = c(opts, covariates = quote(list(log_clear = log_mass))),
              sef = c(opts, covariates = quote(list(log_sef = log_mass))))
 
-# # cor_phylo run with bootstrapping (takes ~1.5 min)
-# set.seed(1844365955)
-# clear_sef <- map(c("clear", "sef"), ~ do.call(cor_phylo, opts[[.x]])) %>% 
-#     setNames(c("clear", "sef"))
-# # readr::write_rds(clear_sef, "~/Desktop/clear_sef.rds")
-clear_sef <- readr::read_rds("~/Desktop/clear_sef.rds")
+# cor_phylo run with bootstrapping (takes ~1.5 min)
+set.seed(1844365955)
+clear_sef <- map(c("clear", "sef"), ~ do.call(cor_phylo, opts[[.x]])) %>%
+    setNames(c("clear", "sef"))
+```
+
+```{r cor_phylo_write, echo = FALSE, eval = run_models}
+write_rds(clear_sef, 'output/inc_mass_cor_phylo.rds')
 ```
 
 
-```{r cor_phylo_refits}
-
-source(textConnection(readLines("reports/03-include_mass.Rmd")[30:39]))
-source(textConnection(readLines("reports/03-include_mass.Rmd")[53:67]))
-source(textConnection(readLines("reports/03-include_mass.Rmd")[239:268]))
-
-
-
-
-
-
-cp_obj <- clear_sef$clear
-
-new_call <- cp_obj$call
-new_call$boot <- NULL
-new_call$keep_boots <- NULL
-
-data <- eval(new_call$data)
-phy <- phyr:::check_phy(eval(new_call$phy))
-
-# If a character, convert to an expression before evaluating in cp_get_species():
-spp_vec <- phyr:::cp_get_species(new_call$species, data, phy)
-
-phy_order <- match(phy$tip.label, spp_vec)
-X <- phyr:::extract_traits(new_call$traits, phy_order, data)
-trait_names <- colnames(X)
-U <- phyr:::call_arg(new_call, "covariates")
-U <- phyr:::extract_covariates(U, phy_order, trait_names, data)
-M <- phyr:::call_arg(new_call, "meas_errors")
-M <- phyr:::extract_meas_errors(M, phy_order, trait_names, data)
-
-species <- phy$tip.label
-
-new_call$traits <- quote(X)
-new_call$species <- quote(species)
-new_call$phy <- quote(phy)
-new_call$covariates <- quote(U)
-new_call$meas_errors <- quote(M)
-new_call$data <- NULL
-
-# new_args <- list(...)
-new_args <- list(rcond_threshold = 1e-3)
-for (x in names(new_args)) {
-    new_call[[x]] <- new_args[[x]]
-}
-
-new_cps <- as.list(rep(NA, length(cp_obj$bootstrap$inds)))
-
-for (i in 1:length(cp_obj$bootstrap$inds)) {
-    
-    for (j in 1:ncol(X)) {
-        X[,j] <- cp_obj$bootstrap$mats[[i]][,j]
-    }
-    new_cps[[i]] <- eval(new_call)
-    
-    new_cps[[i]]$call$traits <- cp_obj$call$traits
-    new_cps[[i]]$call$species <- cp_obj$call$species
-    new_cps[[i]]$call$phy <- cp_obj$call$phy
-    new_cps[[i]]$call$covariates <- cp_obj$call$covariates
-    new_cps[[i]]$call$meas_errors <- cp_obj$call$meas_errors
-    new_cps[[i]]$call$data <- cp_obj$call$data
-}
-
-class(new_cps) <- c(class(new_cps), "cp_refits")
+Some bootstrap replicates did not converge, so I'm refitting them using a higher
+threshold for the reciprocal condition number of two matrices inside the
+likelihood function.
+This makes the optimization process more strongly "bounce away" from badly
+conditioned matrices.
+From trial and error, two sets of refits (using `rcond_threshold` values of
+`5e-4` and `5e-3`) seem to make all the replicates converge and
+provide sensible results.
 
 
-
-
-for (x in c("clear", "sef")) {
-    opts[[x]]$data = quote(clear_df_bm_)
-    opts[[x]]$rcond_threshold <- 1e-3
-    opts[[x]]$boot <- NULL
-    opts[[x]]$keep_boots <- NULL
-}; rm(x)
-
-clear_df_bm_ <- clear_df_bm
-x <- "clear"
-# How many intially failed to converge?
-clear_sef[[x]]$bootstrap$mats %>% length()
-# Re-fit ones that failed
-clear_refits <- map(clear_sef[[x]]$bootstrap$mats,
-       function(X) {
-           for (i in 1:ncol(X)) {
-               clear_df_bm_[, paste(opts[[x]]$traits)[-1][i]] <- X[,i]
-           }
-           do.call(cor_phylo, opts[[x]])
-       })
-
-# How many still failed?
-map_lgl(clear_refits, ~ .x$convcode != 0) %>% 
-    sum()
-
-still_failed <- map_lgl(clear_refits, ~ .x$convcode != 0) %>% 
-    which()
-
-for (x in c("clear", "sef")) {
-    opts[[x]]$rcond_threshold <- 5e-3
-}; rm(x)
-
-x <- "sef"
-map(still_failed, 
-    function(i) {
-        X <- clear_sef[[x]]$bootstrap$mats[[i]]
-        for (i in 1:ncol(X)) {
-            clear_df_bm_[, paste(opts[[x]]$traits)[-1][i]] <- X[,i]
-        }
-        do.call(cor_phylo, opts[[x]])
-    })
-
-
-
-
-
-
+```{r cor_phylo_refits, eval = TRUE}
+cp_boot_refits <- list(
+    clear = list(
+        one = refit_boots(clear_sef$clear, rcond_threshold = 5e-4),
+        two = NA
+    ),
+    sef = list(
+        one = refit_boots(clear_sef$sef, rcond_threshold = 5e-4),
+        two = NA
+    ))
+cp_boot_refits$clear$two <- refit_boots(clear_sef$clear,
+                                inds = which(map_lgl(cp_boot_refits$clear$one,
+                                                     ~ .x$convcode != 0)),
+                                rcond_threshold = 5e-3)
+cp_boot_refits$sef$two <- refit_boots(clear_sef$sef,
+                              inds = which(map_lgl(cp_boot_refits$sef$one,
+                                                   ~ .x$convcode != 0)),
+                              rcond_threshold = 5e-3)
 ```
 
 
@@ -390,14 +306,14 @@ map(still_failed,
 P-values for including body mass for clearance and SEF, respectively:
 
 ```{r clear_sef_pval, echo = FALSE}
-cat(sprintf('P = %.3f', pval(clear_sef$clear, "B0")["log_clear_log_mass",]))
-cat(sprintf('P = %.3f', pval(clear_sef$sef, "B0")["log_sef_log_mass",]))
+cat(sprintf('P = %.3f\n',
+            pval(clear_sef$clear, params = "B0",
+                 refits = cp_boot_refits$clear)["log_clear_log_mass",]))
+cat(sprintf('P = %.3f\n',
+            pval(clear_sef$sef, params = "B0",
+                 refits = cp_boot_refits$sef)["log_sef_log_mass",]))
 ```
 
-
-```{r cor_phylo_write, echo = FALSE, eval = run_models}
-write_rds(clear_sef, 'output/inc_mass_cor_phylo.rds')
-```
 
 
 

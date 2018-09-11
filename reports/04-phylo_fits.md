@@ -1,7 +1,7 @@
 Phylogenetic linear regressions and correlations
 ================
 Lucas Nell
-10 Jun 2018
+11 Sep 2018
 
 This file conducts the linear regressions using `phylolm::phylolm` and
 computes correlations using `phyr::cor_phylo`.
@@ -238,8 +238,9 @@ From the original manuscript:
 > both variables \[X and Y\] were subject to error
 
 Instead of an RMA regression, I’ll be using `phyr::cor_phylo`, which is
-similar to `ape::corphylo` but faster and can conduct parametric
-bootstrapping. P-values are calculated using bootstrap replicates.
+similar to `ape::corphylo` but faster, more accurate, and capable of
+conducting parametric bootstrapping. P-values are calculated using
+bootstrap replicates.
 
 I used the same P-values to determine that I do not need to use
 `log_mass` as an independent variable for any of these fits (see
@@ -256,19 +257,38 @@ Clearance = “paracellular probe L-arabinose clearance”
 clear_sef_df <- bind_cols(clear_df %>% select(species, log_sef, log_clear),
                           clear_se_df %>% select(log_sef, log_clear) %>% 
                               rename(log_sef_se = log_sef, log_clear_se = log_clear))
-
 set.seed(1844365955)
 clear_sef <- cor_phylo(traits = list(log_sef, log_clear),
                        meas_errors = list(log_sef_se, log_clear_se),
                        species = species, phy = clear_tr, data = clear_sef_df,
-                       method = "nelder-mead-nlopt",
+                       method = "nelder-mead-r", constrain_d = TRUE,
                        boot = 2000, max_iter = 1e6)
 ```
 
-Saving `cor_phylo` object:
+Some bootstrap replicates did not converge, so I’m refitting them using
+a higher threshold for the reciprocal condition number of two matrices
+inside the likelihood function. This makes the optimization process more
+strongly “bounce away” from badly conditioned matrices. From trial and
+error, two sets of refits (using `rcond_threshold` values of `1e-4` and
+`2e-3`) seem to make all the replicates converge and provide sensible
+results.
+
+``` r
+cp_boot_refits <- list(
+        one = refit_boots(clear_sef, rcond_threshold = 1e-4),
+        two = NA
+    )
+cp_boot_refits$two <- refit_boots(clear_sef,
+                                inds = which(map_lgl(cp_boot_refits$one,
+                                                     ~ .x$convcode != 0)),
+                                rcond_threshold = 2e-3)
+```
+
+Saving `cor_phylo` and refits (class `cp_refits`) objects:
 
 ``` r
 readr::write_rds(clear_sef, 'output/models_cor_phylo.rds')
+readr::write_rds(cp_boot_refits, 'output/models_cor_phylo_refits.rds')
 ```
 
 # Assembling all output into one table
@@ -287,7 +307,7 @@ mod_summaries <- bind_rows(
             lapply(names(pos_fits), function(p) {
                 bind_rows(lapply(pos_fits[[p]], summ_df, .pos = p))
             })),
-        summ_df(clear_sef)
+        summ_df(clear_sef, cp_boot_refits)
         ))
 ```
 
@@ -305,70 +325,71 @@ This outlines the package versions I used for these
     ## Session info -------------------------------------------------------------
 
     ##  setting  value                       
-    ##  version  R version 3.4.4 (2018-03-15)
+    ##  version  R version 3.5.1 (2018-07-02)
     ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2018-06-10
+    ##  date     2018-09-11
 
     ## Packages -----------------------------------------------------------------
 
-    ##  package      * version date       source        
-    ##  ape          * 5.1     2018-04-04 CRAN (R 3.4.4)
-    ##  assertthat     0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports      1.1.2   2017-12-13 CRAN (R 3.4.3)
-    ##  base         * 3.4.4   2018-03-15 local         
-    ##  bindr          0.1.1   2018-03-13 CRAN (R 3.4.4)
-    ##  bindrcpp     * 0.2.2   2018-03-29 CRAN (R 3.4.4)
-    ##  cli            1.0.0   2017-11-05 cran (@1.0.0) 
-    ##  codetools      0.2-15  2016-10-05 CRAN (R 3.4.4)
-    ##  compiler       3.4.4   2018-03-15 local         
-    ##  crayon         1.3.4   2017-09-16 CRAN (R 3.4.1)
-    ##  datasets     * 3.4.4   2018-03-15 local         
-    ##  devtools       1.13.5  2018-02-18 CRAN (R 3.4.3)
-    ##  digest         0.6.15  2018-01-28 CRAN (R 3.4.3)
-    ##  dplyr        * 0.7.5   2018-05-19 CRAN (R 3.4.4)
-    ##  evaluate       0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  future         1.8.1   2018-05-03 CRAN (R 3.4.4)
-    ##  future.apply   0.2.0   2018-05-01 CRAN (R 3.4.4)
-    ##  globals        0.11.0  2018-01-10 CRAN (R 3.4.3)
-    ##  glue           1.2.0   2017-10-29 CRAN (R 3.4.2)
-    ##  graphics     * 3.4.4   2018-03-15 local         
-    ##  grDevices    * 3.4.4   2018-03-15 local         
-    ##  grid           3.4.4   2018-03-15 local         
-    ##  hms            0.4.2   2018-03-10 CRAN (R 3.4.4)
-    ##  htmltools      0.3.6   2017-04-28 cran (@0.3.6) 
-    ##  knitr          1.20    2018-02-20 CRAN (R 3.4.3)
-    ##  lattice        0.20-35 2017-03-25 CRAN (R 3.4.4)
-    ##  listenv        0.7.0   2018-01-21 CRAN (R 3.4.3)
-    ##  magrittr       1.5     2014-11-22 CRAN (R 3.4.0)
-    ##  Matrix         1.2-14  2018-04-09 CRAN (R 3.4.4)
-    ##  memoise        1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods      * 3.4.4   2018-03-15 local         
-    ##  nlme           3.1-137 2018-04-07 CRAN (R 3.4.4)
-    ##  nloptr         1.0.4   2014-08-04 CRAN (R 3.4.0)
-    ##  parallel       3.4.4   2018-03-15 local         
-    ##  phylolm      * 2.6     2018-05-31 CRAN (R 3.4.4)
-    ##  phyr         * 0.1.5   2018-06-09 local         
-    ##  pillar         1.2.3   2018-05-25 CRAN (R 3.4.4)
-    ##  pkgconfig      2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  purrr        * 0.2.5   2018-05-29 CRAN (R 3.4.4)
-    ##  R6             2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp           0.12.17 2018-05-18 CRAN (R 3.4.4)
-    ##  readr        * 1.1.1   2017-05-16 CRAN (R 3.4.0)
-    ##  rlang          0.2.1   2018-05-30 CRAN (R 3.4.4)
-    ##  rmarkdown      1.9     2018-03-01 CRAN (R 3.4.3)
-    ##  rprojroot      1.3-2   2018-01-03 CRAN (R 3.4.3)
-    ##  stats        * 3.4.4   2018-03-15 local         
-    ##  stringi        1.2.2   2018-05-02 CRAN (R 3.4.4)
-    ##  stringr        1.3.1   2018-05-10 CRAN (R 3.4.4)
-    ##  tibble         1.4.2   2018-01-22 CRAN (R 3.4.3)
-    ##  tidyr        * 0.8.1   2018-05-18 CRAN (R 3.4.4)
-    ##  tidyselect     0.2.4   2018-02-26 CRAN (R 3.4.3)
-    ##  tools          3.4.4   2018-03-15 local         
-    ##  utf8           1.1.4   2018-05-24 CRAN (R 3.4.4)
-    ##  utils        * 3.4.4   2018-03-15 local         
-    ##  withr          2.1.2   2018-03-15 CRAN (R 3.4.4)
-    ##  yaml           2.1.19  2018-05-01 CRAN (R 3.4.4)
+    ##  package      * version date       source         
+    ##  ape          * 5.1     2018-04-04 CRAN (R 3.5.0) 
+    ##  assertthat     0.2.0   2017-04-11 CRAN (R 3.5.0) 
+    ##  backports      1.1.2   2017-12-13 CRAN (R 3.5.0) 
+    ##  base         * 3.5.1   2018-07-05 local          
+    ##  bindr          0.1.1   2018-03-13 CRAN (R 3.5.0) 
+    ##  bindrcpp     * 0.2.2   2018-03-29 CRAN (R 3.5.0) 
+    ##  cli            1.0.0   2017-11-05 CRAN (R 3.5.0) 
+    ##  codetools      0.2-15  2016-10-05 CRAN (R 3.5.1) 
+    ##  compiler       3.5.1   2018-07-05 local          
+    ##  crayon         1.3.4   2017-09-16 CRAN (R 3.5.0) 
+    ##  datasets     * 3.5.1   2018-07-05 local          
+    ##  devtools       1.13.6  2018-06-27 CRAN (R 3.5.0) 
+    ##  digest         0.6.16  2018-08-22 CRAN (R 3.5.0) 
+    ##  dplyr        * 0.7.6   2018-06-29 CRAN (R 3.5.1) 
+    ##  evaluate       0.11    2018-07-17 CRAN (R 3.5.0) 
+    ##  fansi          0.3.0   2018-08-13 CRAN (R 3.5.0) 
+    ##  future         1.9.0   2018-07-23 CRAN (R 3.5.0) 
+    ##  future.apply   1.0.1   2018-08-26 CRAN (R 3.5.0) 
+    ##  globals        0.12.2  2018-08-25 CRAN (R 3.5.0) 
+    ##  glue           1.3.0   2018-07-17 CRAN (R 3.5.0) 
+    ##  graphics     * 3.5.1   2018-07-05 local          
+    ##  grDevices    * 3.5.1   2018-07-05 local          
+    ##  grid           3.5.1   2018-07-05 local          
+    ##  hms            0.4.2   2018-03-10 CRAN (R 3.5.0) 
+    ##  htmltools      0.3.6   2017-04-28 CRAN (R 3.5.0) 
+    ##  knitr          1.20    2018-02-20 CRAN (R 3.5.0) 
+    ##  lattice        0.20-35 2017-03-25 CRAN (R 3.5.1) 
+    ##  listenv        0.7.0   2018-01-21 CRAN (R 3.5.0) 
+    ##  magrittr       1.5     2014-11-22 CRAN (R 3.5.0) 
+    ##  Matrix         1.2-14  2018-04-13 CRAN (R 3.5.1) 
+    ##  memoise        1.1.0   2017-04-21 CRAN (R 3.5.0) 
+    ##  methods      * 3.5.1   2018-07-05 local          
+    ##  nlme           3.1-137 2018-04-07 CRAN (R 3.5.1) 
+    ##  nloptr         1.0.4   2017-08-22 CRAN (R 3.5.0) 
+    ##  parallel       3.5.1   2018-07-05 local          
+    ##  phylolm      * 2.6     2018-05-31 CRAN (R 3.5.0) 
+    ##  phyr         * 0.1.5   2018-09-11 local          
+    ##  pillar         1.3.0   2018-07-14 CRAN (R 3.5.0) 
+    ##  pkgconfig      2.0.2   2018-08-16 CRAN (R 3.5.0) 
+    ##  purrr        * 0.2.5   2018-05-29 CRAN (R 3.5.0) 
+    ##  R6             2.2.2   2017-06-17 CRAN (R 3.5.0) 
+    ##  Rcpp           0.12.18 2018-07-23 cran (@0.12.18)
+    ##  readr        * 1.1.1   2017-05-16 CRAN (R 3.5.0) 
+    ##  rlang          0.2.2   2018-08-16 CRAN (R 3.5.0) 
+    ##  rmarkdown      1.10    2018-06-11 CRAN (R 3.5.0) 
+    ##  rprojroot      1.3-2   2018-01-03 CRAN (R 3.5.0) 
+    ##  stats        * 3.5.1   2018-07-05 local          
+    ##  stringi        1.2.4   2018-07-20 CRAN (R 3.5.0) 
+    ##  stringr        1.3.1   2018-05-10 CRAN (R 3.5.0) 
+    ##  tibble         1.4.2   2018-01-22 CRAN (R 3.5.0) 
+    ##  tidyr        * 0.8.1   2018-05-18 CRAN (R 3.5.0) 
+    ##  tidyselect     0.2.4   2018-02-26 CRAN (R 3.5.0) 
+    ##  tools          3.5.1   2018-07-05 local          
+    ##  utf8           1.1.4   2018-05-24 CRAN (R 3.5.0) 
+    ##  utils        * 3.5.1   2018-07-05 local          
+    ##  withr          2.1.2   2018-03-15 CRAN (R 3.5.0) 
+    ##  yaml           2.2.0   2018-07-25 CRAN (R 3.5.0)
