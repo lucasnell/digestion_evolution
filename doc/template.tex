@@ -344,6 +344,8 @@ $if(author)$
     $for(affil)$
         \affil[$affil.num$]{$affil.name$}
     $endfor$
+$else$
+    \author{}
 $endif$
 % $if(author)$
 % \author{$for(author)$$author$$sep$ \and $endfor$}
@@ -352,7 +354,8 @@ $if(institute)$
 \providecommand{\institute}[1]{}
 \institute{$for(institute)$$institute$$sep$ \and $endfor$}
 $endif$
-\date{$date$}
+% \date{$date$}
+\date{}
 $if(beamer)$
 $if(titlegraphic)$
 \titlegraphic{\includegraphics{$titlegraphic$}}

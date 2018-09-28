@@ -452,19 +452,20 @@ predict_ci <- function(mod){
 #' @export
 #'
 #' @examples
-add_title <- function(.p, .title, .mult = list(x = 1, y = 1), .data = NULL, 
+add_title <- function(.p, .title, .mult = list(x = 0.0, y = 0.0), .data = NULL, 
                       font_size = 14) {
     
     if (missing(.title)) stop("Why is .title missing?")
     if (is.null(.title)) return(.p)
     
-    x_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$x.range
-    y_range <- ggplot_build(.p)$layout$panel_ranges[[1]]$y.range
+    x_range <- ggplot_build(.p)$layout$panel_scales_x[[1]]$range$range
+    y_range <- ggplot_build(.p)$layout$panel_scales_y[[1]]$range$range
     if (!is.null(.p$coordinates$trans$x)) {
         x_range <- .p$coordinates$trans$x$inverse(x_range)
     }
-    if (!is.null(.p$coordinates$trans$y)) {
-        y_range <- .p$coordinates$trans$y$inverse(y_range)
+    if (!.p$coordinates$is_linear()) {
+        # y_range <- .p$coordinates$trans$y$inverse(y_range)
+        stop("Not programmed in add_title")
     }
     min_x <- min(x_range) + .mult$x * 0.02 * diff(x_range)
     max_y <- max(y_range) - .mult$y * 0.02 * diff(y_range)

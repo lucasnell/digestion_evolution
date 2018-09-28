@@ -1,35 +1,7 @@
 ---
 title: 'Electronic Supplementary Material: Supplemental Methods and Results'
-subtitle: "``Morphometric bases for intestinal paracellular absorption in bats and rodents''"
+subtitle: "``Structural bases for intestinal paracellular absorption in bats and rodents''"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
-author:
-    - name: Antonio Brun
-      nums: "1,2"
-    - name: Guido Fernández Marinone
-      nums: "1,2"
-    - name: Edwin R. Price
-      nums: "3"
-    - name: Lucas A. Nell
-      nums: "3"
-    - name: Beatriz Marques
-      nums: "4"
-    - name: Alexandre Castellar
-      nums: "4"
-    - name: Ariovaldo P. Cruz-Neto
-      nums: "4"
-    - name: William H. Karasov
-      nums: "3"
-    - name: Enrique Caviedes-Vidal
-      nums: "1,2"
-affil:
-    - name: Instituto Multidisciplinario de Investigaciones Biológicas de San Luis
-      num: "1"
-    - name: Universidad Nacional de San Luis
-      num: "2"
-    - name: University of Wisconsin--Madison
-      num: "3"
-    - name: Universidade Estadual Paulista ``Julio de Mesquita Filho'' Rio Claro
-      num: "4"
 fontsize: 12pt
 csl: "ecology.csl"
 bibliography: "references.bib"
@@ -49,6 +21,39 @@ output:
         toc: yes
         toc_depth: 2
 ---
+
+
+<!---
+Originally provided author names, but Journal of Evolutionary Biology doesn't want that:
+# author:
+#     - name: Antonio Brun
+#       nums: "1,2"
+#     - name: Guido Fernández Marinone
+#       nums: "1,2"
+#     - name: Edwin R. Price
+#       nums: "3"
+#     - name: Lucas A. Nell
+#       nums: "3"
+#     - name: Beatriz Marques
+#       nums: "4"
+#     - name: Alexandre Castellar
+#       nums: "4"
+#     - name: Ariovaldo P. Cruz-Neto
+#       nums: "4"
+#     - name: William H. Karasov
+#       nums: "3"
+#     - name: Enrique Caviedes-Vidal
+#       nums: "1,2"
+# affil:
+#     - name: Instituto Multidisciplinario de Investigaciones Biológicas de San Luis
+#       num: "1"
+#     - name: Universidad Nacional de San Luis
+#       num: "2"
+#     - name: University of Wisconsin--Madison
+#       num: "3"
+#     - name: Universidade Estadual Paulista ``Julio de Mesquita Filho'' Rio Claro
+#       num: "4"
+-->
 
 ```{r setup, include=FALSE, cache = FALSE}
 suppressPackageStartupMessages({

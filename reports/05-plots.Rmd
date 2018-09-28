@@ -34,6 +34,7 @@ suppressPackageStartupMessages({
     library(dplyr)
     library(tidyr)
     library(purrr)
+    library(stringr)
     library(phylolm)
     library(ape)
     library(ggplot2)
@@ -186,7 +187,7 @@ fig1[['a']] <- clade_only_plot(models$spp$log_intestinal_length,
                                "Intestinal length (cm)", 
                                y_breaks = 8 * 2^(0:3), 
                                plot_title = 'A') +
-    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1),
+    theme(legend.position = c(0.1, 1), legend.justification = c(0, 1),
           axis.title.x = element_blank(), axis.text.x = element_blank(),
           plot.margin = margin(t = 5.5, r = 5.5, b = 0, l = 5.5))
 # Figure 1B
@@ -199,7 +200,7 @@ fig1[['b']] <- clade_only_plot(models$spp$log_nsa,
 fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
                         expression("Villous surface area (" * cm^2 * ")"),
                         y_breaks = 50 * 3^(0:2)) +
-    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
+    theme(legend.position = c(0.1, 1), legend.justification = c(0, 1))
 
 # Figure 6 (same as for figure 4)
 fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
@@ -207,7 +208,7 @@ fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
                         # CHANGING UNITS HERE (from enterocytes to 
                         # 1e9 enterocytes:
                         y_breaks = 200e6 * 2^(0:3), y_labels = 0.2 * 2^(0:3)) +
-    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
+    theme(legend.position = c(0.1, 1), legend.justification = c(0, 1))
 ```
 
 
@@ -483,18 +484,12 @@ fig7[['b']] <- fig7[['b']] %>%
 ```{r final_plots_fxn}
 # Printing figures from single or a list of ggplot object(s).
 one_fig <- function(fig_list) {
-    if (is(fig_list, 'list')) {
+    if (inherits(fig_list, 'list')) {
         stopifnot(all(sapply(fig_list, function(x) is(x, 'ggplot'))))
         
         grob_list <- lapply(fig_list, ggplotGrob)
         # Number of columns in each plot; indicative of whether it's faceted
         grob_cols <- sapply(grob_list, ncol)
-        
-        if (any(!grob_cols %in% c(7, 15))) {
-            stop(str_c("The number of columns in this ggplotGrob is not 7 or 15. ",
-                       "Check that it's doing what you want and re-program the ",
-                       "`one_fig` function."))
-        }
         
         # Figure 1 combines faceted and non-faceted plots.
         # This is the best way I know of for plotting them:
@@ -518,7 +513,7 @@ one_fig <- function(fig_list) {
         
     # For figures 3, 4, and 6, you can simply plot them bc they're ggplot objects
     # I'm using ggplotGrob for consistency with those above
-    } else if (is(fig_list, 'ggplot')) {
+    } else if (inherits(fig_list, 'ggplot')) {
         out <- ggplotGrob(fig_list)
     } else stop("Input fig_list can only be a list or ggplot object.")
     

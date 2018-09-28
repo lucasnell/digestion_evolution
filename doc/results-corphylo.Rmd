@@ -95,7 +95,7 @@ cowplot::plot_grid(plotlist = cor_jack_p, ncol = 2, rel_widths = c(5, 4),
 
 #### Re-running model without influential point
 
-```{r results-influence-rerun-cor-phylo, cache = FALSE}
+```{r results-influence-rerun-cor-phylo, cache = TRUE}
 clear_sef_df_ <- clear_sef_df %>% 
     filter(species != 'Tadarida brasiliensis')
 clear_tr_ <- clear_tr %>% filter_tr(clear_sef_df_$species)
