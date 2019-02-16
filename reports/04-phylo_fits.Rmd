@@ -51,7 +51,7 @@ tr <- get_tr('spp')
 # Morphometrics by species
 spp_df <- get_df('spp')
 # Morphometrics by species and segment
-seg_types <- c('prox', 'med', 'dist')
+seg_types <- c('prox', 'mid', 'dist')
 pos_df_list <- lapply(seg_types, get_df, .df = 'pos')
 names(pos_df_list) <- seg_types
 # Absorption by species
@@ -173,7 +173,7 @@ spp_fits <- readr::read_rds('output/models_spp.rds')
 ## `Morphometrics` on `Clade`, separately by segment
 
 
-(Segment = proximal, medial, or distal)
+(Segment = proximal, middle, or distal)
 
 List of `Y`s:
 
@@ -191,7 +191,7 @@ Below are the column names for these parameters and all the segment types.
 ```{r pos_ys}
 pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
             'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
-seg_types <- c('prox', 'med', 'dist')
+seg_types <- c('prox', 'mid', 'dist')
 ```
 
 

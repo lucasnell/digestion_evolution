@@ -54,7 +54,7 @@ clear_sef <- read_rds('output/inc_mass_cor_phylo.rds')
 spp_df <- get_df('spp')
 tr <- get_tr('spp')
 # Morphometrics by species and segment
-seg_types <- c('prox', 'med', 'dist')
+seg_types <- c('prox', 'mid', 'dist')
 pos_df_list <- lapply(seg_types, get_df, .df = 'pos')
 names(pos_df_list) <- seg_types
 # Absorption by species
@@ -197,11 +197,11 @@ Because there are so many models, I'm writing whether to include mass to a csv f
 include_df <- lapply(
     seg_types, 
     function(p) {
-        data_frame(pos = p, y = names(pos_fits[[p]]),
-                   include = sapply(pos_fits[[p]], pval, 
-                                    params = 'log_mass') < 0.05)
+        tibble(pos = p, y = names(pos_fits[[p]]),
+               include = sapply(pos_fits[[p]], pval, 
+                                params = 'log_mass') < 0.05)
     }) %>% 
-    bind_rows
+    bind_rows()
 write_csv(include_df, 'output/include_mass_pos.csv')
 ```
 
@@ -213,8 +213,8 @@ P-values:
 ```{r pos_analyses_pvals, echo = FALSE}
 cat("proximal:\n")
 cbind(P = sapply(pos_fits$prox, pval, params = 'log_mass'))
-cat("medial:\n")
-cbind(P = sapply(pos_fits$med, pval, params = 'log_mass'))
+cat("middle:\n")
+cbind(P = sapply(pos_fits$mid, pval, params = 'log_mass'))
 cat("distal:\n")
 cbind(P = sapply(pos_fits$dist, pval, params = 'log_mass'))
 ```
@@ -235,7 +235,7 @@ by including it separately for clearance, then for SEF.
 
 
 
-```{r clear_sef, eval = run_models}
+```{r clear_sef-data}
 # Making data frame with all info, including measurement errors:
 clear_df_bm <- clear_df
 clear_df_bm$log_clear_se <- clear_se_df$log_clear
@@ -247,7 +247,12 @@ clear_df_bm <- clear_df_bm[!is.na(clear_df$log_mass),]
 clear_tr_bm <- ape::drop.tip(
     clear_tr,
     tip = clear_tr$tip.label[!clear_tr$tip.label %in% clear_df_bm$species])
+```
 
+
+Now organizing options and running `cor_phylo`.
+
+```{r clear_sef, eval = run_models}
 # Options that are the same for both calls
 opts <- list(traits = quote(list(log_clear, log_sef)),
              meas_errors = quote(list(log_clear_se, log_sef_se)),
@@ -282,6 +287,7 @@ provide sensible results.
 
 
 ```{r cor_phylo_refits, eval = TRUE}
+set.seed(1110216289)
 cp_boot_refits <- list(
     clear = list(
         one = refit_boots(clear_sef$clear, rcond_threshold = 5e-4),

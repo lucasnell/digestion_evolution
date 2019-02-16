@@ -121,8 +121,7 @@ using for my analyses.
 ```{r spp_df}
 spp_df <- morph_df %>% 
     # Selecting measurement columns, plus the identifying columns
-    select_(.dots = append(list('diet', 'clade', 'species', 'id', 'pos'), 
-                           spp_measures)) %>% 
+    select(c('diet', 'clade', 'species', 'id', 'pos', spp_measures)) %>% 
     # Removing all rows with all NAs in measures columns
     filter(Reduce(`+`, lapply(.[,spp_measures], is.na)) < length(spp_measures)) %>% 
     # Add nsa to all positions' estimates (for total_enterocytes below)
@@ -197,9 +196,13 @@ Next I manipulated `morph_df` as such to get means and standard errors for each
 parameter that I will be analyzing.
 
 ```{r pos_df}
-pos_df <- morph_df %>% 
-    select_(.dots = append(list('clade', 'diet', 'species', 'pos', 'id'), 
-                           as.list(pos_measures))) %>% 
+needed_cols <- c('clade', 'diet', 'species', 'pos',
+          paste0(rep(c('log_intestinal_diameter', 'log_villus_height', 'villus_width',
+                       'crypt_width', 'log_sef', 'enterocyte_diameter',
+                       'log_enterocyte_density', 'log_mass'), each = 2),
+                 c('_mean', '_se')))
+pos_df <- morph_df %>%
+    select(c('clade', 'diet', 'species', 'pos', 'id', pos_measures)) %>% 
     # Add mass to all positions' estimates
     group_by(clade, diet, species, id) %>% 
     mutate(mass = ifelse(is.na(mass), mass[!is.na(mass)], mass)) %>% 
@@ -207,24 +210,18 @@ pos_df <- morph_df %>%
     # Now removing rows with pos == NA bc they don't have the other measurements
     filter(!is.na(pos)) %>% 
     # Taking the log now, before taking any means
-    mutate_(.dots = setNames(as.list(sprintf('%s(%s)', 'log', pos_measures)), 
-                             paste0('log_', pos_measures))) %>% 
+    mutate_at(vars(pos_measures), funs(log = log(.))) %>% 
+    rename_at(vars(ends_with("_log")), funs(paste0("log_", gsub("_log", "", .)))) %>% 
     # Grouping by, then taking mean and SE of all measurement columns and transformed-
     # measurement columns
     group_by(clade, diet, species, pos) %>% 
-    summarize_at(.vars = c(pos_measures, paste0('log_', pos_measures)), funs(mean, se), 
+    summarize_at(vars(c(pos_measures, paste0('log_', pos_measures))), funs(mean, se), 
                  na.rm = TRUE) %>% 
-    ungroup %>% 
+    ungroup() %>% 
     # Adjusting species with NA for their SE (i.e., those spp with only 1 individual)
     mutate_at(vars(ends_with('_se')), na_se) %>%
     # Now only outputting columns that are necessary
-    select_(
-        .dots = as.list(c('clade', 'diet', 'species', 'pos',
-          paste0(rep(c('log_intestinal_diameter', 'log_villus_height', 'villus_width',
-                       'crypt_width', 'log_sef', 'enterocyte_diameter',
-                       'log_enterocyte_density', 'log_mass'), each = 2),
-                 c('_mean', '_se'))))
-    ) %>%
+    select(needed_cols) %>%
     arrange(clade, diet, species, pos)
 ```
 
@@ -257,7 +254,7 @@ clear_df <- clear_df %>%
         # They lumped herbivores and omnivores together as "carb eater <clade>"
         diet = ifelse(diet == "Protein", diet, "Carb"),
         # Averaging SEF by individual, on log scale
-        log_sef = (log(prox) + log(med) + log(dist)) / 3,
+        log_sef = (log(prox) + log(mid) + log(dist)) / 3,
         # Taking log of clearance before any means are calculated
         # Some clearances were negative, so there would be NaNs produced
         # The next two lines are to avoid the warning message
@@ -265,7 +262,7 @@ clear_df <- clear_df %>%
         log_clear = log(log_clear)
     ) %>% 
     # These are no longer necessary
-    select(-prox, -med, -dist, -clear) %>% 
+    select(-prox, -mid, -dist, -clear) %>% 
     group_by(diet, clade, species) %>% 
     summarize_at(vars(log_sef, log_clear), funs(mean, se), na.rm = TRUE) %>% 
     ungroup
@@ -376,7 +373,7 @@ m = log(M)-v/2
 absorp_df <- absorp_df %>%
     mutate(
         # Averaging SEF by individual (i.e., across segments)
-        sef = (prox + med + dist) / 3,
+        sef = (prox + mid + dist) / 3,
         ns = 1 / (nsa * sef),
         log_mass = log(mass)
     ) %>% 

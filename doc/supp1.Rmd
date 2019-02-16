@@ -12,6 +12,8 @@ graphics: true
 colorlinks: true
 supplemental: true
 mathspec: true
+header-includes: 
+    - \usepackage{placeins}
 output:
     bookdown::pdf_document2:
         fig_caption: yes

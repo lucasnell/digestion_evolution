@@ -93,7 +93,7 @@ To begin, equation \ref{eq:absorption} can be manipulated to the following:
 Now we did the following to get mean absorptions ($\bar{a}$) for a given species:
 
 \begin{equation}
-\label{eq:absorption2}
+\label{eq:absorption3}
 \begin{split}
     \bar{e} &= \frac{1}{n_e}\sum_{i=1}^{n_e}\left( e_i \right) \\
     \bar{B} &= \frac{1}{n_b}\sum_{j=1}^{n_b}\left( \frac{1}{ b_j } \right) \\
@@ -109,7 +109,7 @@ To estimate the standard error of $a$ ($s_{\bar{a}}$), we did the following:
 
 
 \begin{equation}
-\label{eq:absorption3}
+\label{eq:absorption4}
 \begin{split}
     s_e^2 &= \frac{1}{n_e-1} \sum_{i=1}^{n_e}\left( e_{i} - \bar{e} \right)^2 \\
     s_B^2 &= \frac{1}{n_b-1} \sum_{i=1}^{n_b}\left( B_{i} - \bar{B} \right)^2 \\

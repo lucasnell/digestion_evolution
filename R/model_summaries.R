@@ -162,7 +162,7 @@ summ_df.phylolm <- function(mod, .pos = NA) {
     estimates <- as.numeric(c(coef(mod)[params], mod$optpar))
     params <- c(params, phy_signal_str(mod))
     Y <- paste(mod$formula)[2]
-    .df <- as_data_frame(ci(mod, params))
+    .df <- as_tibble(ci(mod, params))
     P <- pval(mod, params)
     
     .df <- .df %>%
@@ -191,7 +191,7 @@ summ_df.cor_phylo <- function(mod, refits = NULL) {
                    upper = corrs[upper.tri(corrs)])
     ds <- ci(mod, "d", refits)
     
-    .df <- as_data_frame(rbind(corrs, ds))
+    .df <- as_tibble(rbind(corrs, ds))
     
     P <- pval(mod, c("corrs", rep("d", length(.corr_pars))), refits)
     P <- c(lapply(P,
@@ -416,12 +416,13 @@ predict_ci <- function(mod){
               }) %>% 
         apply(1,
               function(x) as.numeric(quantile(x, probs = c(0.025, 0.975)))) %>% 
-        t
+        t()
     
     # Adding predicted outcomes, and converting to a data frame.
     out_df <- cbind(predict(mod, new_data_df), ci_matrix) %>% 
-        as_data_frame %>% 
-        rename_(.dots = setNames(colnames(.), c('estimate', 'low', 'high'))) %>% 
+        as.data.frame() %>% 
+        as_tibble() %>% 
+        set_names(c('estimate', 'low', 'high')) %>% 
         mutate(measure = y_measure,
                clade = factor(rep(c(1.0, 0.0), each = n_mass), levels = c(0,1), 
                               labels = c('Rodent', 'Bat')),

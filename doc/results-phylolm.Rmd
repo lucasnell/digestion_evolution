@@ -59,13 +59,13 @@ filter(summary_df, pos == 'prox', model == 'phylolm')$data[[1]] %>%
 ``` 
 
 
-```{r results-med-summs} 
-filter(summary_df, pos == 'med', model == 'phylolm')$data[[1]] %>% 
+```{r results-mid-summs} 
+filter(summary_df, pos == 'mid', model == 'phylolm')$data[[1]] %>% 
     arrange(Y, parameter) %>%
     mutate(Y = ifelse(Y == lag(Y, default = 'XXX'), "", Y) %>% clean_Y(),
            parameter = greekify(parameter)) %>% 
     select(-phy_model) %>% 
-    pretty_df(., caption = str_c('\\texttt{phylolm} model summaries for medial ',
+    pretty_df(., caption = str_c('\\texttt{phylolm} model summaries for middle ',
                                  'intestinal segment analyses. ',
                                  '$\\dagger$ indicates Y variables that were ',
                                  'log-transformed.'))
@@ -83,6 +83,9 @@ filter(summary_df, pos == 'dist', model == 'phylolm')$data[[1]] %>%
                                  '$\\dagger$ indicates Y variables that were ',
                                  'log-transformed.'))
 ``` 
+
+
+\clearpage
 
 
 ### Uncertainty in regression of proximal crypt width on clade
@@ -127,6 +130,8 @@ three coefficient estimates.
 int_jack <- jack(plm_mods$spp$log_intestinal_length, 
                  phy = get_tr('spp'))
 ```
+
+
 
 
 
@@ -241,3 +246,5 @@ list(first_run_df, rerun_df) %>%
                                  'present in dataset.'))
 ```
 
+
+\FloatBarrier

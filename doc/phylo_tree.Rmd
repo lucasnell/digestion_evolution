@@ -17,6 +17,7 @@ present in each dataset.
 suppressPackageStartupMessages({
     library(ape)
     library(dplyr)
+    library(purrr)
     library(ggplot2)
     library(ggtree)
     library(ggimage)
@@ -45,10 +46,8 @@ data_df <- data_df[, -1]
 gg_tr <- ggtree(tr)
 gg_tr$data$x <- gg_tr$data$x - max(gg_tr$data$x)
 gg_tr <- gg_tr + 
-    theme_tree2(axis.title.x = element_blank(),
-                axis.text.x = element_blank(),
-                axis.ticks.x = element_blank(),
-                plot.margin = margin(0,0,0,0)) +
+    theme_tree(axis.title.x = element_blank(),
+               plot.margin = margin(0,0,0,0)) +
     geom_tiplab(aes(x = x + 2), size = 3, fontface = 'bold.italic')
 
 suppressMessages(
@@ -56,22 +55,22 @@ suppressMessages(
                       colnames_position ='bottom', colnames_angle = -30, 
                       colnames_offset_y = -0.25, colnames_offset_x = 2) +
         scale_fill_manual(breaks = c(TRUE, FALSE),  values = c("gray70", "dodgerblue"),
-                          guide = FALSE) + 
+                          guide = FALSE) +
         geom_treescale(x = -90, y = 15, offset = 0.5, width = 10)
 )
-gg_tr <- gg_tr + 
-    # Bat image
-    geom_phylopic(image = "18bfd2fc-f184-4c3a-b511-796aafcc70f6",
-                           color = "firebrick", 
-                           data = NULL, inherit.aes = FALSE,
-                           x = -73, y = 6,
-                           alpha = 0.01, height = 622, by = 'height', size = 0.25) +
-    # Rodent image
-    geom_phylopic(image = "13ddd312-92ad-4873-9d65-4732b86cfbbd",
-                           color = "steelblue", 
-                           data = NULL, inherit.aes = FALSE,
-                           x = -60, y = 13,
-                           alpha = 0.01, height = 551, size = 0.25)
+
+img_ids <- c("18bfd2fc-f184-4c3a-b511-796aafcc70f6",  # rodent
+             "13ddd312-92ad-4873-9d65-4732b86cfbbd")  # bat
+imgs <- map(img_ids, ~ rphylopic::image_data(.x, 512)[[1]])
+img_credits <- map_chr(img_ids, ~ rphylopic::image_get(.x, options = "credit")$credit)
+
+gg_tr <- gg_tr +
+    rphylopic::add_phylopic(imgs[[1]], color = "black", alpha = 0.25,
+                            x = -73, y = 6, ysize = 20) +
+    rphylopic::add_phylopic(imgs[[2]], color = "black", alpha = 0.25,
+                            x = -60, y = 13, ysize = 20) +
+    # Credit at the bottom
+    labs(caption = sprintf("Silhouettes: %s, %s", img_credits[1], img_credits[2]))
 
 gg_tr
 ```

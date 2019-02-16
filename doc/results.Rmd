@@ -108,7 +108,7 @@ pretty_df <- function(df_, caption = NULL) {
         df_ <- edit_nums(df_)
     }
     kable_obj <- knitr::kable(df_, format = 'latex', booktabs = TRUE, caption = caption,
-                              escape = FALSE)
+                              escape = FALSE, format.args = list(floating = FALSE))
     kable_str <- unlist(str_split(kable_obj, '\n'))
     kable_str <- kable_str[kable_str != "\\addlinespace"]
     for (i in 1:(length(kable_str)-1)) {

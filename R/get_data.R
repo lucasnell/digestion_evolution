@@ -14,7 +14,7 @@
 #'     \item{ \code{'pos'} }{ morphometric analyses by species and position }
 #'     }
 #' @param .pos Position of intestine to return data from. Takes values of \code{'prox'}, 
-#'     \code{'med'}, or {'dist'}. This argument is ignored if \code{.df != 'pos'}.
+#'     \code{'mid'}, or {'dist'}. This argument is ignored if \code{.df != 'pos'}.
 #'     Defaults to \code{NA}, which will return an error if \code{.df == 'pos'}.
 #' @param .stat Statistic to return, which can be \code{'mean'} or \code{'se'} for 
 #'     mean and standard error, respectively. Defaults to \code{'mean'}.
@@ -28,7 +28,7 @@
 get_df <- function(.df, .pos = NA, .stat = c('mean', 'se')) {
     
     .df <- match.arg(.df, c('spp', 'clear', 'absorp', 'pos'))
-    if (!is.na(.pos)) .pos  <- match.arg(.pos, c('prox', 'med', 'dist'))
+    if (!is.na(.pos)) .pos  <- match.arg(.pos, c('prox', 'mid', 'dist'))
     .stat <- match.arg(.stat)
     
     if (.df == 'pos' & is.na(.pos)) stop('provide a position when .df == "pos"')
@@ -87,7 +87,7 @@ get_tr <- function(.df) {
     
     # Just choosing parameters for get_df. These won't affect anything bc this is just
     # to retrieve species names.
-    .pos <- ifelse(.df == 'pos', 'med', NA)
+    .pos <- ifelse(.df == 'pos', 'mid', NA)
 
     focal_df <- get_df(.df, .pos = .pos)
 

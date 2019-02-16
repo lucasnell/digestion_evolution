@@ -1,22 +1,14 @@
 Plots for main paper
 ================
 Lucas Nell
-14 Dec 2017
+16 Feb 2019
 
--   [Loading model data](#loading-model-data)
--   [Creating plot lists](#creating-plot-lists)
--   [Individual plots for models by species only](#individual-plots-for-models-by-species-only)
-    -   [Function to create base plots](#function-to-create-base-plots)
-    -   [Creating plot objects](#creating-plot-objects)
--   [Individual plots for models by species and intestinal segment](#individual-plots-for-models-by-species-and-intestinal-segment)
-    -   [Objects to create base plots](#objects-to-create-base-plots)
-    -   [Creating plot objects](#creating-plot-objects-1)
--   [Individual plots for clearance and absorption](#individual-plots-for-clearance-and-absorption)
--   [Creating and saving final plots](#creating-and-saving-final-plots)
-    -   [Function to combine plots](#function-to-combine-plots)
--   [Session info](#session-info)
-
-This file creates the figures from the main portion of the paper. In the code below, note that functions `get_df`, `get_tr`, `filter_tr`, and `cp_mat` come from [`R/get_data.R`](R/get_data.R) and functions `add_title`, `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_corphylo`, and `predict_ci` come from [`R/model_summaries.R`](R/model_summaries.R). See those files for these functions' documentation.
+This file creates the figures from the main portion of the paper. In the
+code below, note that functions `get_df`, `get_tr`, `filter_tr`, and
+`cp_mat` come from [`R/get_data.R`](R/get_data.R) and functions
+`add_title`, `pval`, `ci`, `summ_df`, `jack_phylolm`, `jack_cor_phylo`,
+and `predict_ci` come from [`R/model_summaries.R`](R/model_summaries.R).
+See those files for these functions’ documentation.
 
 ``` r
 # Packages needed for this script
@@ -25,18 +17,18 @@ suppressPackageStartupMessages({
     library(dplyr)
     library(tidyr)
     library(purrr)
+    library(stringr)
     library(phylolm)
     library(ape)
     library(ggplot2)
     library(grid)
     library(gridExtra)
+    library(phyr)
 })
 # Functions `get_df`, `get_tr`, `filter_tr`, `cp_mat`
 source('R/get_data.R')
 # Functions `pval`, `ci`, `summ_df`, `jack_phylolm`, and `predict_ci`
 source('R/model_summaries.R')
-# Custom version of ape::corphylo
-suppressMessages(devtools::load_all('corphyloCpp'))
 
 # setting default `ggplot2` theme
 theme_set(theme_classic() %+replace% 
@@ -47,8 +39,7 @@ theme_set(theme_classic() %+replace%
                     plot.title = element_text(size = 14, hjust = 0)))
 ```
 
-Loading model data
-==================
+# Loading model data
 
 `phylolm` objects saved from [`04-phylo_fits`](04-phylo_fits.md):
 
@@ -64,38 +55,44 @@ Data frames used for each model fit:
 
 ``` r
 data <- list(absorp = get_df('absorp') %>% as_tibble,
-             pos = lapply(c('prox','med', 'dist'), 
+             pos = lapply(c('prox', 'mid', 'dist'), 
                           function(p) {get_df(.df = 'pos', .pos = p) %>% 
                                   mutate(pos = p)}) %>% 
                  bind_rows %>% 
                  as_tibble %>% 
                  select(pos, everything()) %>% 
                  gather('measure', 'value', -pos, -clade, -diet, -species, -log_mass) %>% 
-                 mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
-                                     labels = c('Proximal', 'Medial', 'Distal'))),
+                 mutate(pos = factor(pos, levels = c('prox','mid', 'dist'), 
+                                     labels = c('Proximal', 'Middle', 'Distal'))),
              spp = get_df('spp') %>% as_tibble,
              clear = get_df('clear') %>% as_tibble)
 ```
 
-Creating plot lists
-===================
+# Creating plot lists
 
-Plots are not organized in a straightforward way so that it would be easy to create them one by one. So I'm creating lists here that will store sub-plots (e.g., Fig. 1a, 1b) for each figure. (There are 7 figures total.)
+Plots are not organized in a straightforward way so that it would be
+easy to create them one by one. So I’m creating lists here that will
+store sub-plots (e.g., Fig. 1a, 1b) for each figure. (There are 7
+figures total.)
 
 ``` r
 for (i in 1:7) assign(sprintf('fig%i', i), list())
 rm(i)
 ```
 
-Individual plots for models by species only
-===========================================
+# Individual plots for models by species only
 
-Function to create base plots
------------------------------
+## Function to create base plots
 
-This creates the base plots for those models that have only clade on the x-axis (i.e., those organized by species only—not by intestinal segment). All these models include log(mass) as a covariate so are plotted with log(mass) on the x-axis.
+This creates the base plots for those models that have only clade on the
+x-axis (i.e., those organized by species only—not by intestinal
+segment). All these models include log(mass) as a covariate so are
+plotted with log(mass) on the x-axis.
 
-Function to create each plot depending on the `phylolm` model (`.model`), y-axis title (`y_axis_title`), plot title (`plot_title`), y-axis break points (`y_breaks`), y-axis labels (`y_labels`), and y-axis limits (`y_limits`). Only the first two are required.
+Function to create each plot depending on the `phylolm` model
+(`.model`), y-axis title (`y_axis_title`), plot title (`plot_title`),
+y-axis break points (`y_breaks`), y-axis labels (`y_labels`), and y-axis
+limits (`y_limits`). Only the first two are required.
 
 ``` r
 clade_only_plot <- function(.model, 
@@ -120,11 +117,11 @@ clade_only_plot <- function(.model,
         geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
                     fill = 'gray80', color = NA, alpha = 0.5) +
         # Raw data points
-        geom_point(data = data_frame(estimate = as.numeric(.model$y), 
-                                     log_mass = as.numeric(.model$X[,'log_mass']),
-                                     clade = factor(as.integer(.model$X[,'cladeBat']), 
-                                                    levels = c(0,1), 
-                                                    labels = c('Rodent', 'Bat'))) %>%
+        geom_point(data = tibble(estimate = as.numeric(.model$y), 
+                                 log_mass = as.numeric(.model$X[,'log_mass']),
+                                 clade = factor(as.integer(.model$X[,'cladeBat']), 
+                                                levels = c(0,1), 
+                                                labels = c('Rodent', 'Bat'))) %>%
                        mutate_at(vars(log_mass, estimate), exp),
                    size = 2) +
         # Regression fit
@@ -144,13 +141,15 @@ clade_only_plot <- function(.model,
 }
 ```
 
-Creating plot objects
----------------------
+## Creating plot objects
 
-For all the plots below...
+For all the plots below…
 
 1.  Both axes are on the log scale.
-2.  Envelopes represent 95% CI for model predictions via parametric bootstrapping.
+2.  Envelopes represent 95% CI for model predictions via parametric
+    bootstrapping.
+
+<!-- end list -->
 
 ``` r
 # Figure 1A
@@ -158,7 +157,7 @@ fig1[['a']] <- clade_only_plot(models$spp$log_intestinal_length,
                                "Intestinal length (cm)", 
                                y_breaks = 8 * 2^(0:3), 
                                plot_title = 'A') +
-    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1),
+    theme(legend.position = c(0.1, 1), legend.justification = c(0, 1),
           axis.title.x = element_blank(), axis.text.x = element_blank(),
           plot.margin = margin(t = 5.5, r = 5.5, b = 0, l = 5.5))
 # Figure 1B
@@ -171,38 +170,38 @@ fig1[['b']] <- clade_only_plot(models$spp$log_nsa,
 fig4 <- clade_only_plot(models$spp$log_vill_surface_area,
                         expression("Villous surface area (" * cm^2 * ")"),
                         y_breaks = 50 * 3^(0:2)) +
-    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
+    theme(legend.position = c(0.1, 1), legend.justification = c(0, 1))
 
 # Figure 6 (same as for figure 4)
 fig6 <- clade_only_plot(models$spp$log_total_enterocytes,
-                        expression("Total enterocytes" %*% 10^{-9}),
+                        "Total enterocytes",
                         # CHANGING UNITS HERE (from enterocytes to 
                         # 1e9 enterocytes:
                         y_breaks = 200e6 * 2^(0:3), y_labels = 0.2 * 2^(0:3)) +
-    theme(legend.position = c(0.05, 1), legend.justification = c(0, 1))
+    theme(legend.position = c(0.1, 1), legend.justification = c(0, 1))
 ```
 
-Individual plots for models by species and intestinal segment
-=============================================================
+# Individual plots for models by species and intestinal segment
 
-Objects to create base plots
-----------------------------
+## Objects to create base plots
 
-Making data frame of confidence intervals. (Nesting by parameter, not position, bc the former is how they'll be plotted.)
+Making data frame of confidence intervals. (Nesting by parameter, not
+position, bc the former is how they’ll be plotted.)
 
 ``` r
 pos_ci <- lapply(names(models$pos$prox), 
                  function(n) {
                      bind_rows(list(predict_ci(models$pos$prox[[n]]),
-                                    predict_ci(models$pos$med[[n]]),
+                                    predict_ci(models$pos$mid[[n]]),
                                     predict_ci(models$pos$dist[[n]])))
                  }) %>% 
     bind_rows %>% 
-    mutate(pos = factor(pos, levels = c('prox', 'med', 'dist'), 
-                        labels = c('Proximal', 'Medial', 'Distal')))
+    mutate(pos = factor(pos, levels = c('prox', 'mid', 'dist'), 
+                        labels = c('Proximal', 'Middle', 'Distal')))
 ```
 
-Table of y-axis names for each parameter:
+Table of y-axis names for each
+parameter:
 
 ``` r
 plot_names <- rbind(c("log_intestinal_diameter", "Intestinal ~ diameter ~ '(cm)'"),
@@ -212,12 +211,14 @@ plot_names <- rbind(c("log_intestinal_diameter", "Intestinal ~ diameter ~ '(cm)'
                     c("log_sef", "Surface ~ enlargement ~ factor ~ '(SEF)'"),
                     c("enterocyte_diameter", "Enterocyte ~ diameter ~ '(\u03BCm)'"),
                     c("log_enterocyte_density", 
-                      "Enterocyte ~ density  %*% 10^{-6} ~ '(' * cm^{-2} * ')'")) %>% 
-    as_tibble %>% 
-    rename(og = V1, new = V2)
+                      "Enterocyte ~ density ~ '(' * cm^{-2} * ')'")) %>% 
+    as_tibble(.name_repair = "universal") %>% 
+    rename(og = `...1`, new = `...2`)
 ```
 
-Function to create each plot depending on the input measurement name (`.measure`), custom y-axis break points (`y_breaks`) and labels (`y_labels`), and plot title (`plot_title`).
+Function to create each plot depending on the input measurement name
+(`.measure`), custom y-axis break points (`y_breaks`) and labels
+(`y_labels`), and plot title (`plot_title`).
 
 ``` r
 clade_pos_plot <- function(.measure, 
@@ -225,7 +226,7 @@ clade_pos_plot <- function(.measure,
                            y_labels = ggplot2::waiver(), 
                            plot_title = NULL) {
     # Getting model-prediction data frame for all three intestinal segments
-    predict_df <- lapply(c('prox', 'med', 'dist'), 
+    predict_df <- lapply(c('prox', 'mid', 'dist'), 
                          function(seg_) {
                              df_ <- predict_ci(models$pos[[seg_]][[.measure]])
                              # Adding log_mass to models that don't include it
@@ -250,8 +251,8 @@ clade_pos_plot <- function(.measure,
                          }) %>% 
         bind_rows %>% 
         mutate(signif = factor(signif, levels = c('no', 'yes')),
-               pos = factor(pos, levels = c('prox', 'med', 'dist'), 
-                            labels = c('Proximal', 'Medial', 'Distal')))
+               pos = factor(pos, levels = c('prox', 'mid', 'dist'), 
+                            labels = c('Proximal', 'Middle', 'Distal')))
     
     # Is the y-axis log-transformed?
     y_logged <- grepl('log', .measure)
@@ -307,22 +308,23 @@ clade_pos_plot <- function(.measure,
     # .mult is set to 3 for the x-axis to compensate for 3 facets
     # .data is provided to make sure it only shows up in the first facet
     .p <- add_title(.p, .title = plot_title, .mult = list(x = 3, y = 1),
-                    .data = data_frame(pos = sort(unique(predict_df$pos))[1]))
+                    .data = tibble(pos = sort(unique(predict_df$pos))[1]))
     
     return (.p)
 }
 ```
 
-Creating plot objects
----------------------
+## Creating plot objects
 
 X-axis is on log scale for all plots.
 
 Y-axis is on log scale for all plots *except* the following:
 
--   fig2b
--   fig2c
--   fig5a
+  - fig2b
+  - fig2c
+  - fig5a
+
+<!-- end list -->
 
 ``` r
 # Figure 1c
@@ -367,8 +369,7 @@ fig5[['b']] <- clade_pos_plot('log_enterocyte_density',
     theme(strip.background = element_blank(), strip.text = element_blank())
 ```
 
-Individual plots for clearance and absorption
-=============================================
+# Individual plots for clearance and absorption
 
 All axes are on the log scale for all plots.
 
@@ -438,27 +439,19 @@ fig7[['b']] <- fig7[['b']] %>%
     add_title('B')
 ```
 
-Creating and saving final plots
-===============================
+# Creating and saving final plots
 
-Function to combine plots
--------------------------
+## Function to combine plots
 
 ``` r
 # Printing figures from single or a list of ggplot object(s).
 one_fig <- function(fig_list) {
-    if (is(fig_list, 'list')) {
+    if (inherits(fig_list, 'list')) {
         stopifnot(all(sapply(fig_list, function(x) is(x, 'ggplot'))))
         
         grob_list <- lapply(fig_list, ggplotGrob)
         # Number of columns in each plot; indicative of whether it's faceted
         grob_cols <- sapply(grob_list, ncol)
-        
-        if (any(!grob_cols %in% c(7, 15))) {
-            stop(str_c("The number of columns in this ggplotGrob is not 7 or 15. ",
-                       "Check that it's doing what you want and re-program the ",
-                       "`one_fig` function."))
-        }
         
         # Figure 1 combines faceted and non-faceted plots.
         # This is the best way I know of for plotting them:
@@ -482,7 +475,7 @@ one_fig <- function(fig_list) {
         
     # For figures 3, 4, and 6, you can simply plot them bc they're ggplot objects
     # I'm using ggplotGrob for consistency with those above
-    } else if (is(fig_list, 'ggplot')) {
+    } else if (inherits(fig_list, 'ggplot')) {
         out <- ggplotGrob(fig_list)
     } else stop("Input fig_list can only be a list or ggplot object.")
     
@@ -511,80 +504,92 @@ save_fig(fig6, 6, width = 3.875, height = 3.125, .seed = 6)
 save_fig(fig7, 7, width = 3.875, height = 3.125 * 2, .seed = 7)
 ```
 
-Session info
-============
+# Session info
 
-This outlines the package versions I used for this script.
+This outlines the package versions I used for this
+    script.
 
-    ## Session info -------------------------------------------------------------
-
+    ## ─ Session info ──────────────────────────────────────────────────────────
     ##  setting  value                       
-    ##  version  R version 3.4.2 (2017-09-28)
+    ##  version  R version 3.5.2 (2018-12-20)
+    ##  os       macOS Mojave 10.14.3        
     ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
+    ##  ctype    en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-14
-
-    ## Packages -----------------------------------------------------------------
-
-    ##  package     * version date       source        
-    ##  ape         * 5.0     2017-10-30 CRAN (R 3.4.2)
-    ##  assertthat    0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports     1.1.1   2017-09-25 CRAN (R 3.4.2)
-    ##  base        * 3.4.2   2017-10-04 local         
-    ##  bindr         0.1     2016-11-13 CRAN (R 3.4.0)
-    ##  bindrcpp    * 0.2     2017-06-17 CRAN (R 3.4.0)
-    ##  colorspace    1.3-2   2016-12-14 CRAN (R 3.4.0)
-    ##  commonmark    1.4     2017-09-01 CRAN (R 3.4.1)
-    ##  compiler      3.4.2   2017-10-04 local         
-    ##  corphyloCpp * 1.0     <NA>       local         
-    ##  cowplot       0.9.1   2017-11-16 CRAN (R 3.4.2)
-    ##  datasets    * 3.4.2   2017-10-04 local         
-    ##  devtools      1.13.3  2017-08-02 CRAN (R 3.4.1)
-    ##  digest        0.6.12  2017-01-27 CRAN (R 3.4.0)
-    ##  dplyr       * 0.7.4   2017-09-28 CRAN (R 3.4.2)
-    ##  evaluate      0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  ggplot2     * 2.2.1   2016-12-30 CRAN (R 3.4.0)
-    ##  glue          1.2.0   2017-10-29 CRAN (R 3.4.2)
-    ##  graphics    * 3.4.2   2017-10-04 local         
-    ##  grDevices   * 3.4.2   2017-10-04 local         
-    ##  grid        * 3.4.2   2017-10-04 local         
-    ##  gridExtra   * 2.3     2017-09-09 CRAN (R 3.4.1)
-    ##  gtable        0.2.0   2016-02-26 CRAN (R 3.4.0)
-    ##  hms           0.3     2016-11-22 CRAN (R 3.4.0)
-    ##  htmltools     0.3.6   2017-04-28 cran (@0.3.6) 
-    ##  knitr         1.17    2017-08-10 CRAN (R 3.4.1)
-    ##  labeling      0.3     2014-08-23 CRAN (R 3.4.0)
-    ##  lattice       0.20-35 2017-03-25 CRAN (R 3.4.2)
-    ##  lazyeval      0.2.1   2017-10-29 CRAN (R 3.4.2)
-    ##  magrittr      1.5     2014-11-22 CRAN (R 3.4.0)
-    ##  memoise       1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods     * 3.4.2   2017-10-04 local         
-    ##  munsell       0.4.3   2016-02-13 CRAN (R 3.4.0)
-    ##  nlme          3.1-131 2017-02-06 CRAN (R 3.4.2)
-    ##  parallel      3.4.2   2017-10-04 local         
-    ##  phylolm     * 2.5     2016-10-17 CRAN (R 3.4.0)
-    ##  pkgconfig     2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  plyr          1.8.4   2016-06-08 CRAN (R 3.4.0)
-    ##  purrr       * 0.2.4   2017-10-18 CRAN (R 3.4.2)
-    ##  R6            2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp          0.12.13 2017-09-28 CRAN (R 3.4.2)
-    ##  readr       * 1.1.1   2017-05-16 CRAN (R 3.4.0)
-    ##  rlang         0.1.4   2017-11-05 CRAN (R 3.4.2)
-    ##  rmarkdown     1.6     2017-06-15 CRAN (R 3.4.0)
-    ##  roxygen2      6.0.1   2017-02-06 CRAN (R 3.4.0)
-    ##  rprojroot     1.2     2017-01-16 cran (@1.2)   
-    ##  scales        0.5.0   2017-08-24 CRAN (R 3.4.1)
-    ##  stats       * 3.4.2   2017-10-04 local         
-    ##  stringi       1.1.5   2017-04-07 CRAN (R 3.4.0)
-    ##  stringr       1.2.0   2017-02-18 CRAN (R 3.4.0)
-    ##  tibble        1.3.4   2017-08-22 CRAN (R 3.4.1)
-    ##  tidyr       * 0.7.2   2017-10-16 CRAN (R 3.4.2)
-    ##  tidyselect    0.2.3   2017-11-06 CRAN (R 3.4.2)
-    ##  tools         3.4.2   2017-10-04 local         
-    ##  utils       * 3.4.2   2017-10-04 local         
-    ##  withr         2.1.0   2017-11-01 CRAN (R 3.4.2)
-    ##  xml2          1.1.1   2017-01-24 CRAN (R 3.4.0)
-    ##  yaml          2.1.14  2016-11-12 cran (@2.1.14)
+    ##  date     2019-02-16                  
+    ## 
+    ## ─ Packages ──────────────────────────────────────────────────────────────
+    ##  package      * version  date       lib source                        
+    ##  ape          * 5.2      2018-09-24 [1] CRAN (R 3.5.0)                
+    ##  assertthat     0.2.0    2017-04-11 [1] CRAN (R 3.5.0)                
+    ##  backports      1.1.3    2018-12-14 [1] CRAN (R 3.5.0)                
+    ##  callr          3.1.1    2018-12-21 [1] CRAN (R 3.5.0)                
+    ##  cli            1.0.1    2018-09-25 [1] CRAN (R 3.5.0)                
+    ##  codetools      0.2-16   2018-12-24 [1] CRAN (R 3.5.2)                
+    ##  colorspace     1.4-0    2019-01-13 [1] CRAN (R 3.5.2)                
+    ##  cowplot        0.9.4    2019-01-08 [1] CRAN (R 3.5.2)                
+    ##  crayon         1.3.4    2017-09-16 [1] CRAN (R 3.5.0)                
+    ##  desc           1.2.0    2018-05-01 [1] CRAN (R 3.5.0)                
+    ##  devtools       2.0.1    2018-10-26 [1] CRAN (R 3.5.1)                
+    ##  digest         0.6.18   2018-10-10 [1] CRAN (R 3.5.0)                
+    ##  dplyr        * 0.8.0.1  2019-02-15 [1] CRAN (R 3.5.2)                
+    ##  evaluate       0.13     2019-02-12 [1] CRAN (R 3.5.2)                
+    ##  fs             1.2.6    2018-08-23 [1] CRAN (R 3.5.0)                
+    ##  future         1.11.1.1 2019-01-26 [1] CRAN (R 3.5.2)                
+    ##  future.apply   1.1.0    2019-01-17 [1] CRAN (R 3.5.2)                
+    ##  ggplot2      * 3.1.0    2018-10-25 [1] CRAN (R 3.5.0)                
+    ##  globals        0.12.4   2018-10-11 [1] CRAN (R 3.5.0)                
+    ##  glue           1.3.0    2018-07-17 [1] CRAN (R 3.5.0)                
+    ##  gridExtra    * 2.3      2017-09-09 [1] CRAN (R 3.5.0)                
+    ##  gtable         0.2.0    2016-02-26 [1] CRAN (R 3.5.0)                
+    ##  hms            0.4.2    2018-03-10 [1] CRAN (R 3.5.0)                
+    ##  htmltools      0.3.6    2017-04-28 [1] CRAN (R 3.5.0)                
+    ##  knitr          1.21     2018-12-10 [1] CRAN (R 3.5.2)                
+    ##  labeling       0.3      2014-08-23 [1] CRAN (R 3.5.0)                
+    ##  lattice        0.20-38  2018-11-04 [1] CRAN (R 3.5.2)                
+    ##  lazyeval       0.2.1    2017-10-29 [1] CRAN (R 3.5.0)                
+    ##  listenv        0.7.0    2018-01-21 [1] CRAN (R 3.5.0)                
+    ##  lme4           1.1-20   2019-02-04 [1] CRAN (R 3.5.2)                
+    ##  magrittr       1.5      2014-11-22 [1] CRAN (R 3.5.0)                
+    ##  MASS           7.3-51.1 2018-11-01 [1] CRAN (R 3.5.2)                
+    ##  Matrix         1.2-15   2018-11-01 [1] CRAN (R 3.5.2)                
+    ##  memoise        1.1.0    2017-04-21 [1] CRAN (R 3.5.0)                
+    ##  minqa          1.2.4    2014-10-09 [1] CRAN (R 3.5.0)                
+    ##  munsell        0.5.0    2018-06-12 [1] CRAN (R 3.5.0)                
+    ##  nlme           3.1-137  2018-04-07 [1] CRAN (R 3.5.2)                
+    ##  nloptr         1.2.1    2018-10-03 [1] CRAN (R 3.5.0)                
+    ##  phylolm      * 2.6      2018-05-31 [1] CRAN (R 3.5.0)                
+    ##  phyr         * 0.1.5    2018-11-16 [1] Github (daijiang/phyr@b789866)
+    ##  pillar         1.3.1    2018-12-15 [1] CRAN (R 3.5.0)                
+    ##  pkgbuild       1.0.2    2018-10-16 [1] CRAN (R 3.5.0)                
+    ##  pkgconfig      2.0.2    2018-08-16 [1] CRAN (R 3.5.0)                
+    ##  pkgload        1.0.2    2018-10-29 [1] CRAN (R 3.5.0)                
+    ##  plyr           1.8.4    2016-06-08 [1] CRAN (R 3.5.0)                
+    ##  prettyunits    1.0.2    2015-07-13 [1] CRAN (R 3.5.0)                
+    ##  processx       3.2.1    2018-12-05 [1] CRAN (R 3.5.0)                
+    ##  ps             1.3.0    2018-12-21 [1] CRAN (R 3.5.0)                
+    ##  purrr        * 0.3.0    2019-01-27 [1] CRAN (R 3.5.2)                
+    ##  R6             2.4.0    2019-02-14 [1] CRAN (R 3.5.2)                
+    ##  Rcpp           1.0.0    2018-11-07 [1] CRAN (R 3.5.0)                
+    ##  readr        * 1.3.1    2018-12-21 [1] CRAN (R 3.5.0)                
+    ##  remotes        2.0.2    2018-10-30 [1] CRAN (R 3.5.0)                
+    ##  rlang          0.3.1    2019-01-08 [1] CRAN (R 3.5.2)                
+    ##  rmarkdown      1.11     2018-12-08 [1] CRAN (R 3.5.0)                
+    ##  rprojroot      1.3-2    2018-01-03 [1] CRAN (R 3.5.0)                
+    ##  scales         1.0.0    2018-08-09 [1] CRAN (R 3.5.0)                
+    ##  sessioninfo    1.1.1    2018-11-05 [1] CRAN (R 3.5.0)                
+    ##  stringi        1.3.1    2019-02-13 [1] CRAN (R 3.5.2)                
+    ##  stringr      * 1.4.0    2019-02-10 [1] CRAN (R 3.5.2)                
+    ##  testthat       2.0.1    2018-10-13 [1] CRAN (R 3.5.0)                
+    ##  tibble         2.0.1    2019-01-12 [1] CRAN (R 3.5.2)                
+    ##  tidyr        * 0.8.2    2018-10-28 [1] CRAN (R 3.5.0)                
+    ##  tidyselect     0.2.5    2018-10-11 [1] CRAN (R 3.5.0)                
+    ##  usethis        1.4.0    2018-08-14 [1] CRAN (R 3.5.0)                
+    ##  withr          2.1.2    2018-03-15 [1] CRAN (R 3.5.0)                
+    ##  xfun           0.4      2018-10-23 [1] CRAN (R 3.5.0)                
+    ##  yaml           2.2.0    2018-07-25 [1] CRAN (R 3.5.0)                
+    ## 
+    ## [1] /Library/Frameworks/R.framework/Versions/3.5/Resources/library

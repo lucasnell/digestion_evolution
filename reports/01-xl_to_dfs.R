@@ -53,7 +53,7 @@ suppressPackageStartupMessages({
 #' Read from Excel file.
 #' 
 #+  read_morph
-xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, 
+xl <- read_excel('data/raw_data.xlsx', col_names = paste0("X__", 1:88), 
                  col_types = rep('text', 88), sheet = 1)
 #' 
 #' 
@@ -74,11 +74,9 @@ spp_df_$abbrev[spp_df_$full == 'Molossus molossus'] <- 'Mmo'
 # Start of final morphometrics data frame, starting with diet, clade, name, and 
 # villus heights
 initial_df <- xl[c(4:34,36:64),1:6] %>%  # (<-- row 35 is all NAs)
-    rename_(.dots = setNames(paste0('X__', 1:6), 
-                             c('diet', 'clade', 'id', 
-                               'prox', 'med', 'dist'))) %>% 
-    mutate_at(vars(prox, med, dist), 
-              function(x) as.numeric(ifelse(x == 'None', NA, x))) %>% 
+    set_names(c('diet', 'clade', 'id', 'prox', 'mid', 'dist')) %>% 
+    mutate_at(vars(prox, mid, dist),
+              function(x) as.numeric(ifelse(x == 'None', NA, x))) %>%
     mutate(measure = 'villus height')
 
 # Resolving ambiguous ids
@@ -87,7 +85,7 @@ initial_df$id[initial_df$clade == 'Bat' & grepl('Mm', initial_df$id)] <- paste0(
 initial_df$id[grepl('My', initial_df$id)] <- paste0('My', 1:3)
 
 # Assigning species names
-initial_df <- initial_df %>% 
+initial_df <- initial_df %>%
     mutate(species = sapply(id, function(.id) {
         spp_df_$full[spp_df_$abbrev == gsub('[0-9]', '', .id)]
     })) %>% 
@@ -102,7 +100,7 @@ initial_df <- initial_df %>%
 #' It's assumed that all these are located in rows `c(4:34,36:64)`, like the villus height
 #' data.
 #' Also, `n` should only be 2 or 0, for measures with and without separate proximal, 
-#' medial, and distal measurements, respectively.
+#' middle, and distal measurements, respectively.
 #' Lastly, although I am extracting columns from the Excel file, I want the new csv file
 #' to be in "long" format, so I'm binding them by rows.
 #' 
@@ -127,14 +125,13 @@ new_cols <- new_cols %>%
 xl_extr <- function(.x) {
     .df <- xl[c(4:34,36:64), .x$col1:(.x$col1+.x$n)]
     if (.x$n == 0) {
-        .df <- .df %>% 
-            mutate_(.dots = setNames(list(as.numeric(NA), as.numeric(NA)), 
-                                     paste0('X__', .x$col1 + 1:2)))
+        lhs <- sprintf('X__%i', .x$col1 + 1:2)
+        .df <- .df %>%
+            mutate(!!lhs[1] := NA_real_, !!lhs[2] := NA_real_)
     }
     
     .df <- .df %>%
-        rename_(.dots = setNames(paste0('X__', .x$col1:(.x$col1 + 2)), 
-                                 c('prox', 'med', 'dist'))) %>% 
+        set_names(c('prox', 'mid', 'dist')) %>% 
         mutate_all(function(x) as.numeric(ifelse(x == 'None', NA, x))) %>% 
         mutate(measure = .x$name)
     # Now adding columns common to all dataframes
@@ -144,11 +141,11 @@ xl_extr <- function(.x) {
     return(out_df)
 }
 
-morph_df <- new_cols %>% 
+morph_df <- new_cols %>%
     split(.$name) %>% 
-    map(xl_extr) %>% 
-    bind_rows %>% 
-    bind_rows(initial_df) %>% 
+    map(xl_extr) %>%
+    bind_rows() %>%
+    bind_rows(initial_df) %>%
     arrange(measure, species, id)
 
 
@@ -158,9 +155,9 @@ morph_df <- morph_df %>%
     mutate(dist = ifelse(species == 'Microtus pennsylvanicus' &
                               measure == 'enterocyte width', 
                          dist * 10, dist),
-           med = ifelse(species == 'Microtus pennsylvanicus' &
+           mid = ifelse(species == 'Microtus pennsylvanicus' &
                              measure == 'enterocyte width', 
-                        med * 10, med)) %>% 
+                        mid * 10, mid)) %>% 
     # These species' diets weren't included
     mutate(diet = ifelse(species == 'Microtus pennsylvanicus', 'Herbivorous',
                          ifelse(species == 'Eptesicus fuscus', 'Protein', diet))) %>% 
@@ -171,7 +168,7 @@ morph_df <- morph_df %>%
 # Number of individuals
 N <- morph_df$id %>% unique %>% length
 
-# Measures with no position (i.e., NA in pos column instead of prox, med, or dist)
+# Measures with no position (i.e., NA in pos column instead of prox, mid, or dist)
 no_pos <- morph_df %>% 
     filter(is.na(dist)) %>% 
     group_by(measure) %>% 
@@ -252,7 +249,7 @@ is_num <- function(x) {
 #+  read_clear
 xl_sef <- read_excel('data/raw_data.xlsx', sheet = 2, range = "B20:E138",
                      col_types = rep('text', 4),
-                     col_names = c('id', 'prox', 'med', 'dist'))
+                     col_names = c('id', 'prox', 'mid', 'dist'))
 
 
 xl_clear <- read_excel('data/raw_data.xlsx', col_names = c('id', 'clear'), 
@@ -265,10 +262,10 @@ xl_clear <- read_excel('data/raw_data.xlsx', col_names = c('id', 'clear'),
 #' 
 #+  sef_df
 sef_df <- xl_sef %>%
-    filter(!is.na(id) | !is.na(prox) | !is.na(med) | !is.na(dist),
-           is_num(prox), is_num(med), is_num(dist), 
+    filter(!is.na(id) | !is.na(prox) | !is.na(mid) | !is.na(dist),
+           is_num(prox), is_num(mid), is_num(dist), 
            id != "SEF") %>% 
-    mutate_at(vars(prox, med, dist), as.numeric) %>% 
+    mutate_at(vars(prox, mid, dist), as.numeric) %>% 
     mutate(
         # this one was input incorrectly
         id = gsub("perspicillatac", "perspicillata", id),
@@ -281,7 +278,7 @@ sef_df <- xl_sef %>%
         diet = find_diet(species),
         clade = find_clade(species)
     ) %>% 
-    select(diet, clade, species, id, prox, med, dist)
+    select(diet, clade, species, id, prox, mid, dist)
 
 
 
@@ -329,7 +326,7 @@ clear_df <- bind_rows(sef_df, clear_df) %>%
 xl_abs <- read_excel('data/raw_data.xlsx', sheet = 3, range = "C19:M131",
                      col_types = rep('text', 11),
                      col_names = c('id', 'gavage', 'injection', 
-                                   'id2', 'prox', 'med', 'dist', 'animal_avg', 
+                                   'id2', 'prox', 'mid', 'dist', 'animal_avg', 
                                    'sp_avg', 'nsa', 'mass'))
 #' 
 #' 
@@ -361,10 +358,10 @@ abs_df <- xl_abs %>%
 
 
 abs_df2 <- xl_abs %>%
-    select(id2, prox, med, dist, nsa, mass) %>% 
-    filter(!is.na(id2), !is.na(prox) , !is.na(med),
+    select(id2, prox, mid, dist, nsa, mass) %>% 
+    filter(!is.na(id2), !is.na(prox) , !is.na(mid),
            !is.na(dist), !is.na(nsa), !is.na(mass)) %>% 
-    mutate_at(vars(prox, med, dist, nsa, mass), as.numeric) %>% 
+    mutate_at(vars(prox, mid, dist, nsa, mass), as.numeric) %>% 
     mutate(
         # this one was input incorrectly
         id2 = gsub("Microtus", "M. pennsylvanicus ", id2),
@@ -377,7 +374,7 @@ abs_df2 <- xl_abs %>%
         diet = find_diet(species),
         clade = find_clade(species)
     ) %>% 
-    select(diet, clade, species, id, prox, med, dist, nsa, mass)
+    select(diet, clade, species, id, prox, mid, dist, nsa, mass)
 
 absorp_df <- bind_rows(abs_df, abs_df2) %>% 
     arrange(clade, diet, species, id)

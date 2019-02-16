@@ -77,15 +77,15 @@ Data frames used for each model fit:
 
 ```{r load_data}
 data <- list(absorp = get_df('absorp') %>% as_tibble,
-             pos = lapply(c('prox','med', 'dist'), 
+             pos = lapply(c('prox', 'mid', 'dist'), 
                           function(p) {get_df(.df = 'pos', .pos = p) %>% 
                                   mutate(pos = p)}) %>% 
                  bind_rows %>% 
                  as_tibble %>% 
                  select(pos, everything()) %>% 
                  gather('measure', 'value', -pos, -clade, -diet, -species, -log_mass) %>% 
-                 mutate(pos = factor(pos, levels = c('prox','med', 'dist'), 
-                                     labels = c('Proximal', 'Medial', 'Distal'))),
+                 mutate(pos = factor(pos, levels = c('prox','mid', 'dist'), 
+                                     labels = c('Proximal', 'Middle', 'Distal'))),
              spp = get_df('spp') %>% as_tibble,
              clear = get_df('clear') %>% as_tibble)
 ```
@@ -149,11 +149,11 @@ clade_only_plot <- function(.model,
         geom_ribbon(aes(ymin = low, ymax = high, group = clade), 
                     fill = 'gray80', color = NA, alpha = 0.5) +
         # Raw data points
-        geom_point(data = data_frame(estimate = as.numeric(.model$y), 
-                                     log_mass = as.numeric(.model$X[,'log_mass']),
-                                     clade = factor(as.integer(.model$X[,'cladeBat']), 
-                                                    levels = c(0,1), 
-                                                    labels = c('Rodent', 'Bat'))) %>%
+        geom_point(data = tibble(estimate = as.numeric(.model$y), 
+                                 log_mass = as.numeric(.model$X[,'log_mass']),
+                                 clade = factor(as.integer(.model$X[,'cladeBat']), 
+                                                levels = c(0,1), 
+                                                labels = c('Rodent', 'Bat'))) %>%
                        mutate_at(vars(log_mass, estimate), exp),
                    size = 2) +
         # Regression fit
@@ -227,18 +227,18 @@ Making data frame of confidence intervals.
 pos_ci <- lapply(names(models$pos$prox), 
                  function(n) {
                      bind_rows(list(predict_ci(models$pos$prox[[n]]),
-                                    predict_ci(models$pos$med[[n]]),
+                                    predict_ci(models$pos$mid[[n]]),
                                     predict_ci(models$pos$dist[[n]])))
                  }) %>% 
     bind_rows %>% 
-    mutate(pos = factor(pos, levels = c('prox', 'med', 'dist'), 
-                        labels = c('Proximal', 'Medial', 'Distal')))
+    mutate(pos = factor(pos, levels = c('prox', 'mid', 'dist'), 
+                        labels = c('Proximal', 'Middle', 'Distal')))
 ```
 
 
 Table of y-axis names for each parameter:
 
-```{r plots_seg_names}
+```{r plots_seg_names, message=FALSE}
 plot_names <- rbind(c("log_intestinal_diameter", "Intestinal ~ diameter ~ '(cm)'"),
                     c("log_villus_height", "Villus ~ height ~ '(mm)'"),
                     c("villus_width", "Villus ~ width ~ '(mm)'"),
@@ -247,8 +247,8 @@ plot_names <- rbind(c("log_intestinal_diameter", "Intestinal ~ diameter ~ '(cm)'
                     c("enterocyte_diameter", "Enterocyte ~ diameter ~ '(\u03BCm)'"),
                     c("log_enterocyte_density", 
                       "Enterocyte ~ density ~ '(' * cm^{-2} * ')'")) %>% 
-    as_tibble %>% 
-    rename(og = V1, new = V2)
+    as_tibble(.name_repair = "universal") %>% 
+    rename(og = `...1`, new = `...2`)
 ```
 
 
@@ -262,7 +262,7 @@ clade_pos_plot <- function(.measure,
                            y_labels = ggplot2::waiver(), 
                            plot_title = NULL) {
     # Getting model-prediction data frame for all three intestinal segments
-    predict_df <- lapply(c('prox', 'med', 'dist'), 
+    predict_df <- lapply(c('prox', 'mid', 'dist'), 
                          function(seg_) {
                              df_ <- predict_ci(models$pos[[seg_]][[.measure]])
                              # Adding log_mass to models that don't include it
@@ -287,8 +287,8 @@ clade_pos_plot <- function(.measure,
                          }) %>% 
         bind_rows %>% 
         mutate(signif = factor(signif, levels = c('no', 'yes')),
-               pos = factor(pos, levels = c('prox', 'med', 'dist'), 
-                            labels = c('Proximal', 'Medial', 'Distal')))
+               pos = factor(pos, levels = c('prox', 'mid', 'dist'), 
+                            labels = c('Proximal', 'Middle', 'Distal')))
     
     # Is the y-axis log-transformed?
     y_logged <- grepl('log', .measure)
@@ -344,7 +344,7 @@ clade_pos_plot <- function(.measure,
     # .mult is set to 3 for the x-axis to compensate for 3 facets
     # .data is provided to make sure it only shows up in the first facet
     .p <- add_title(.p, .title = plot_title, .mult = list(x = 3, y = 1),
-                    .data = data_frame(pos = sort(unique(predict_df$pos))[1]))
+                    .data = tibble(pos = sort(unique(predict_df$pos))[1]))
     
     return (.p)
 }

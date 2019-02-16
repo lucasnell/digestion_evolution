@@ -43,14 +43,14 @@ pd_nsa <- perc_diff(plm_mods$spp$log_nsa) %>%
 ```{r results-percent-diff-sef}
 pd_sef <- mean(c(
     perc_diff(plm_mods$pos$prox$log_sef),
-    perc_diff(plm_mods$pos$med$log_sef),
+    perc_diff(plm_mods$pos$mid$log_sef),
     perc_diff(plm_mods$pos$dist$log_sef))) %>% 
     signif(digits = 4)
 ```
 ```{r results-percent-diff-ent-dens}
 pd_ed <- mean(c(
     perc_diff(plm_mods$pos$prox$log_enterocyte_density), 
-    perc_diff(plm_mods$pos$med$log_enterocyte_density), 
+    perc_diff(plm_mods$pos$mid$log_enterocyte_density), 
     perc_diff(plm_mods$pos$dist$log_enterocyte_density))) %>% 
     signif(digits = 4)
 ```

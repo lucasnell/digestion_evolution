@@ -1,15 +1,10 @@
 Convert raw Excel file into simpler data frames
 ================
 Lucas Nell
-12 Dec 2017
+16 Feb 2019
 
--   [Morphometric data](#morphometric-data)
--   [Clearance data](#clearance-data)
--   [Absorption data](#absorption-data)
--   [Remove excess objects](#remove-excess-objects)
--   [Session info](#session-info)
-
-This reads the initial Excel file and simplifies it into data frames. It needs to be sourced every time you run `doc/02-aggregate.Rmd`.
+This reads the initial Excel file and simplifies it into data frames. It
+needs to be sourced every time you run `doc/02-aggregate.Rmd`.
 
 **Load packages:**
 
@@ -41,17 +36,17 @@ Function to get integer index from Excel alphabetic index
 
     ## [1] 26
 
-Morphometric data
-=================
+# Morphometric data
 
 Read from Excel file.
 
 ``` r
-xl <- read_excel('data/raw_data.xlsx', col_names = FALSE, 
+xl <- read_excel('data/raw_data.xlsx', col_names = paste0("X__", 1:88), 
                  col_types = rep('text', 88), sheet = 1)
 ```
 
-Initial manipulation to retrieve desired info and correct ambiguity / "untidy-ness".
+Initial manipulation to retrieve desired info and correct ambiguity /
+“untidy-ness”.
 
 ``` r
 # Table of abbreviated species names
@@ -68,11 +63,9 @@ spp_df_$abbrev[spp_df_$full == 'Molossus molossus'] <- 'Mmo'
 # Start of final morphometrics data frame, starting with diet, clade, name, and 
 # villus heights
 initial_df <- xl[c(4:34,36:64),1:6] %>%  # (<-- row 35 is all NAs)
-    rename_(.dots = setNames(paste0('X__', 1:6), 
-                             c('diet', 'clade', 'id', 
-                               'prox', 'med', 'dist'))) %>% 
-    mutate_at(vars(prox, med, dist), 
-              function(x) as.numeric(ifelse(x == 'None', NA, x))) %>% 
+    set_names(c('diet', 'clade', 'id', 'prox', 'mid', 'dist')) %>% 
+    mutate_at(vars(prox, mid, dist),
+              function(x) as.numeric(ifelse(x == 'None', NA, x))) %>%
     mutate(measure = 'villus height')
 
 # Resolving ambiguous ids
@@ -81,14 +74,21 @@ initial_df$id[initial_df$clade == 'Bat' & grepl('Mm', initial_df$id)] <- paste0(
 initial_df$id[grepl('My', initial_df$id)] <- paste0('My', 1:3)
 
 # Assigning species names
-initial_df <- initial_df %>% 
+initial_df <- initial_df %>%
     mutate(species = sapply(id, function(.id) {
         spp_df_$full[spp_df_$abbrev == gsub('[0-9]', '', .id)]
     })) %>% 
     select(diet, clade, species, id, measure, everything())
 ```
 
-I'm next going to make a new data frame of column names along with their column location in the Excel file and the number of additional columns to take (after the one specified). It's assumed that all these are located in rows `c(4:34,36:64)`, like the villus height data. Also, `n` should only be 2 or 0, for measures with and without separate proximal, medial, and distal measurements, respectively. Lastly, although I am extracting columns from the Excel file, I want the new csv file to be in "long" format, so I'm binding them by rows.
+I’m next going to make a new data frame of column names along with their
+column location in the Excel file and the number of additional columns
+to take (after the one specified). It’s assumed that all these are
+located in rows `c(4:34,36:64)`, like the villus height data. Also, `n`
+should only be 2 or 0, for measures with and without separate proximal,
+middle, and distal measurements, respectively. Lastly, although I am
+extracting columns from the Excel file, I want the new csv file to be in
+“long” format, so I’m binding them by rows.
 
 ``` r
 new_cols <- read_csv('name,col1,n
@@ -111,14 +111,13 @@ new_cols <- new_cols %>%
 xl_extr <- function(.x) {
     .df <- xl[c(4:34,36:64), .x$col1:(.x$col1+.x$n)]
     if (.x$n == 0) {
-        .df <- .df %>% 
-            mutate_(.dots = setNames(list(as.numeric(NA), as.numeric(NA)), 
-                                     paste0('X__', .x$col1 + 1:2)))
+        lhs <- sprintf('X__%i', .x$col1 + 1:2)
+        .df <- .df %>%
+            mutate(!!lhs[1] := NA_real_, !!lhs[2] := NA_real_)
     }
     
     .df <- .df %>%
-        rename_(.dots = setNames(paste0('X__', .x$col1:(.x$col1 + 2)), 
-                                 c('prox', 'med', 'dist'))) %>% 
+        set_names(c('prox', 'mid', 'dist')) %>% 
         mutate_all(function(x) as.numeric(ifelse(x == 'None', NA, x))) %>% 
         mutate(measure = .x$name)
     # Now adding columns common to all dataframes
@@ -128,11 +127,11 @@ xl_extr <- function(.x) {
     return(out_df)
 }
 
-morph_df <- new_cols %>% 
+morph_df <- new_cols %>%
     split(.$name) %>% 
-    map(xl_extr) %>% 
-    bind_rows %>% 
-    bind_rows(initial_df) %>% 
+    map(xl_extr) %>%
+    bind_rows() %>%
+    bind_rows(initial_df) %>%
     arrange(measure, species, id)
 
 
@@ -142,9 +141,9 @@ morph_df <- morph_df %>%
     mutate(dist = ifelse(species == 'Microtus pennsylvanicus' &
                               measure == 'enterocyte width', 
                          dist * 10, dist),
-           med = ifelse(species == 'Microtus pennsylvanicus' &
+           mid = ifelse(species == 'Microtus pennsylvanicus' &
                              measure == 'enterocyte width', 
-                        med * 10, med)) %>% 
+                        mid * 10, mid)) %>% 
     # These species' diets weren't included
     mutate(diet = ifelse(species == 'Microtus pennsylvanicus', 'Herbivorous',
                          ifelse(species == 'Eptesicus fuscus', 'Protein', diet))) %>% 
@@ -155,7 +154,7 @@ morph_df <- morph_df %>%
 # Number of individuals
 N <- morph_df$id %>% unique %>% length
 
-# Measures with no position (i.e., NA in pos column instead of prox, med, or dist)
+# Measures with no position (i.e., NA in pos column instead of prox, mid, or dist)
 no_pos <- morph_df %>% 
     filter(is.na(dist)) %>% 
     group_by(measure) %>% 
@@ -179,10 +178,9 @@ morph_df <- morph_df %>%
 rm(no_pos, N)
 ```
 
-Clearance data
-==============
+# Clearance data
 
-For "L-arabinose clearance (μl min^-1)" vs SEF (Figure 7A)
+For “L-arabinose clearance (μl min^-1)” vs SEF (Figure 7A)
 
 Necessary functions:
 
@@ -229,26 +227,28 @@ is_num <- function(x) {
 }
 ```
 
-Reading the data.
+Reading the
+data.
 
 ``` r
 xl_sef <- read_excel('data/raw_data.xlsx', sheet = 2, range = "B20:E138",
                      col_types = rep('text', 4),
-                     col_names = c('id', 'prox', 'med', 'dist'))
+                     col_names = c('id', 'prox', 'mid', 'dist'))
 
 
 xl_clear <- read_excel('data/raw_data.xlsx', col_names = c('id', 'clear'), 
                        col_types = rep('text', 2), sheet = 2, range = "I20:J140")
 ```
 
-Manipulating for SEF and clearance, then combining them into one data frame.
+Manipulating for SEF and clearance, then combining them into one data
+frame.
 
 ``` r
 sef_df <- xl_sef %>%
-    filter(!is.na(id) | !is.na(prox) | !is.na(med) | !is.na(dist),
-           is_num(prox), is_num(med), is_num(dist), 
+    filter(!is.na(id) | !is.na(prox) | !is.na(mid) | !is.na(dist),
+           is_num(prox), is_num(mid), is_num(dist), 
            id != "SEF") %>% 
-    mutate_at(vars(prox, med, dist), as.numeric) %>% 
+    mutate_at(vars(prox, mid, dist), as.numeric) %>% 
     mutate(
         # this one was input incorrectly
         id = gsub("perspicillatac", "perspicillata", id),
@@ -261,7 +261,7 @@ sef_df <- xl_sef %>%
         diet = find_diet(species),
         clade = find_clade(species)
     ) %>% 
-    select(diet, clade, species, id, prox, med, dist)
+    select(diet, clade, species, id, prox, mid, dist)
 
 
 
@@ -288,24 +288,26 @@ clear_df <- bind_rows(sef_df, clear_df) %>%
     arrange(clade, diet, species, id)
 ```
 
-Absorption data
-===============
+# Absorption data
 
-For "Fractional absorption / total intestinal surface (cm^-2)" vs clade (Figure 7B)
+For “Fractional absorption / total intestinal surface (cm^-2)” vs clade
+(Figure 7B)
 
 This uses many of the same functions that the clearance data did.
 
-Reading data:
+Reading
+data:
 
 ``` r
 xl_abs <- read_excel('data/raw_data.xlsx', sheet = 3, range = "C19:M131",
                      col_types = rep('text', 11),
                      col_names = c('id', 'gavage', 'injection', 
-                                   'id2', 'prox', 'med', 'dist', 'animal_avg', 
+                                   'id2', 'prox', 'mid', 'dist', 'animal_avg', 
                                    'sp_avg', 'nsa', 'mass'))
 ```
 
-Manipulating for the two main sections of `xl_abs`, then combining them into one data frame.
+Manipulating for the two main sections of `xl_abs`, then combining them
+into one data frame.
 
 ``` r
 abs_df <- xl_abs %>%
@@ -330,10 +332,10 @@ abs_df <- xl_abs %>%
 
 
 abs_df2 <- xl_abs %>%
-    select(id2, prox, med, dist, nsa, mass) %>% 
-    filter(!is.na(id2), !is.na(prox) , !is.na(med),
+    select(id2, prox, mid, dist, nsa, mass) %>% 
+    filter(!is.na(id2), !is.na(prox) , !is.na(mid),
            !is.na(dist), !is.na(nsa), !is.na(mass)) %>% 
-    mutate_at(vars(prox, med, dist, nsa, mass), as.numeric) %>% 
+    mutate_at(vars(prox, mid, dist, nsa, mass), as.numeric) %>% 
     mutate(
         # this one was input incorrectly
         id2 = gsub("Microtus", "M. pennsylvanicus ", id2),
@@ -346,16 +348,16 @@ abs_df2 <- xl_abs %>%
         diet = find_diet(species),
         clade = find_clade(species)
     ) %>% 
-    select(diet, clade, species, id, prox, med, dist, nsa, mass)
+    select(diet, clade, species, id, prox, mid, dist, nsa, mass)
 
 absorp_df <- bind_rows(abs_df, abs_df2) %>% 
     arrange(clade, diet, species, id)
 ```
 
-Remove excess objects
-=====================
+# Remove excess objects
 
-Only the objects `morph_df`, `clear_df`, and `absorp_df` are needed downstream.
+Only the objects `morph_df`, `clear_df`, and `absorp_df` are needed
+downstream.
 
 ``` r
 rm(list = c(".i", "abbrev_id", "abs_df",
@@ -365,63 +367,71 @@ rm(list = c(".i", "abbrev_id", "abs_df",
             "xl_extr", "xl_sef"))
 ```
 
-Session info
-============
+# Session info
 
-This outlines the package versions I used for this script.
+This outlines the package versions I used for this
+    script.
 
-    ## Session info -------------------------------------------------------------
-
+    ## ─ Session info ──────────────────────────────────────────────────────────
     ##  setting  value                       
-    ##  version  R version 3.4.2 (2017-09-28)
+    ##  version  R version 3.5.2 (2018-12-20)
+    ##  os       macOS Mojave 10.14.3        
     ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
+    ##  ctype    en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2017-12-12
-
-    ## Packages -----------------------------------------------------------------
-
-    ##  package    * version date       source        
-    ##  assertthat   0.2.0   2017-04-11 CRAN (R 3.4.0)
-    ##  backports    1.1.1   2017-09-25 CRAN (R 3.4.2)
-    ##  base       * 3.4.2   2017-10-04 local         
-    ##  bindr        0.1     2016-11-13 CRAN (R 3.4.0)
-    ##  bindrcpp   * 0.2     2017-06-17 CRAN (R 3.4.0)
-    ##  cellranger   1.1.0   2016-07-27 CRAN (R 3.4.0)
-    ##  compiler     3.4.2   2017-10-04 local         
-    ##  datasets   * 3.4.2   2017-10-04 local         
-    ##  devtools     1.13.3  2017-08-02 CRAN (R 3.4.1)
-    ##  digest       0.6.12  2017-01-27 CRAN (R 3.4.0)
-    ##  dplyr      * 0.7.4   2017-09-28 CRAN (R 3.4.2)
-    ##  evaluate     0.10.1  2017-06-24 CRAN (R 3.4.1)
-    ##  glue         1.2.0   2017-10-29 CRAN (R 3.4.2)
-    ##  graphics   * 3.4.2   2017-10-04 local         
-    ##  grDevices  * 3.4.2   2017-10-04 local         
-    ##  hms          0.3     2016-11-22 CRAN (R 3.4.0)
-    ##  htmltools    0.3.6   2017-04-28 cran (@0.3.6) 
-    ##  knitr        1.17    2017-08-10 CRAN (R 3.4.1)
-    ##  magrittr     1.5     2014-11-22 CRAN (R 3.4.0)
-    ##  memoise      1.1.0   2017-04-21 CRAN (R 3.4.0)
-    ##  methods    * 3.4.2   2017-10-04 local         
-    ##  pkgconfig    2.0.1   2017-03-21 CRAN (R 3.4.0)
-    ##  purrr      * 0.2.4   2017-10-18 CRAN (R 3.4.2)
-    ##  R6           2.2.2   2017-06-17 CRAN (R 3.4.0)
-    ##  Rcpp         0.12.13 2017-09-28 CRAN (R 3.4.2)
-    ##  readr      * 1.1.1   2017-05-16 CRAN (R 3.4.0)
-    ##  readxl     * 1.0.0   2017-04-18 CRAN (R 3.4.0)
-    ##  rematch      1.0.1   2016-04-21 CRAN (R 3.4.0)
-    ##  rlang        0.1.4   2017-11-05 CRAN (R 3.4.2)
-    ##  rmarkdown    1.6     2017-06-15 CRAN (R 3.4.0)
-    ##  rprojroot    1.2     2017-01-16 cran (@1.2)   
-    ##  stats      * 3.4.2   2017-10-04 local         
-    ##  stringi      1.1.5   2017-04-07 CRAN (R 3.4.0)
-    ##  stringr      1.2.0   2017-02-18 CRAN (R 3.4.0)
-    ##  tibble       1.3.4   2017-08-22 CRAN (R 3.4.1)
-    ##  tidyr      * 0.7.2   2017-10-16 CRAN (R 3.4.2)
-    ##  tidyselect   0.2.3   2017-11-06 CRAN (R 3.4.2)
-    ##  tools        3.4.2   2017-10-04 local         
-    ##  utils      * 3.4.2   2017-10-04 local         
-    ##  withr        2.1.0   2017-11-01 CRAN (R 3.4.2)
-    ##  yaml         2.1.14  2016-11-12 cran (@2.1.14)
+    ##  date     2019-02-16                  
+    ## 
+    ## ─ Packages ──────────────────────────────────────────────────────────────
+    ##  package     * version date       lib source        
+    ##  assertthat    0.2.0   2017-04-11 [1] CRAN (R 3.5.0)
+    ##  backports     1.1.3   2018-12-14 [1] CRAN (R 3.5.0)
+    ##  callr         3.1.1   2018-12-21 [1] CRAN (R 3.5.0)
+    ##  cellranger    1.1.0   2016-07-27 [1] CRAN (R 3.5.0)
+    ##  cli           1.0.1   2018-09-25 [1] CRAN (R 3.5.0)
+    ##  crayon        1.3.4   2017-09-16 [1] CRAN (R 3.5.0)
+    ##  desc          1.2.0   2018-05-01 [1] CRAN (R 3.5.0)
+    ##  devtools      2.0.1   2018-10-26 [1] CRAN (R 3.5.1)
+    ##  digest        0.6.18  2018-10-10 [1] CRAN (R 3.5.0)
+    ##  dplyr       * 0.8.0.1 2019-02-15 [1] CRAN (R 3.5.2)
+    ##  evaluate      0.13    2019-02-12 [1] CRAN (R 3.5.2)
+    ##  fs            1.2.6   2018-08-23 [1] CRAN (R 3.5.0)
+    ##  glue          1.3.0   2018-07-17 [1] CRAN (R 3.5.0)
+    ##  highr         0.7     2018-06-09 [1] CRAN (R 3.5.0)
+    ##  hms           0.4.2   2018-03-10 [1] CRAN (R 3.5.0)
+    ##  htmltools     0.3.6   2017-04-28 [1] CRAN (R 3.5.0)
+    ##  knitr         1.21    2018-12-10 [1] CRAN (R 3.5.2)
+    ##  magrittr      1.5     2014-11-22 [1] CRAN (R 3.5.0)
+    ##  memoise       1.1.0   2017-04-21 [1] CRAN (R 3.5.0)
+    ##  pillar        1.3.1   2018-12-15 [1] CRAN (R 3.5.0)
+    ##  pkgbuild      1.0.2   2018-10-16 [1] CRAN (R 3.5.0)
+    ##  pkgconfig     2.0.2   2018-08-16 [1] CRAN (R 3.5.0)
+    ##  pkgload       1.0.2   2018-10-29 [1] CRAN (R 3.5.0)
+    ##  prettyunits   1.0.2   2015-07-13 [1] CRAN (R 3.5.0)
+    ##  processx      3.2.1   2018-12-05 [1] CRAN (R 3.5.0)
+    ##  ps            1.3.0   2018-12-21 [1] CRAN (R 3.5.0)
+    ##  purrr       * 0.3.0   2019-01-27 [1] CRAN (R 3.5.2)
+    ##  R6            2.4.0   2019-02-14 [1] CRAN (R 3.5.2)
+    ##  Rcpp          1.0.0   2018-11-07 [1] CRAN (R 3.5.0)
+    ##  readr       * 1.3.1   2018-12-21 [1] CRAN (R 3.5.0)
+    ##  readxl      * 1.3.0   2019-02-15 [1] CRAN (R 3.5.2)
+    ##  rematch       1.0.1   2016-04-21 [1] CRAN (R 3.5.0)
+    ##  remotes       2.0.2   2018-10-30 [1] CRAN (R 3.5.0)
+    ##  rlang         0.3.1   2019-01-08 [1] CRAN (R 3.5.2)
+    ##  rmarkdown     1.11    2018-12-08 [1] CRAN (R 3.5.0)
+    ##  rprojroot     1.3-2   2018-01-03 [1] CRAN (R 3.5.0)
+    ##  sessioninfo   1.1.1   2018-11-05 [1] CRAN (R 3.5.0)
+    ##  stringi       1.3.1   2019-02-13 [1] CRAN (R 3.5.2)
+    ##  stringr       1.4.0   2019-02-10 [1] CRAN (R 3.5.2)
+    ##  testthat      2.0.1   2018-10-13 [1] CRAN (R 3.5.0)
+    ##  tibble        2.0.1   2019-01-12 [1] CRAN (R 3.5.2)
+    ##  tidyr       * 0.8.2   2018-10-28 [1] CRAN (R 3.5.0)
+    ##  tidyselect    0.2.5   2018-10-11 [1] CRAN (R 3.5.0)
+    ##  usethis       1.4.0   2018-08-14 [1] CRAN (R 3.5.0)
+    ##  withr         2.1.2   2018-03-15 [1] CRAN (R 3.5.0)
+    ##  xfun          0.4     2018-10-23 [1] CRAN (R 3.5.0)
+    ##  yaml          2.2.0   2018-07-25 [1] CRAN (R 3.5.0)
+    ## 
+    ## [1] /Library/Frameworks/R.framework/Versions/3.5/Resources/library

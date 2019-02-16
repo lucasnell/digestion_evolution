@@ -95,6 +95,11 @@ cowplot::plot_grid(plotlist = cor_jack_p, ncol = 2, rel_widths = c(5, 4),
 
 #### Re-running model without influential point
 
+Table \ref{tab:results-re-run-summ-dfs-cor-phylo} shows the `cor_phylo` output
+when this influential point is excluded.
+
+
+
 ```{r results-influence-rerun-cor-phylo, cache = TRUE}
 clear_sef_df_ <- clear_sef_df %>% 
     filter(species != 'Tadarida brasiliensis')
@@ -124,21 +129,19 @@ cp_rerun_boot_refits <- refit_boots(influence_rerun, rcond_threshold = 2e-3)
 
 
 
-Table \ref{tab:results-re-run-summ-dfs-cor-phylo} shows the `cor_phylo` output
-when this influential point is excluded.
 
 ```{r results-re-run-summ-dfs-cor-phylo}
 bci <- boot_ci(influence_rerun, cp_rerun_boot_refits)
-rerun_df <- data_frame(parameter = c('$r$', '$d_{\\text{sef}}$', 
-                                     '$d_{\\text{clear}}$'),
-                       estimate = c(influence_rerun$corrs[1,2], 
-                                    influence_rerun$d),
-                       lower = c(bci$corrs[2,1],
-                                 bci$d[,'lower']),
-                       upper = c(bci$corrs[1,2],
-                                 bci$d[,'upper']),
-                       P = c(pval(influence_rerun, "corrs", cp_rerun_boot_refits)[1,2], 
-                             rep("–", 2)))
+rerun_df <- tibble(parameter = c('$r$', '$d_{\\text{sef}}$', 
+                                 '$d_{\\text{clear}}$'),
+                   estimate = c(influence_rerun$corrs[1,2], 
+                                influence_rerun$d),
+                   lower = c(bci$corrs[2,1],
+                             bci$d[,'lower']),
+                   upper = c(bci$corrs[1,2],
+                             bci$d[,'upper']),
+                   P = c(pval(influence_rerun, "corrs", cp_rerun_boot_refits)[1,2], 
+                         rep("–", 2)))
 rerun_df %>% 
     pretty_df(., caption = str_c('\\texttt{cor\\_phylo} model summary for the ',
                                  'correlation between clearance and SEF ',

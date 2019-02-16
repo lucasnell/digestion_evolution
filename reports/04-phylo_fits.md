@@ -1,7 +1,7 @@
 Phylogenetic linear regressions and correlations
 ================
 Lucas Nell
-11 Sep 2018
+16 Feb 2019
 
 This file conducts the linear regressions using `phylolm::phylolm` and
 computes correlations using `phyr::cor_phylo`.
@@ -21,7 +21,7 @@ tr <- get_tr('spp')
 # Morphometrics by species
 spp_df <- get_df('spp')
 # Morphometrics by species and segment
-seg_types <- c('prox', 'med', 'dist')
+seg_types <- c('prox', 'mid', 'dist')
 pos_df_list <- lapply(seg_types, get_df, .df = 'pos')
 names(pos_df_list) <- seg_types
 # Absorption by species
@@ -120,7 +120,7 @@ readr::write_rds(spp_fits, 'output/models_spp.rds')
 
 ## `Morphometrics` on `Clade`, separately by segment
 
-(Segment = proximal, medial, or distal)
+(Segment = proximal, middle, or distal)
 
 List of `Y`s:
 
@@ -138,7 +138,7 @@ types.
 ``` r
 pos_ys <- c('log_intestinal_diameter', 'log_villus_height', 'villus_width', 
             'crypt_width', 'log_sef', 'enterocyte_diameter', 'log_enterocyte_density')
-seg_types <- c('prox', 'med', 'dist')
+seg_types <- c('prox', 'mid', 'dist')
 ```
 
 Below is a data frame including whether or not to include `log_mass` as
@@ -162,10 +162,10 @@ include_mass
     ##  5 prox  log_sef                 TRUE   
     ##  6 prox  enterocyte_diameter     FALSE  
     ##  7 prox  log_enterocyte_density  FALSE  
-    ##  8 med   log_intestinal_diameter TRUE   
-    ##  9 med   log_villus_height       TRUE   
-    ## 10 med   villus_width            FALSE  
-    ## # ... with 11 more rows
+    ##  8 mid   log_intestinal_diameter TRUE   
+    ##  9 mid   log_villus_height       TRUE   
+    ## 10 mid   villus_width            FALSE  
+    ## # … with 11 more rows
 
 `phylolm` call:
 
@@ -322,74 +322,79 @@ write_csv(mod_summaries, 'output/models_summaries.csv')
 This outlines the package versions I used for these
     analyses.
 
-    ## Session info -------------------------------------------------------------
-
+    ## ─ Session info ──────────────────────────────────────────────────────────
     ##  setting  value                       
-    ##  version  R version 3.5.1 (2018-07-02)
+    ##  version  R version 3.5.2 (2018-12-20)
+    ##  os       macOS Mojave 10.14.3        
     ##  system   x86_64, darwin15.6.0        
     ##  ui       X11                         
     ##  language (EN)                        
     ##  collate  en_US.UTF-8                 
+    ##  ctype    en_US.UTF-8                 
     ##  tz       America/Chicago             
-    ##  date     2018-09-11
-
-    ## Packages -----------------------------------------------------------------
-
-    ##  package      * version date       source         
-    ##  ape          * 5.1     2018-04-04 CRAN (R 3.5.0) 
-    ##  assertthat     0.2.0   2017-04-11 CRAN (R 3.5.0) 
-    ##  backports      1.1.2   2017-12-13 CRAN (R 3.5.0) 
-    ##  base         * 3.5.1   2018-07-05 local          
-    ##  bindr          0.1.1   2018-03-13 CRAN (R 3.5.0) 
-    ##  bindrcpp     * 0.2.2   2018-03-29 CRAN (R 3.5.0) 
-    ##  cli            1.0.0   2017-11-05 CRAN (R 3.5.0) 
-    ##  codetools      0.2-15  2016-10-05 CRAN (R 3.5.1) 
-    ##  compiler       3.5.1   2018-07-05 local          
-    ##  crayon         1.3.4   2017-09-16 CRAN (R 3.5.0) 
-    ##  datasets     * 3.5.1   2018-07-05 local          
-    ##  devtools       1.13.6  2018-06-27 CRAN (R 3.5.0) 
-    ##  digest         0.6.16  2018-08-22 CRAN (R 3.5.0) 
-    ##  dplyr        * 0.7.6   2018-06-29 CRAN (R 3.5.1) 
-    ##  evaluate       0.11    2018-07-17 CRAN (R 3.5.0) 
-    ##  fansi          0.3.0   2018-08-13 CRAN (R 3.5.0) 
-    ##  future         1.9.0   2018-07-23 CRAN (R 3.5.0) 
-    ##  future.apply   1.0.1   2018-08-26 CRAN (R 3.5.0) 
-    ##  globals        0.12.2  2018-08-25 CRAN (R 3.5.0) 
-    ##  glue           1.3.0   2018-07-17 CRAN (R 3.5.0) 
-    ##  graphics     * 3.5.1   2018-07-05 local          
-    ##  grDevices    * 3.5.1   2018-07-05 local          
-    ##  grid           3.5.1   2018-07-05 local          
-    ##  hms            0.4.2   2018-03-10 CRAN (R 3.5.0) 
-    ##  htmltools      0.3.6   2017-04-28 CRAN (R 3.5.0) 
-    ##  knitr          1.20    2018-02-20 CRAN (R 3.5.0) 
-    ##  lattice        0.20-35 2017-03-25 CRAN (R 3.5.1) 
-    ##  listenv        0.7.0   2018-01-21 CRAN (R 3.5.0) 
-    ##  magrittr       1.5     2014-11-22 CRAN (R 3.5.0) 
-    ##  Matrix         1.2-14  2018-04-13 CRAN (R 3.5.1) 
-    ##  memoise        1.1.0   2017-04-21 CRAN (R 3.5.0) 
-    ##  methods      * 3.5.1   2018-07-05 local          
-    ##  nlme           3.1-137 2018-04-07 CRAN (R 3.5.1) 
-    ##  nloptr         1.0.4   2017-08-22 CRAN (R 3.5.0) 
-    ##  parallel       3.5.1   2018-07-05 local          
-    ##  phylolm      * 2.6     2018-05-31 CRAN (R 3.5.0) 
-    ##  phyr         * 0.1.5   2018-09-11 local          
-    ##  pillar         1.3.0   2018-07-14 CRAN (R 3.5.0) 
-    ##  pkgconfig      2.0.2   2018-08-16 CRAN (R 3.5.0) 
-    ##  purrr        * 0.2.5   2018-05-29 CRAN (R 3.5.0) 
-    ##  R6             2.2.2   2017-06-17 CRAN (R 3.5.0) 
-    ##  Rcpp           0.12.18 2018-07-23 cran (@0.12.18)
-    ##  readr        * 1.1.1   2017-05-16 CRAN (R 3.5.0) 
-    ##  rlang          0.2.2   2018-08-16 CRAN (R 3.5.0) 
-    ##  rmarkdown      1.10    2018-06-11 CRAN (R 3.5.0) 
-    ##  rprojroot      1.3-2   2018-01-03 CRAN (R 3.5.0) 
-    ##  stats        * 3.5.1   2018-07-05 local          
-    ##  stringi        1.2.4   2018-07-20 CRAN (R 3.5.0) 
-    ##  stringr        1.3.1   2018-05-10 CRAN (R 3.5.0) 
-    ##  tibble         1.4.2   2018-01-22 CRAN (R 3.5.0) 
-    ##  tidyr        * 0.8.1   2018-05-18 CRAN (R 3.5.0) 
-    ##  tidyselect     0.2.4   2018-02-26 CRAN (R 3.5.0) 
-    ##  tools          3.5.1   2018-07-05 local          
-    ##  utf8           1.1.4   2018-05-24 CRAN (R 3.5.0) 
-    ##  utils        * 3.5.1   2018-07-05 local          
-    ##  withr          2.1.2   2018-03-15 CRAN (R 3.5.0) 
-    ##  yaml           2.2.0   2018-07-25 CRAN (R 3.5.0)
+    ##  date     2019-02-16                  
+    ## 
+    ## ─ Packages ──────────────────────────────────────────────────────────────
+    ##  package      * version  date       lib source                        
+    ##  ape          * 5.2      2018-09-24 [1] CRAN (R 3.5.0)                
+    ##  assertthat     0.2.0    2017-04-11 [1] CRAN (R 3.5.0)                
+    ##  backports      1.1.3    2018-12-14 [1] CRAN (R 3.5.0)                
+    ##  callr          3.1.1    2018-12-21 [1] CRAN (R 3.5.0)                
+    ##  cli            1.0.1    2018-09-25 [1] CRAN (R 3.5.0)                
+    ##  codetools      0.2-16   2018-12-24 [1] CRAN (R 3.5.2)                
+    ##  crayon         1.3.4    2017-09-16 [1] CRAN (R 3.5.0)                
+    ##  desc           1.2.0    2018-05-01 [1] CRAN (R 3.5.0)                
+    ##  devtools       2.0.1    2018-10-26 [1] CRAN (R 3.5.1)                
+    ##  digest         0.6.18   2018-10-10 [1] CRAN (R 3.5.0)                
+    ##  dplyr        * 0.8.0.1  2019-02-15 [1] CRAN (R 3.5.2)                
+    ##  evaluate       0.13     2019-02-12 [1] CRAN (R 3.5.2)                
+    ##  fansi          0.4.0    2018-10-05 [1] CRAN (R 3.5.0)                
+    ##  fs             1.2.6    2018-08-23 [1] CRAN (R 3.5.0)                
+    ##  future         1.11.1.1 2019-01-26 [1] CRAN (R 3.5.2)                
+    ##  future.apply   1.1.0    2019-01-17 [1] CRAN (R 3.5.2)                
+    ##  globals        0.12.4   2018-10-11 [1] CRAN (R 3.5.0)                
+    ##  glue           1.3.0    2018-07-17 [1] CRAN (R 3.5.0)                
+    ##  hms            0.4.2    2018-03-10 [1] CRAN (R 3.5.0)                
+    ##  htmltools      0.3.6    2017-04-28 [1] CRAN (R 3.5.0)                
+    ##  knitr          1.21     2018-12-10 [1] CRAN (R 3.5.2)                
+    ##  lattice        0.20-38  2018-11-04 [1] CRAN (R 3.5.2)                
+    ##  listenv        0.7.0    2018-01-21 [1] CRAN (R 3.5.0)                
+    ##  lme4           1.1-20   2019-02-04 [1] CRAN (R 3.5.2)                
+    ##  magrittr       1.5      2014-11-22 [1] CRAN (R 3.5.0)                
+    ##  MASS           7.3-51.1 2018-11-01 [1] CRAN (R 3.5.2)                
+    ##  Matrix         1.2-15   2018-11-01 [1] CRAN (R 3.5.2)                
+    ##  memoise        1.1.0    2017-04-21 [1] CRAN (R 3.5.0)                
+    ##  minqa          1.2.4    2014-10-09 [1] CRAN (R 3.5.0)                
+    ##  nlme           3.1-137  2018-04-07 [1] CRAN (R 3.5.2)                
+    ##  nloptr         1.2.1    2018-10-03 [1] CRAN (R 3.5.0)                
+    ##  phylolm      * 2.6      2018-05-31 [1] CRAN (R 3.5.0)                
+    ##  phyr         * 0.1.5    2018-11-16 [1] Github (daijiang/phyr@b789866)
+    ##  pillar         1.3.1    2018-12-15 [1] CRAN (R 3.5.0)                
+    ##  pkgbuild       1.0.2    2018-10-16 [1] CRAN (R 3.5.0)                
+    ##  pkgconfig      2.0.2    2018-08-16 [1] CRAN (R 3.5.0)                
+    ##  pkgload        1.0.2    2018-10-29 [1] CRAN (R 3.5.0)                
+    ##  prettyunits    1.0.2    2015-07-13 [1] CRAN (R 3.5.0)                
+    ##  processx       3.2.1    2018-12-05 [1] CRAN (R 3.5.0)                
+    ##  ps             1.3.0    2018-12-21 [1] CRAN (R 3.5.0)                
+    ##  purrr        * 0.3.0    2019-01-27 [1] CRAN (R 3.5.2)                
+    ##  R6             2.4.0    2019-02-14 [1] CRAN (R 3.5.2)                
+    ##  Rcpp           1.0.0    2018-11-07 [1] CRAN (R 3.5.0)                
+    ##  readr        * 1.3.1    2018-12-21 [1] CRAN (R 3.5.0)                
+    ##  remotes        2.0.2    2018-10-30 [1] CRAN (R 3.5.0)                
+    ##  rlang          0.3.1    2019-01-08 [1] CRAN (R 3.5.2)                
+    ##  rmarkdown      1.11     2018-12-08 [1] CRAN (R 3.5.0)                
+    ##  rprojroot      1.3-2    2018-01-03 [1] CRAN (R 3.5.0)                
+    ##  sessioninfo    1.1.1    2018-11-05 [1] CRAN (R 3.5.0)                
+    ##  stringi        1.3.1    2019-02-13 [1] CRAN (R 3.5.2)                
+    ##  stringr        1.4.0    2019-02-10 [1] CRAN (R 3.5.2)                
+    ##  testthat       2.0.1    2018-10-13 [1] CRAN (R 3.5.0)                
+    ##  tibble         2.0.1    2019-01-12 [1] CRAN (R 3.5.2)                
+    ##  tidyr        * 0.8.2    2018-10-28 [1] CRAN (R 3.5.0)                
+    ##  tidyselect     0.2.5    2018-10-11 [1] CRAN (R 3.5.0)                
+    ##  usethis        1.4.0    2018-08-14 [1] CRAN (R 3.5.0)                
+    ##  utf8           1.1.4    2018-05-24 [1] CRAN (R 3.5.0)                
+    ##  withr          2.1.2    2018-03-15 [1] CRAN (R 3.5.0)                
+    ##  xfun           0.4      2018-10-23 [1] CRAN (R 3.5.0)                
+    ##  yaml           2.2.0    2018-07-25 [1] CRAN (R 3.5.0)                
+    ## 
+    ## [1] /Library/Frameworks/R.framework/Versions/3.5/Resources/library
