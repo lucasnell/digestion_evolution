@@ -5,7 +5,7 @@
 -->
 
 The phylogenetic tree was downloaded from [`timetree.org`](timetree.org)
-`r citep("10.1093/molbev/msx116")`.
+\citep{Kumar_2017}.
 Not every species in our phylogeny was used for every analysis.
 Analyses related to morphometric, clearance, and absorption data had separate
 datasets consisting of different species.

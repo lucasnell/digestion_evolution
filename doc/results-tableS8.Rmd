@@ -1,0 +1,108 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r add_tableS8_refs_fxn, eval = FALSE}
+s8_refs <- bibtex::read.bib(file = 'doc/s8_refs.bib')
+ct <- function(...) {
+    keys <- sapply(match.call(expand.dots = FALSE)[['...']], deparse)
+    citep(s8_refs[keys])
+}
+```
+
+
+
+
+
+\subsection{Measurements of absorption of paracellular probes in bats and rodents}
+
+\begin{sidewaystable}[!ht]
+
+\fontsize{10}{12}\selectfont
+
+\centering
+\caption{Summary of measurements of absorption of 
+paracellular probes in bats and rodents. Data are presented as species mean values.}
+\label{tab:table-s8}
+
+\begin{tabular}{p{0.125in}@{}lSlSSSSp{2.5in}}
+\toprule
+
+    \multicolumn{4}{l}{} & 
+        \multicolumn{3}{c}{\makecell[bc]{\textbf{Whole-animal} \\ \textbf{fractional} \\ 
+            \textbf{absorption} \\ 
+            \textbf{(proportion)}${}^{\dagger}$}} &
+    \multicolumn{1}{c}{\makecell[bc]{\textbf{Tissue-level} \\ \textbf{absorption} \\
+        \textbf{(}$\mathbf{\mu}$\textbf{L min}${}^{\mathbf{-1}}$ \\
+        \textbf{cm}${}^{\mathbf{2}}$\textbf{)}}} &
+        {} \\
+
+\cmidrule(r){5-7} \cmidrule(r){8-8}
+
+    {} & 
+        \multicolumn{1}{c}{\textbf{Species}} & 
+        \multicolumn{1}{c}{\makecell[bc]{\textbf{Body} \\ \textbf{Mass} \\ \textbf{(g)}}} & 
+        \multicolumn{1}{c}{\makecell[bc]{\textbf{Primary} \\ \textbf{Dietary} \\ \textbf{Nutrient}}} & 
+        \multicolumn{1}{c}{\rotatebox[origin=lB]{90}{\textbf{Arabinose}}} &
+        \multicolumn{1}{c}{\rotatebox[origin=lB]{90}{\textbf{Rhamnose}}} &
+        \multicolumn{1}{c}{\rotatebox[origin=lB]{90}{\makecell[lc]{\textbf{Lactulose or} \\ 
+            \textbf{Cellobiose}}}} &
+        \multicolumn{1}{c}{\rotatebox[origin=lB]{90}{\textbf{Arabinose}}} &
+        \multicolumn{1}{c}{\textbf{Reference(s)}} \\
+        
+\midrule
+\addlinespace[2ex]
+
+    \multicolumn{9}{l}{Rodents:} \\
+\addlinespace[1ex]
+    & \emph{Peromyscus leucopus}      & 22.4  & Protein       & 0.31  &       & 0.12  & 0.974 & \citep{price2014} \\
+    & \emph{Mus musculus}             & 30    & Carb/Prot     & 0.21  & 0.19  &       & 1.564 & \citep{caviedes2007, fasulo2013a, brun2014} \\
+    & \emph{Microtus pennsylvanicus}  & 35.4  & Carbohydrate  & 0.22  &       & 0.15  &       & \citep{price2016} \\
+    & \emph{Akodon montensis}         & 37    & Carb/Prot     & 0.35  &       &       & 3.98  & \citep{brun2014} \\
+    & \emph{Onychomys leucogaster}    & 38    & Protein       & 0.40  &       & 0.13  & 1.257 & \citep{price2014} \\
+    & \emph{Acomys cahirinus}         & 58    & Carbohydrate  & 0.42  &       & 0.05  &       & \citep{karasov2012} \\
+    & \emph{Acomys russatus}          & 58    & Carbohydrate  & 0.31  &       & 0.14  &       & \citep{karasov2012} \\
+    & \emph{Galea galea}              & 247   & Carbohydrate  &       & 0.22  & 0.08  &       & \citep{caviedes2007} \\
+    & \emph{Rattus norvegicus}        & 300   & Carb/Prot     & 0.34  & 0.13  & 0.09  & 1.38  & \citep{lavin2007, brun2014} \\
+
+\addlinespace[2ex]
+\midrule[0.25pt]
+\addlinespace[2ex]
+
+    \multicolumn{9}{l}{Bats:} \\
+\addlinespace[1ex]
+    & \emph{Myotis lucifugus}             & 7.8   & Protein           & 0.82  &       & 0.57  & 2.812 & \citep{price2014} \\
+    & \emph{Glossophaga soricina}         & 10    & Carbohydrate      &       &       &       & 13.68 & \citep{price2015} \\
+    & \emph{Tadarida brasiliensis}        & 13    & Protein           & 1.03  &       &       & 1.91  & \citep{fasulo2013b, price2013} \\
+    & \emph{Carollia perspicillata}       & 16    & Carbohydrate      &       &       &       & 8.81  & \citep{brun2014} \\
+    & \emph{Eptesicus fuscus}             & 17.9  & Protein           & 0.85  &       &       &       & \citep{price2016} \\
+    & \emph{Leptonycteris yerbabuenae}    & 20    & Carbohydrate      &       & 0.71  & 0.23  &       & \citep{rodriguez2016} \\
+    & \emph{Sturnira lilium}              & 22    & Carbohydrate      & 1.2   &       &       & 14.03 & \citep{brun2014} \\
+    & \emph{Desmodus rotundus}            & 34    & Protein           &       &       &       & 2.92  & \citep{price2015} \\
+    & \emph{Artibeus lituratus}           &       & Carbohydrate      &       & 0.9   & 0.1   & 15.9  & \citep{caviedes2007, brun2014} \\
+    & \emph{Rousettus aegyptiacus}        & 125   & Carbohydrate      &       & 0.62  & 0.22  &       & \citep{tracy2007} \\
+
+\addlinespace[2ex]
+\bottomrule
+\addlinespace[2ex]
+\end{tabular}
+
+\raggedright
+
+Notes:
+
+$\dagger$ Different sized probe molecules are used in order to characterize the
+molecular-size discrimination characteristics of the paracellular pathway.
+All these compounds are inert, nonactively transported compounds that bracket in
+molecular size D-glucose (molecular radius $\sim 3.9$ \AA{} \citep{pappenheimer1951}):
+L-arabinose ($\sim 3.1$ \AA; \citep{schultz1961}), 
+L-rhamnose ($\sim 3.7$ \AA; \citep{hamilton1987}; and 
+lactulose and cellobiose (both $\sim 5$ \AA; \citep{hamilton1987}).
+
+\end{sidewaystable}
+
+
+

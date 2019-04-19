@@ -1,9 +1,10 @@
 
 
 This section displays all results from analyses using
-`phylolm::phylolm` `r citep(citation("phylolm"))` and 
+`phylolm::phylolm`
+\citep{Ho_2014} and 
 `phyr::cor_phylo`
-`r citep("10.1111/j.1365-2435.2009.01596.x")`.
+\citep{Zheng_2009}.
 The `phyr` package is available from <http://github.com/daijiang/phyr>.
 
 In the tables below, the "estimate" column is the maximum likelihood estimate 

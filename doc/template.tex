@@ -297,7 +297,7 @@ $if(dir)$
 $endif$
 $if(natbib)$
 \usepackage[$natbiboptions$]{natbib}
-\bibliographystyle{$if(biblio-style)$$biblio-style$$else$plainnat$endif$}
+%% \bibliographystyle{$if(biblio-style)$$biblio-style$$else$plainnat$endif$}
 $endif$
 $if(biblatex)$
 \usepackage[$if(biblio-style)$style=$biblio-style$,$endif$$for(biblatexoptions)$$biblatexoptions$$sep$,$endfor$]{biblatex}
@@ -373,6 +373,14 @@ $endif$
 \let\originalright\right
 \renewcommand{\left}{\mathopen{}\mathclose\bgroup\originalleft}
 \renewcommand{\right}{\aftergroup\egroup\originalright}
+
+
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{rotating} % To display tables in landscape
+\usepackage{siunitx} % Required for alignment
+
 
 
 \begin{document}

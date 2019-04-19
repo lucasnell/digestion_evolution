@@ -1,9 +1,8 @@
 ---
 title: 'Electronic Supplementary Material: Supplemental Methods and Results'
-subtitle: "``Structural bases for intestinal paracellular absorption in bats and rodents''"
+subtitle: "``Morphological bases for intestinal paracellular absorption in bats and rodents''"
 date: "`r Sys.setenv(TZ='America/Chicago'); format(Sys.Date(), '%d %b %Y')`"
 fontsize: 12pt
-csl: "ecology.csl"
 bibliography: "references.bib"
 geometry: margin=1in,letterpaper
 documentclass: article
@@ -12,6 +11,8 @@ graphics: true
 colorlinks: true
 supplemental: true
 mathspec: true
+natbib: true
+natbiboptions: authoryear,sectionbib,sort
 header-includes: 
     - \usepackage{placeins}
 output:
@@ -22,10 +23,16 @@ output:
         latex_engine: xelatex
         toc: yes
         toc_depth: 2
+        keep_tex: true
+        citation_package: natbib
 ---
 
 
 <!---
+
+
+
+
 Originally provided author names, but Journal of Evolutionary Biology doesn't want that:
 # author:
 #     - name: Antonio Brun
@@ -60,15 +67,15 @@ Originally provided author names, but Journal of Evolutionary Biology doesn't wa
 ```{r setup, include=FALSE, cache = FALSE}
 suppressPackageStartupMessages({
     library(knitr)
-    library(knitcitations)
+    # library(knitcitations)
     library(bookdown)
 })
 knitr::opts_chunk$set(echo = FALSE, cache = FALSE, dev = 'quartz_pdf')
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 knitr::knit_theme$set(knitr::knit_theme$get("acid"))
 
-cleanbib()
-options("citation_format" = "pandoc")
+# cleanbib()
+# options("citation_format" = "pandoc")
 ```
 
 
@@ -116,9 +123,16 @@ options("citation_format" = "pandoc")
 
 
 
+```{r results-tableS8-main, child = 'results-tableS8.Rmd'}
+```
+
+\clearpage
+
 # References
 
+\bibliographystyle{amnatnat.bst}
+
 ```{r biblio, message = FALSE}
-write.bibtex(file="doc/references.bib")
+# write.bibtex(file="doc/references.bib")
 ```
 
